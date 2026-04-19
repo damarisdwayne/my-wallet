@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
 import { mockDividends } from '@/data/mock'
 import { formatCurrency } from '@/lib/utils'
 

@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { Badge } from '@/components/ui/Badge'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
 import { mockDividends } from '@/data/mock'
 import { formatCurrency, formatDate } from '@/lib/utils'
 

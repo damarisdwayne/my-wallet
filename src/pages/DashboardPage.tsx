@@ -1,5 +1,5 @@
 import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
 import { mockAssets, mockDividends, mockExpenses, mockPatrimonyHistory } from '@/data/mock'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 

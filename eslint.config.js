@@ -26,7 +26,16 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        printWidth: 100,
+        tabWidth: 2,
+        bracketSpacing: true,
+        arrowParens: 'always',
+        endOfLine: 'lf',
+      }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },

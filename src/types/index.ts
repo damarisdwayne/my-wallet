@@ -65,6 +65,22 @@ export interface MonthlyResult {
   vacancy?: number // FII vacancy %
 }
 
+/* ─── Diagrama do Cerrado ──────────────────────────────────────── */
+
+export interface DiagramQuestion {
+  id: string
+  text: string
+}
+
+export interface Diagram {
+  id: string
+  name: string
+  appliesTo: AssetType[]
+  questions: DiagramQuestion[]
+}
+
+export type AssetAnswers = Record<string, 0 | 1> // questionId → 0 (não) | 1 (sim)
+
 /* ─── Theme ────────────────────────────────────────────────────── */
 
 export type Theme = 'light' | 'dark' | 'system'

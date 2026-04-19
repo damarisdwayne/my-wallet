@@ -12,7 +12,35 @@ import {
 } from '@/components/ui/Dialog'
 import { mockAnswers, mockAssets, mockCategories, mockDiagrams } from '@/data/mock'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
-import type { Asset, AssetAnswers, AssetType, Diagram, DiagramQuestion } from '@/types'
+import type {
+  Asset,
+  AssetAnswers,
+  AssetType,
+  Diagram,
+  DiagramQuestion,
+  PortfolioCategory,
+} from '@/types'
+
+const ASSET_TYPES: AssetType[] = ['stock', 'fii', 'bdr', 'etf', 'fixed_income', 'crypto', 'other']
+
+const emptyNewCat = () => ({
+  name: '',
+  type: 'stock' as AssetType,
+  targetPercent: '10',
+  color: '#3b82f6',
+})
+
+const emptyNewAsset = () => ({
+  ticker: '',
+  name: '',
+  type: 'stock' as AssetType,
+  quantity: '',
+  avgPrice: '',
+  currentPrice: '',
+  targetPercent: '10',
+  categoryId: '',
+  autoCategory: true,
+})
 
 const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Análise']
 
@@ -37,6 +65,20 @@ export const PortfolioPage = () => {
   const [activeTab, setActiveTab] = useState(0)
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
 
+  // assets state
+  const [assets, setAssets] = useState<Asset[]>(mockAssets)
+
+  // allocation state
+  const [categories, setCategories] = useState<PortfolioCategory[]>(mockCategories)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editTargetValue, setEditTargetValue] = useState('')
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false)
+  const [newCat, setNewCat] = useState(emptyNewCat())
+
+  // add asset state
+  const [addAssetOpen, setAddAssetOpen] = useState(false)
+  const [newAsset, setNewAsset] = useState(emptyNewAsset())
+
   // diagrama state
   const [diagrams, setDiagrams] = useState<Diagram[]>(mockDiagrams)
   const [activeDiagramId, setActiveDiagramId] = useState(mockDiagrams[0].id)
@@ -50,19 +92,19 @@ export const PortfolioPage = () => {
   const [editingQuestionText, setEditingQuestionText] = useState('')
 
   const totalValue = useMemo(
-    () => mockAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0),
-    [],
+    () => assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0),
+    [assets],
   )
 
   // unique types present in portfolio
   const availableTypes = useMemo(
-    () => [...new Set(mockAssets.map((a) => a.type))] as AssetType[],
-    [],
+    () => [...new Set(assets.map((a) => a.type))] as AssetType[],
+    [assets],
   )
 
   const filteredAssets = useMemo(
-    () => (filterType === ALL ? mockAssets : mockAssets.filter((a) => a.type === filterType)),
-    [filterType],
+    () => (filterType === ALL ? assets : assets.filter((a) => a.type === filterType)),
+    [filterType, assets],
   )
 
   // total value per type for summary cards
@@ -70,30 +112,76 @@ export const PortfolioPage = () => {
     () =>
       availableTypes.reduce(
         (acc, type) => {
-          const v = mockAssets
+          const v = assets
             .filter((a) => a.type === type)
             .reduce((s, a) => s + a.currentPrice * a.quantity, 0)
           return { ...acc, [type]: v }
         },
         {} as Record<string, number>,
       ),
-    [availableTypes],
+    [availableTypes, assets],
   )
 
   const filteredTotal = filteredAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
 
+  const inputClass =
+    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+
+  const handleAddCategory = () => {
+    const name = newCat.name.trim()
+    if (!name) return
+    const target = parseFloat(newCat.targetPercent)
+    setCategories((prev) => [
+      ...prev,
+      {
+        id: `cat-${Date.now()}`,
+        name,
+        type: newCat.type,
+        targetPercent: isNaN(target) ? 0 : Math.round(target * 10) / 10,
+        color: newCat.color,
+      },
+    ])
+    setNewCat(emptyNewCat())
+    setAddCategoryOpen(false)
+  }
+
+  const handleAddAsset = () => {
+    const ticker = newAsset.ticker.trim().toUpperCase()
+    const name = newAsset.name.trim()
+    if (!ticker || !name) return
+    const autoCatId = categories.find((c) => c.type === newAsset.type)?.id ?? ''
+    const resolvedCategoryId = newAsset.autoCategory ? autoCatId : newAsset.categoryId
+    setAssets((prev) => [
+      ...prev,
+      {
+        id: `asset-${Date.now()}`,
+        ticker,
+        name,
+        type: newAsset.type,
+        categoryId: resolvedCategoryId,
+        quantity: parseFloat(newAsset.quantity) || 0,
+        avgPrice: parseFloat(newAsset.avgPrice) || 0,
+        currentPrice: parseFloat(newAsset.currentPrice) || 0,
+        targetPercent: parseFloat(newAsset.targetPercent) || 0,
+      },
+    ])
+    setNewAsset(emptyNewAsset())
+    setAddAssetOpen(false)
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="relative flex gap-1 pb-px">
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
         {tabs.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActiveTab(i)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`relative px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === i
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab}
@@ -173,6 +261,17 @@ export const PortfolioPage = () => {
             })}
           </div>
 
+          {/* Add asset button */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setAddAssetOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={14} />
+              Adicionar ativo
+            </button>
+          </div>
+
           {/* Assets table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -231,69 +330,165 @@ export const PortfolioPage = () => {
         </div>
       )}
 
-      {activeTab === 1 && (
-        <div className="space-y-4">
-          {mockCategories.map((cat) => {
-            const assets = mockAssets.filter((a) => a.categoryId === cat.id)
-            const catValue = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
-            const actualPct = (catValue / totalValue) * 100
-            const diff = actualPct - cat.targetPercent
+      {activeTab === 1 &&
+        (() => {
+          const saveTarget = (id: string) => {
+            const n = parseFloat(editTargetValue)
+            if (!isNaN(n) && n >= 0 && n <= 100) {
+              setCategories((prev) =>
+                prev.map((c) =>
+                  c.id === id ? { ...c, targetPercent: Math.round(n * 10) / 10 } : c,
+                ),
+              )
+            }
+            setEditingCategoryId(null)
+          }
 
-            return (
-              <Card key={cat.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
-                      <CardTitle className="text-foreground text-sm font-semibold">
-                        {cat.name}
-                      </CardTitle>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-muted-foreground">Meta: {cat.targetPercent}%</span>
-                      <span className="font-medium text-foreground">
-                        Atual: {actualPct.toFixed(1)}%
-                      </span>
-                      <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
-                        {diff >= 0 ? '+' : ''}
-                        {diff.toFixed(1)}%
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2 mt-2">
-                    <div
-                      className="h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(actualPct, 100)}%`,
-                        background: cat.color,
-                      }}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {assets.map((a) => {
-                      const v = a.currentPrice * a.quantity
-                      return (
-                        <div key={a.id} className="text-xs p-2 rounded bg-muted">
-                          <p className="font-semibold text-foreground">{a.ticker}</p>
-                          <p className="text-muted-foreground">{formatCurrency(v)}</p>
-                          <p className="text-muted-foreground">Alvo: {a.targetPercent}%</p>
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Total alocado:{' '}
+                  <span
+                    className={cn(
+                      'font-semibold',
+                      Math.abs(categories.reduce((s, c) => s + c.targetPercent, 0) - 100) < 0.1
+                        ? 'text-success'
+                        : 'text-warning',
+                    )}
+                  >
+                    {categories.reduce((s, c) => s + c.targetPercent, 0).toFixed(1)}%
+                  </span>{' '}
+                  de 100%
+                </p>
+                <button
+                  onClick={() => setAddCategoryOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
+                >
+                  <Plus size={14} />
+                  Nova categoria
+                </button>
+              </div>
+              {categories.map((cat) => {
+                const catAssets = assets.filter((a) => a.categoryId === cat.id)
+                const catValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+                const actualPct = (catValue / totalValue) * 100
+                const diff = actualPct - cat.targetPercent
+                const isEditing = editingCategoryId === cat.id
+
+                return (
+                  <Card key={cat.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
+                          <CardTitle className="text-foreground text-sm font-semibold">
+                            {cat.name}
+                          </CardTitle>
                         </div>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <span>Meta:</span>
+                            <button
+                              className="flex items-center gap-1 group"
+                              onClick={() => {
+                                setEditingCategoryId(cat.id)
+                                setEditTargetValue(String(cat.targetPercent))
+                              }}
+                            >
+                              <span className={isEditing ? 'text-primary font-semibold' : ''}>
+                                {isEditing
+                                  ? `${parseFloat(editTargetValue || '0').toFixed(1)}%`
+                                  : `${cat.targetPercent}%`}
+                              </span>
+                              <Pencil
+                                size={11}
+                                className={cn(
+                                  'transition-colors',
+                                  isEditing
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground/40 group-hover:text-primary',
+                                )}
+                              />
+                            </button>
+                          </div>
+                          <span className="font-medium text-foreground">
+                            Atual: {actualPct.toFixed(1)}%
+                          </span>
+                          <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
+                            {diff >= 0 ? '+' : ''}
+                            {diff.toFixed(1)}%
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {isEditing && (
+                        <div className="mt-3 flex items-center gap-3">
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={0.5}
+                            value={editTargetValue}
+                            onChange={(e) => setEditTargetValue(e.target.value)}
+                            className="flex-1 accent-primary cursor-pointer"
+                            autoFocus
+                          />
+                          <span className="text-sm font-semibold text-primary w-12 text-right tabular-nums">
+                            {parseFloat(editTargetValue || '0').toFixed(1)}%
+                          </span>
+                          <button
+                            onClick={() => saveTarget(cat.id)}
+                            className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors"
+                          >
+                            OK
+                          </button>
+                          <button
+                            onClick={() => setEditingCategoryId(null)}
+                            className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs hover:text-foreground transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      {!isEditing && (
+                        <div className="w-full bg-muted rounded-full h-2 mt-2">
+                          <div
+                            className="h-2 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(actualPct, 100)}%`,
+                              background: cat.color,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {catAssets.map((a) => {
+                          const v = a.currentPrice * a.quantity
+                          return (
+                            <div key={a.id} className="text-xs p-2 rounded bg-muted">
+                              <p className="font-semibold text-foreground">{a.ticker}</p>
+                              <p className="text-muted-foreground">{formatCurrency(v)}</p>
+                              <p className="text-muted-foreground">Alvo: {a.targetPercent}%</p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )
+        })()}
 
       {activeTab === 2 &&
         (() => {
           const diagram = diagrams.find((d) => d.id === activeDiagramId) ?? diagrams[0]
-          const diagramAssets = mockAssets.filter((a) => diagram.appliesTo.includes(a.type))
+          const diagramAssets = assets.filter((a) => diagram.appliesTo.includes(a.type))
           const editingAnswers = (editingAsset && answers[editingAsset.id]) || {}
           const { yes: editYes, total: editTotal } = calcScore(editingAnswers, diagram.questions)
 
@@ -352,9 +547,6 @@ export const PortfolioPage = () => {
             setEditingQuestion(null)
             setEditingQuestionText('')
           }
-
-          const inputClass =
-            'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
           return (
             <div className="space-y-5">
@@ -610,6 +802,270 @@ export const PortfolioPage = () => {
           Análise de ativos — em breve
         </div>
       )}
+
+      {/* Add Category Dialog */}
+      <Dialog
+        open={addCategoryOpen}
+        onOpenChange={(open) => {
+          setAddCategoryOpen(open)
+          if (!open) setNewCat(emptyNewCat())
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova categoria</DialogTitle>
+            <DialogDescription>Defina nome, tipo, meta de alocação e cor.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
+              <input
+                className={inputClass}
+                placeholder="Ex: Ações Growth"
+                value={newCat.name}
+                onChange={(e) => setNewCat((p) => ({ ...p, name: e.target.value }))}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Tipo de ativo</label>
+              <select
+                className={inputClass}
+                value={newCat.type}
+                onChange={(e) => setNewCat((p) => ({ ...p, type: e.target.value as AssetType }))}
+              >
+                {ASSET_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {typeLabel[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Meta de alocação (%)
+              </label>
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                value={newCat.targetPercent}
+                onChange={(e) => setNewCat((p) => ({ ...p, targetPercent: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Cor</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={newCat.color}
+                  onChange={(e) => setNewCat((p) => ({ ...p, color: e.target.value }))}
+                  className="w-10 h-10 rounded-md border border-input bg-background cursor-pointer p-0.5"
+                />
+                <span className="text-sm text-muted-foreground font-mono">{newCat.color}</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <button
+              onClick={() => setAddCategoryOpen(false)}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleAddCategory}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Criar categoria
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Asset Dialog */}
+      {(() => {
+        const autoCatId = categories.find((c) => c.type === newAsset.type)?.id ?? ''
+        const resolvedCatName = newAsset.autoCategory
+          ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma categoria encontrada')
+          : (categories.find((c) => c.id === newAsset.categoryId)?.name ?? '—')
+        return (
+          <Dialog
+            open={addAssetOpen}
+            onOpenChange={(open) => {
+              setAddAssetOpen(open)
+              if (!open) setNewAsset(emptyNewAsset())
+            }}
+          >
+            <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Adicionar ativo</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados do ativo e vincule uma categoria.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Ticker</label>
+                    <input
+                      className={inputClass}
+                      placeholder="PETR4"
+                      value={newAsset.ticker}
+                      onChange={(e) => setNewAsset((p) => ({ ...p, ticker: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
+                    <select
+                      className={inputClass}
+                      value={newAsset.type}
+                      onChange={(e) =>
+                        setNewAsset((p) => ({
+                          ...p,
+                          type: e.target.value as AssetType,
+                          categoryId: '',
+                        }))
+                      }
+                    >
+                      {ASSET_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {typeLabel[t]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
+                  <input
+                    className={inputClass}
+                    placeholder="Petrobras PN"
+                    value={newAsset.name}
+                    onChange={(e) => setNewAsset((p) => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Quantidade</label>
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min={0}
+                      placeholder="100"
+                      value={newAsset.quantity}
+                      onChange={(e) => setNewAsset((p) => ({ ...p, quantity: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">PM (R$)</label>
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="30.00"
+                      value={newAsset.avgPrice}
+                      onChange={(e) => setNewAsset((p) => ({ ...p, avgPrice: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Atual (R$)</label>
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="35.00"
+                      value={newAsset.currentPrice}
+                      onChange={(e) => setNewAsset((p) => ({ ...p, currentPrice: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">
+                    % alvo na categoria
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={newAsset.targetPercent}
+                    onChange={(e) => setNewAsset((p) => ({ ...p, targetPercent: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Categoria</label>
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() =>
+                        setNewAsset((p) => ({ ...p, autoCategory: true, categoryId: '' }))
+                      }
+                      className={cn(
+                        'flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
+                        newAsset.autoCategory
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      Detectar automaticamente
+                    </button>
+                    <button
+                      onClick={() => setNewAsset((p) => ({ ...p, autoCategory: false }))}
+                      className={cn(
+                        'flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
+                        !newAsset.autoCategory
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      Selecionar manualmente
+                    </button>
+                  </div>
+                  {newAsset.autoCategory ? (
+                    <p className="text-xs px-3 py-2 rounded-md bg-muted text-muted-foreground">
+                      Categoria detectada:{' '}
+                      <span className="text-foreground font-medium">{resolvedCatName}</span>
+                    </p>
+                  ) : (
+                    <select
+                      className={inputClass}
+                      value={newAsset.categoryId}
+                      onChange={(e) => setNewAsset((p) => ({ ...p, categoryId: e.target.value }))}
+                    >
+                      <option value="">Selecione uma categoria...</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({typeLabel[c.type]})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <button
+                  onClick={() => setAddAssetOpen(false)}
+                  className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAddAsset}
+                  className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Adicionar
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )
+      })()}
     </div>
   )
 }

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { AllocationTab } from './components/allocation-tab'
+import { AporteTab } from './components/aporte-tab'
 import { DiagramTab } from './components/diagram-tab'
 import { OverviewTab } from './components/overview-tab'
 
-const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Análise']
+const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Aporte', 'Análise']
 
 export const PortfolioPage = () => {
   const {
@@ -69,6 +70,9 @@ export const PortfolioPage = () => {
         />
       )}
       {activeTab === 3 && (
+        <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
+      )}
+      {activeTab === 4 && (
         <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
           Análise de ativos — em breve
         </div>

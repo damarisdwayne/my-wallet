@@ -7,8 +7,11 @@ export const subscribeToAssets = (userId: string, cb: (assets: Asset[]) => void)
     cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Asset)),
   )
 
+const stripUndefined = <T extends object>(obj: T): T =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T
+
 export const addAsset = (userId: string, asset: Asset) =>
-  setDoc(doc(db, 'users', userId, 'assets', asset.id), asset)
+  setDoc(doc(db, 'users', userId, 'assets', asset.id), stripUndefined(asset))
 
 export const updateAssetPrice = (userId: string, assetId: string, price: number) =>
   updateDoc(doc(db, 'users', userId, 'assets', assetId), { currentPrice: price })

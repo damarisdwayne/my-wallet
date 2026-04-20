@@ -11,8 +11,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
-import type { Asset, AssetType, PortfolioCategory } from '@/types'
+import type { Asset, AssetAnswers, AssetType, Diagram, PortfolioCategory } from '@/types'
 import { ASSET_TYPES, typeLabel } from '../constants'
+import { computeAssetTargets } from '../compute-targets'
 
 const emptyNewCat = () => ({
   name: '',
@@ -28,10 +29,14 @@ interface Props {
   assets: Asset[]
   categories: PortfolioCategory[]
   totalValue: number
+  diagrams: Diagram[]
+  answers: Record<string, AssetAnswers>
   saveCategory: (cat: PortfolioCategory) => Promise<void>
 }
 
-export const AllocationTab = ({ assets, categories, totalValue, saveCategory }: Props) => {
+export const AllocationTab = ({ assets, categories, totalValue, diagrams, answers, saveCategory }: Props) => {
+  const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
+
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [editTargetValue, setEditTargetValue] = useState('')
   const [addCategoryOpen, setAddCategoryOpen] = useState(false)
@@ -194,7 +199,7 @@ export const AllocationTab = ({ assets, categories, totalValue, saveCategory }: 
                     <div key={a.id} className="text-xs p-2 rounded bg-muted">
                       <p className="font-semibold text-foreground">{a.ticker}</p>
                       <p className="text-muted-foreground">{formatCurrency(v)}</p>
-                      <p className="text-muted-foreground">Alvo: {a.targetPercent}%</p>
+                      <p className="text-muted-foreground">Alvo: {(assetTargets.get(a.id) ?? 0).toFixed(1)}%</p>
                     </div>
                   )
                 })}

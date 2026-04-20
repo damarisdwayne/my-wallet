@@ -68,12 +68,15 @@ export const PortfolioPage = () => {
           assets={assets}
           categories={categories}
           totalValue={totalValue}
+          diagrams={diagrams}
+          answers={answers}
           saveCategory={saveCategory}
         />
       )}
       {activeTab === 2 && (
         <DiagramTab
           assets={assets}
+          categories={categories}
           diagrams={diagrams}
           answers={answers}
           saveDiagram={saveDiagram}

@@ -7,7 +7,7 @@ import type { B3Asset } from '@/services/b3-import'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import { ALL, typeLabel } from '../constants'
 import { AddAssetDialog } from './add-asset-dialog'
-import { B3ImportDialog } from './b3-import-dialog'
+import { BrokerImportDialog } from './broker-import-dialog'
 
 interface Props {
   assets: Asset[]
@@ -32,7 +32,7 @@ export const OverviewTab = ({
 }: Props) => {
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
-  const [b3ImportOpen, setB3ImportOpen] = useState(false)
+  const [brokerImportOpen, setBrokerImportOpen] = useState(false)
 
   const availableTypes = useMemo(
     () => [...new Set(assets.map((a) => a.type))] as AssetType[],
@@ -137,11 +137,11 @@ export const OverviewTab = ({
           {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
         </button>
         <button
-          onClick={() => setB3ImportOpen(true)}
+          onClick={() => setBrokerImportOpen(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
         >
           <Upload size={14} />
-          Importar B3
+          Importar nota
         </button>
         <button
           onClick={() => setAddAssetOpen(true)}
@@ -214,9 +214,9 @@ export const OverviewTab = ({
         onAdd={addAsset}
       />
 
-      <B3ImportDialog
-        open={b3ImportOpen}
-        onOpenChange={setB3ImportOpen}
+      <BrokerImportDialog
+        open={brokerImportOpen}
+        onOpenChange={setBrokerImportOpen}
         existingAssets={assets}
         onImport={importFromB3}
       />

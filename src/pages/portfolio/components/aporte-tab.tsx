@@ -91,10 +91,8 @@ interface Props {
 
 export const AporteTab = ({ assets, categories, totalValue }: Props) => {
   const [aporteInput, setAporteInput] = useState('')
+  const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-
-  const aporte = parseFloat(aporteInput) || 0
-  const distribution = aporte > 0 ? calcDistribution(aporte, categories, assets, totalValue) : []
 
   const toggle = (id: string) =>
     setCollapsed((prev) => {
@@ -103,9 +101,17 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
       return next
     })
 
+  const calcular = () => {
+    const aporte = Number.parseFloat(aporteInput) || 0
+    if (aporte <= 0) return
+    setDistribution(calcDistribution(aporte, categories, assets, totalValue))
+  }
+
+  const aporte = distribution ? Number.parseFloat(aporteInput) || 0 : 0
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Valor do aporte (R$)</label>
           <input
@@ -115,19 +121,24 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
             step={100}
             placeholder="2000"
             value={aporteInput}
-            onChange={(e) => setAporteInput(e.target.value)}
+            onChange={(e) => {
+              setAporteInput(e.target.value)
+              setDistribution(null)
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && calcular()}
             autoFocus
           />
         </div>
-        {aporte > 0 && (
-          <p className="text-sm text-muted-foreground pb-2">
-            Total a distribuir:{' '}
-            <span className="font-semibold text-foreground">{formatCurrency(aporte)}</span>
-          </p>
-        )}
+        <button
+          onClick={calcular}
+          disabled={!aporteInput || Number.parseFloat(aporteInput) <= 0}
+          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors disabled:opacity-40 sm:mb-0"
+        >
+          Calcular
+        </button>
       </div>
 
-      {aporte > 0 && categories.length === 0 && (
+      {distribution !== null && categories.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-6">
           Nenhuma categoria configurada. Vá em Alocação para criar categorias.
         </p>

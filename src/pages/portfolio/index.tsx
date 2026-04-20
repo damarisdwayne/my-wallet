@@ -55,6 +55,8 @@ export const PortfolioPage = () => {
         <OverviewTab
           assets={assets}
           categories={categories}
+          diagrams={diagrams}
+          answers={answers}
           totalValue={totalValue}
           addAsset={addAsset}
           importFromB3={importFromB3}

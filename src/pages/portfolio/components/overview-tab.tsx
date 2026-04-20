@@ -4,14 +4,17 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 import type { B3Asset } from '@/services/b3-import'
-import type { Asset, AssetType, PortfolioCategory } from '@/types'
+import type { Asset, AssetAnswers, AssetType, Diagram, PortfolioCategory } from '@/types'
 import { ALL, typeLabel } from '../constants'
+import { computeAssetTargets } from '../compute-targets'
 import { AddAssetDialog } from './add-asset-dialog'
 import { BrokerImportDialog } from './broker-import-dialog'
 
 interface Props {
   assets: Asset[]
   categories: PortfolioCategory[]
+  diagrams: Diagram[]
+  answers: Record<string, AssetAnswers>
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
   importFromB3: (assets: B3Asset[], filename: string) => Promise<void>
@@ -23,6 +26,8 @@ interface Props {
 export const OverviewTab = ({
   assets,
   categories,
+  diagrams,
+  answers,
   totalValue,
   addAsset,
   importFromB3,
@@ -30,6 +35,8 @@ export const OverviewTab = ({
   refreshingPrices,
   priceError,
 }: Props) => {
+  const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
+
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [brokerImportOpen, setBrokerImportOpen] = useState(false)
@@ -162,8 +169,9 @@ export const OverviewTab = ({
               <th className="pb-2 font-medium text-right">PM</th>
               <th className="pb-2 font-medium text-right">Atual</th>
               <th className="pb-2 font-medium text-right">Total</th>
+              <th className="pb-2 font-medium text-right">Recomendado</th>
               <th className="pb-2 font-medium text-right">Resultado</th>
-              <th className="pb-2 font-medium text-right">% Cart.</th>
+              <th className="pb-2 font-medium text-right">{filterType === ALL ? '% Cart.' : '% Cat.'}</th>
             </tr>
           </thead>
           <tbody>
@@ -171,7 +179,11 @@ export const OverviewTab = ({
               const total = a.currentPrice * a.quantity
               const cost = a.avgPrice * a.quantity
               const ret = cost > 0 ? ((total - cost) / cost) * 100 : 0
-              const pct = totalValue > 0 ? (total / totalValue) * 100 : 0
+              const baseValue = filterType === ALL ? totalValue : filteredTotal
+              const pct = baseValue > 0 ? (total / baseValue) * 100 : 0
+              const targetPct = assetTargets.get(a.id) ?? 0
+              const recommended = (targetPct / 100) * totalValue
+              const diff = total - recommended
               return (
                 <tr
                   key={a.id}
@@ -193,6 +205,12 @@ export const OverviewTab = ({
                   </td>
                   <td className="py-3 text-right font-medium text-foreground">
                     {formatCurrency(total)}
+                  </td>
+                  <td className="py-3 text-right">
+                    <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
+                    <p className={`text-xs ${diff >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
+                    </p>
                   </td>
                   <td
                     className={`py-3 text-right font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}

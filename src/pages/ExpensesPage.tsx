@@ -11,9 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/Dialog'
-import { mockExpenses, mockSalaryHistory } from '@/data/mock'
+import { useExpenses } from '@/hooks/useExpenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Expense, ExpenseCategory } from '@/types'
+import type { ExpenseCategory } from '@/types'
 
 const categoryLabel: Record<ExpenseCategory, string> = {
   housing: 'Moradia',
@@ -71,85 +71,77 @@ const formatMonthLabel = (ym: string) => {
   return `${MONTH_LABELS[m]}/${y.slice(2)}`
 }
 
+const todayMonth = new Date().toISOString().slice(0, 7)
+
 export const ExpensesPage = () => {
-  const [allExpenses, setAllExpenses] = useState<Expense[]>(mockExpenses)
-  const [salaryByMonth, setSalaryByMonth] = useState<Record<string, number>>(mockSalaryHistory)
+  const { expenses, salaryByMonth, addExpense, updateSalary } = useExpenses()
   const [salaryInput, setSalaryInput] = useState('')
   const [salaryDialogOpen, setSalaryDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [selectedMonth, setSelectedMonth] = useState<string>(todayMonth)
 
-  // build sorted list of available months from data
   const availableMonths = useMemo(() => {
-    const months = [...new Set(allExpenses.map((e) => e.date.slice(0, 7)))]
+    const months = [...new Set(expenses.map((e) => e.date.slice(0, 7)))]
     return months.sort((a, b) => b.localeCompare(a))
-  }, [allExpenses])
+  }, [expenses])
 
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const months = [...new Set(mockExpenses.map((e) => e.date.slice(0, 7)))].sort((a, b) =>
-      b.localeCompare(a),
-    )
-    return months[0]
-  })
-
-  const currentMonth = availableMonths[0]
-  const isCurrentMonth = selectedMonth === currentMonth
-  const salary = salaryByMonth[selectedMonth] ?? salaryByMonth[currentMonth] ?? 19300
+  const salary = salaryByMonth[selectedMonth] ?? salaryByMonth[todayMonth] ?? 0
+  const isCurrentMonth = selectedMonth === todayMonth
 
   const currentIndex = availableMonths.indexOf(selectedMonth)
-  const canGoPrev = currentIndex < availableMonths.length - 1
+  const canGoPrev =
+    currentIndex === -1 ? availableMonths.length > 0 : currentIndex < availableMonths.length - 1
   const canGoNext = currentIndex > 0
 
-  const expenses = useMemo(
-    () => allExpenses.filter((e) => e.date.startsWith(selectedMonth)),
-    [allExpenses, selectedMonth],
+  const filteredExpenses = useMemo(
+    () => expenses.filter((e) => e.date.startsWith(selectedMonth)),
+    [expenses, selectedMonth],
   )
 
   const totals = useMemo(
     () =>
-      expenses.reduce(
-        (acc, e) => ({
-          ...acc,
-          [e.category]: (acc[e.category] ?? 0) + e.amount,
-        }),
+      filteredExpenses.reduce(
+        (acc, e) => ({ ...acc, [e.category]: (acc[e.category] ?? 0) + e.amount }),
         {} as Record<string, number>,
       ),
-    [expenses],
+    [filteredExpenses],
   )
   const grand = Object.values(totals).reduce((s, v) => s + v, 0)
   const leftover = salary - grand
-  const spentPct = Math.min((grand / salary) * 100, 100)
+  const spentPct = salary > 0 ? Math.min((grand / salary) * 100, 100) : 0
 
-  // monthly totals for the bar chart (last 7 months)
   const monthlyHistory = useMemo(() => {
     const months = [...availableMonths].reverse().slice(-7)
     return months.map((m) => ({
       month: m,
-      total: allExpenses.filter((e) => e.date.startsWith(m)).reduce((s, e) => s + e.amount, 0),
+      total: expenses.filter((e) => e.date.startsWith(m)).reduce((s, e) => s + e.amount, 0),
     }))
-  }, [allExpenses, availableMonths])
+  }, [expenses, availableMonths])
 
-  const handleSaveSalary = () => {
+  const handleSaveSalary = async () => {
     const parsed = Number.parseFloat(salaryInput.replace(',', '.'))
-    if (!Number.isNaN(parsed) && parsed > 0)
-      setSalaryByMonth((prev) => ({ ...prev, [currentMonth]: parsed }))
+    if (!Number.isNaN(parsed) && parsed > 0) await updateSalary(todayMonth, parsed)
     setSalaryDialogOpen(false)
   }
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     const amount = Number.parseFloat(form.amount.replace(',', '.'))
     if (!form.description.trim() || Number.isNaN(amount) || amount <= 0) return
-    const newExpense: Expense = {
-      id: `e-${Date.now()}`,
+    await addExpense({
       description: form.description.trim(),
       amount,
       category: form.category,
       date: form.date,
       source: 'manual',
-    }
-    setAllExpenses((prev) => [newExpense, ...prev])
+    })
     setForm(emptyForm)
     setAddDialogOpen(false)
+  }
+
+  const prevMonth = () => {
+    if (currentIndex === -1 && availableMonths.length > 0) setSelectedMonth(availableMonths[0])
+    else if (canGoPrev) setSelectedMonth(availableMonths[currentIndex + 1])
   }
 
   const inputClass =
@@ -165,7 +157,7 @@ export const ExpensesPage = () => {
           <h2 className="text-base font-semibold text-foreground">Gastos</h2>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => canGoPrev && setSelectedMonth(availableMonths[currentIndex + 1])}
+              onClick={prevMonth}
               disabled={!canGoPrev}
               className="p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-default"
             >
@@ -234,10 +226,7 @@ export const ExpensesPage = () => {
                   className={inputClass}
                   value={form.category}
                   onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      category: e.target.value as ExpenseCategory,
-                    }))
+                    setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))
                   }
                 >
                   {Object.entries(categoryLabel).map(([key, label]) => (
@@ -288,7 +277,7 @@ export const ExpensesPage = () => {
                 <Dialog
                   open={salaryDialogOpen}
                   onOpenChange={(open) => {
-                    if (open) setSalaryInput(String(salary))
+                    if (open) setSalaryInput(String(salary || ''))
                     setSalaryDialogOpen(open)
                   }}
                 >
@@ -300,10 +289,7 @@ export const ExpensesPage = () => {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Atualizar salário líquido</DialogTitle>
-                      <DialogDescription>
-                        Informe o seu salário líquido atual. Em breve isso será sincronizado
-                        automaticamente.
-                      </DialogDescription>
+                      <DialogDescription>Informe o seu salário líquido atual.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-1.5">
                       <label htmlFor="salary" className="text-sm font-medium text-foreground">
@@ -318,7 +304,7 @@ export const ExpensesPage = () => {
                         onChange={(e) => setSalaryInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveSalary()}
                         className={inputClass}
-                        placeholder="19300"
+                        placeholder="0,00"
                         autoFocus
                       />
                     </div>
@@ -348,7 +334,9 @@ export const ExpensesPage = () => {
           <CardHeader>
             <CardTitle>Total gasto</CardTitle>
             <CardValue className="text-destructive">{formatCurrency(grand)}</CardValue>
-            <p className="text-xs text-muted-foreground">{spentPct.toFixed(1)}% do salário</p>
+            {salary > 0 && (
+              <p className="text-xs text-muted-foreground">{spentPct.toFixed(1)}% do salário</p>
+            )}
           </CardHeader>
         </Card>
 
@@ -358,99 +346,109 @@ export const ExpensesPage = () => {
             <CardValue className={leftover >= 0 ? 'text-success' : 'text-destructive'}>
               {formatCurrency(leftover)}
             </CardValue>
-            <p className="text-xs text-muted-foreground">
-              {((leftover / salary) * 100).toFixed(1)}% do salário
-            </p>
+            {salary > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {((leftover / salary) * 100).toFixed(1)}% do salário
+              </p>
+            )}
           </CardHeader>
         </Card>
       </div>
 
       {/* Salary bar */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Comprometimento do salário</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-            <div
-              className={`h-3 rounded-full transition-all ${spentPct >= 90 ? 'bg-destructive' : spentPct >= 70 ? 'bg-warning' : 'bg-primary'}`}
-              style={{ width: `${spentPct}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>R$ 0</span>
-            <span>{formatCurrency(salary)}</span>
-          </div>
-        </CardContent>
-      </Card>
+      {salary > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Comprometimento do salário</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div
+                className={`h-3 rounded-full transition-all ${spentPct >= 90 ? 'bg-destructive' : spentPct >= 70 ? 'bg-warning' : 'bg-primary'}`}
+                style={{ width: `${spentPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>R$ 0</span>
+              <span>{formatCurrency(salary)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Monthly history chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico mensal</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end gap-2 h-28">
-            {monthlyHistory.map((h) => {
-              const pct = (h.total / maxHistory) * 100
-              const isSelected = h.month === selectedMonth
-              return (
-                <button
-                  key={h.month}
-                  onClick={() => setSelectedMonth(h.month)}
-                  className="flex-1 flex flex-col items-center gap-1 group"
-                  title={formatCurrency(h.total)}
-                >
-                  <span
-                    className={`text-[10px] font-medium transition-colors ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
+      {monthlyHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico mensal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-2 h-28">
+              {monthlyHistory.map((h) => {
+                const pct = (h.total / maxHistory) * 100
+                const isSelected = h.month === selectedMonth
+                return (
+                  <button
+                    key={h.month}
+                    onClick={() => setSelectedMonth(h.month)}
+                    className="flex-1 flex flex-col items-center gap-1 group"
+                    title={formatCurrency(h.total)}
                   >
-                    {formatCurrency(h.total)}
-                  </span>
-                  <div
-                    className={`w-full rounded-t transition-colors ${isSelected ? 'bg-primary' : 'bg-primary/30 group-hover:bg-primary/50'}`}
-                    style={{ height: `${Math.max(pct, 4)}%` }}
-                  />
-                  <span
-                    className={`text-[10px] transition-colors ${isSelected ? 'text-primary font-medium' : 'text-muted-foreground'}`}
-                  >
-                    {formatMonthLabel(h.month)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                    <span
+                      className={`text-[10px] font-medium transition-colors ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
+                    >
+                      {formatCurrency(h.total)}
+                    </span>
+                    <div
+                      className={`w-full rounded-t transition-colors ${isSelected ? 'bg-primary' : 'bg-primary/30 group-hover:bg-primary/50'}`}
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                    />
+                    <span
+                      className={`text-[10px] transition-colors ${isSelected ? 'text-primary font-medium' : 'text-muted-foreground'}`}
+                    >
+                      {formatMonthLabel(h.month)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Category breakdown */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {Object.entries(totals).map(([cat, val]) => (
-          <Card key={cat} className="text-center">
-            <CardHeader className="p-4">
-              <CardTitle>{categoryLabel[cat as ExpenseCategory]}</CardTitle>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(val)}</p>
-              <p className="text-xs text-muted-foreground">{((val / grand) * 100).toFixed(1)}%</p>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+      {Object.keys(totals).length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {Object.entries(totals).map(([cat, val]) => (
+            <Card key={cat} className="text-center">
+              <CardHeader className="p-4">
+                <CardTitle>{categoryLabel[cat as ExpenseCategory]}</CardTitle>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(val)}</p>
+                <p className="text-xs text-muted-foreground">{((val / grand) * 100).toFixed(1)}%</p>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Transactions */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Transações — {formatMonthLabel(selectedMonth)}</CardTitle>
-            <span className="text-xs text-muted-foreground">{expenses.length} registros</span>
+            <span className="text-xs text-muted-foreground">
+              {filteredExpenses.length} registros
+            </span>
           </div>
         </CardHeader>
         <CardContent>
-          {expenses.length === 0 ? (
+          {filteredExpenses.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
               Nenhum gasto registrado neste mês.
             </p>
           ) : (
             <div className="space-y-2">
-              {expenses.map((e) => (
+              {filteredExpenses.map((e) => (
                 <div
                   key={e.id}
                   className="flex items-center justify-between py-2 border-b border-border last:border-0"

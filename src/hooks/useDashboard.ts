@@ -26,10 +26,22 @@ export const useDashboard = () => {
     }
 
     const unsubs = [
-      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
-      subscribeToMonthlyDividends(user.uid, currentMonth, (data) => { setDividends(data); onLoad() }),
-      subscribeToMonthlyExpenses(user.uid, currentMonth, (data) => { setExpenses(data); onLoad() }),
-      subscribeToPatrimonyHistory(user.uid, (data) => { setPatrimonyHistory(data); onLoad() }),
+      subscribeToAssets(user.uid, (data) => {
+        setAssets(data)
+        onLoad()
+      }),
+      subscribeToMonthlyDividends(user.uid, currentMonth, (data) => {
+        setDividends(data)
+        onLoad()
+      }),
+      subscribeToMonthlyExpenses(user.uid, currentMonth, (data) => {
+        setExpenses(data)
+        onLoad()
+      }),
+      subscribeToPatrimonyHistory(user.uid, (data) => {
+        setPatrimonyHistory(data)
+        onLoad()
+      }),
     ]
 
     return () => unsubs.forEach((unsub) => unsub())

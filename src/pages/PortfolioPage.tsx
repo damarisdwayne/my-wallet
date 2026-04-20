@@ -10,16 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/Dialog'
-import { mockAnswers, mockAssets, mockCategories, mockDiagrams } from '@/data/mock'
+import { usePortfolio } from '@/hooks/usePortfolio'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
-import type {
-  Asset,
-  AssetAnswers,
-  AssetType,
-  Diagram,
-  DiagramQuestion,
-  PortfolioCategory,
-} from '@/types'
+import type { Asset, AssetAnswers, AssetType, DiagramQuestion, PortfolioCategory } from '@/types'
 
 const ASSET_TYPES: AssetType[] = ['stock', 'fii', 'bdr', 'etf', 'fixed_income', 'crypto', 'other']
 
@@ -62,30 +55,28 @@ const calcScore = (answers: AssetAnswers, questions: DiagramQuestion[]) => {
 }
 
 export const PortfolioPage = () => {
+  const {
+    assets,
+    categories,
+    diagrams,
+    answers,
+    addAsset,
+    saveCategory,
+    saveDiagram,
+    saveAnswers,
+  } = usePortfolio()
+
   const [activeTab, setActiveTab] = useState(0)
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
-
-  // assets state
-  const [assets, setAssets] = useState<Asset[]>(mockAssets)
-
-  // allocation state
-  const [categories, setCategories] = useState<PortfolioCategory[]>(mockCategories)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [editTargetValue, setEditTargetValue] = useState('')
   const [addCategoryOpen, setAddCategoryOpen] = useState(false)
   const [newCat, setNewCat] = useState(emptyNewCat())
-
-  // add asset state
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [newAsset, setNewAsset] = useState(emptyNewAsset())
-
-  // diagrama state
-  const [diagrams, setDiagrams] = useState<Diagram[]>(mockDiagrams)
-  const [activeDiagramId, setActiveDiagramId] = useState(mockDiagrams[0].id)
-  const [answers, setAnswers] = useState<Record<string, AssetAnswers>>(mockAnswers)
+  const [selectedDiagramId, setSelectedDiagramId] = useState('')
+  const activeDiagramId = selectedDiagramId || diagrams[0]?.id || ''
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
-
-  // question management state
   const [editQuestionsOpen, setEditQuestionsOpen] = useState(false)
   const [newQuestionText, setNewQuestionText] = useState('')
   const [editingQuestion, setEditingQuestion] = useState<DiagramQuestion | null>(null)
@@ -96,7 +87,6 @@ export const PortfolioPage = () => {
     [assets],
   )
 
-  // unique types present in portfolio
   const availableTypes = useMemo(
     () => [...new Set(assets.map((a) => a.type))] as AssetType[],
     [assets],
@@ -107,7 +97,6 @@ export const PortfolioPage = () => {
     [filterType, assets],
   )
 
-  // total value per type for summary cards
   const valueByType = useMemo(
     () =>
       availableTypes.reduce(
@@ -127,44 +116,40 @@ export const PortfolioPage = () => {
   const inputClass =
     'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     const name = newCat.name.trim()
     if (!name) return
     const target = parseFloat(newCat.targetPercent)
-    setCategories((prev) => [
-      ...prev,
-      {
-        id: `cat-${Date.now()}`,
-        name,
-        type: newCat.type,
-        targetPercent: isNaN(target) ? 0 : Math.round(target * 10) / 10,
-        color: newCat.color,
-      },
-    ])
+    const cat: PortfolioCategory = {
+      id: `cat-${Date.now()}`,
+      name,
+      type: newCat.type,
+      targetPercent: isNaN(target) ? 0 : Math.round(target * 10) / 10,
+      color: newCat.color,
+    }
+    await saveCategory(cat)
     setNewCat(emptyNewCat())
     setAddCategoryOpen(false)
   }
 
-  const handleAddAsset = () => {
+  const handleAddAsset = async () => {
     const ticker = newAsset.ticker.trim().toUpperCase()
     const name = newAsset.name.trim()
     if (!ticker || !name) return
     const autoCatId = categories.find((c) => c.type === newAsset.type)?.id ?? ''
     const resolvedCategoryId = newAsset.autoCategory ? autoCatId : newAsset.categoryId
-    setAssets((prev) => [
-      ...prev,
-      {
-        id: `asset-${Date.now()}`,
-        ticker,
-        name,
-        type: newAsset.type,
-        categoryId: resolvedCategoryId,
-        quantity: parseFloat(newAsset.quantity) || 0,
-        avgPrice: parseFloat(newAsset.avgPrice) || 0,
-        currentPrice: parseFloat(newAsset.currentPrice) || 0,
-        targetPercent: parseFloat(newAsset.targetPercent) || 0,
-      },
-    ])
+    const asset: Asset = {
+      id: `asset-${Date.now()}`,
+      ticker,
+      name,
+      type: newAsset.type,
+      categoryId: resolvedCategoryId,
+      quantity: parseFloat(newAsset.quantity) || 0,
+      avgPrice: parseFloat(newAsset.avgPrice) || 0,
+      currentPrice: parseFloat(newAsset.currentPrice) || 0,
+      targetPercent: parseFloat(newAsset.targetPercent) || 0,
+    }
+    await addAsset(asset)
     setNewAsset(emptyNewAsset())
     setAddAssetOpen(false)
   }
@@ -191,7 +176,6 @@ export const PortfolioPage = () => {
 
       {activeTab === 0 && (
         <div className="space-y-5">
-          {/* Patrimônio total + filtros */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">
@@ -204,8 +188,6 @@ export const PortfolioPage = () => {
                 </p>
               )}
             </div>
-
-            {/* Filter chips */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilterType(ALL)}
@@ -233,7 +215,6 @@ export const PortfolioPage = () => {
             </div>
           </div>
 
-          {/* Category summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {availableTypes.map((type) => {
               const val = valueByType[type] ?? 0
@@ -261,7 +242,6 @@ export const PortfolioPage = () => {
             })}
           </div>
 
-          {/* Add asset button */}
           <div className="flex justify-end">
             <button
               onClick={() => setAddAssetOpen(true)}
@@ -272,7 +252,6 @@ export const PortfolioPage = () => {
             </button>
           </div>
 
-          {/* Assets table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -291,8 +270,8 @@ export const PortfolioPage = () => {
                 {filteredAssets.map((a) => {
                   const total = a.currentPrice * a.quantity
                   const cost = a.avgPrice * a.quantity
-                  const ret = ((total - cost) / cost) * 100
-                  const pct = (total / totalValue) * 100
+                  const ret = cost > 0 ? ((total - cost) / cost) * 100 : 0
+                  const pct = totalValue > 0 ? (total / totalValue) * 100 : 0
                   return (
                     <tr
                       key={a.id}
@@ -332,14 +311,11 @@ export const PortfolioPage = () => {
 
       {activeTab === 1 &&
         (() => {
-          const saveTarget = (id: string) => {
+          const saveTarget = async (id: string) => {
             const n = parseFloat(editTargetValue)
             if (!isNaN(n) && n >= 0 && n <= 100) {
-              setCategories((prev) =>
-                prev.map((c) =>
-                  c.id === id ? { ...c, targetPercent: Math.round(n * 10) / 10 } : c,
-                ),
-              )
+              const cat = categories.find((c) => c.id === id)
+              if (cat) await saveCategory({ ...cat, targetPercent: Math.round(n * 10) / 10 })
             }
             setEditingCategoryId(null)
           }
@@ -369,10 +345,17 @@ export const PortfolioPage = () => {
                   Nova categoria
                 </button>
               </div>
+
+              {categories.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Nenhuma categoria criada ainda.
+                </p>
+              )}
+
               {categories.map((cat) => {
                 const catAssets = assets.filter((a) => a.categoryId === cat.id)
                 const catValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
-                const actualPct = (catValue / totalValue) * 100
+                const actualPct = totalValue > 0 ? (catValue / totalValue) * 100 : 0
                 const diff = actualPct - cat.targetPercent
                 const isEditing = editingCategoryId === cat.id
 
@@ -456,10 +439,7 @@ export const PortfolioPage = () => {
                         <div className="w-full bg-muted rounded-full h-2 mt-2">
                           <div
                             className="h-2 rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(actualPct, 100)}%`,
-                              background: cat.color,
-                            }}
+                            style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
                           />
                         </div>
                       )}
@@ -488,74 +468,62 @@ export const PortfolioPage = () => {
       {activeTab === 2 &&
         (() => {
           const diagram = diagrams.find((d) => d.id === activeDiagramId) ?? diagrams[0]
+
+          if (!diagram) {
+            return (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Nenhum diagrama configurado ainda.
+              </p>
+            )
+          }
+
           const diagramAssets = assets.filter((a) => diagram.appliesTo.includes(a.type))
           const editingAnswers = (editingAsset && answers[editingAsset.id]) || {}
           const { yes: editYes, total: editTotal } = calcScore(editingAnswers, diagram.questions)
 
-          const setAnswer = (questionId: string, value: 0 | 1) => {
+          const setAnswer = async (questionId: string, value: 0 | 1) => {
             if (!editingAsset) return
-            setAnswers((prev) => ({
-              ...prev,
-              [editingAsset.id]: {
-                ...prev[editingAsset.id],
-                [questionId]: value,
-              },
-            }))
+            const updated = { ...(answers[editingAsset.id] ?? {}), [questionId]: value }
+            await saveAnswers(editingAsset.id, updated)
           }
 
-          const addQuestion = () => {
+          const addQuestion = async () => {
             const text = newQuestionText.trim()
             if (!text) return
-            setDiagrams((prev) =>
-              prev.map((d) =>
-                d.id === diagram.id
-                  ? {
-                      ...d,
-                      questions: [...d.questions, { id: `q-${Date.now()}`, text }],
-                    }
-                  : d,
-              ),
-            )
+            await saveDiagram({
+              ...diagram,
+              questions: [...diagram.questions, { id: `q-${Date.now()}`, text }],
+            })
             setNewQuestionText('')
           }
 
-          const removeQuestion = (qId: string) => {
-            setDiagrams((prev) =>
-              prev.map((d) =>
-                d.id === diagram.id
-                  ? { ...d, questions: d.questions.filter((q) => q.id !== qId) }
-                  : d,
-              ),
-            )
+          const removeQuestion = async (qId: string) => {
+            await saveDiagram({
+              ...diagram,
+              questions: diagram.questions.filter((q) => q.id !== qId),
+            })
           }
 
-          const saveEditQuestion = () => {
+          const saveEditQuestion = async () => {
             const text = editingQuestionText.trim()
             if (!text || !editingQuestion) return
-            setDiagrams((prev) =>
-              prev.map((d) =>
-                d.id === diagram.id
-                  ? {
-                      ...d,
-                      questions: d.questions.map((q) =>
-                        q.id === editingQuestion.id ? { ...q, text } : q,
-                      ),
-                    }
-                  : d,
+            await saveDiagram({
+              ...diagram,
+              questions: diagram.questions.map((q) =>
+                q.id === editingQuestion.id ? { ...q, text } : q,
               ),
-            )
+            })
             setEditingQuestion(null)
             setEditingQuestionText('')
           }
 
           return (
             <div className="space-y-5">
-              {/* Diagram selector */}
               <div className="flex flex-wrap items-center gap-2">
                 {diagrams.map((d) => (
                   <button
                     key={d.id}
-                    onClick={() => setActiveDiagramId(d.id)}
+                    onClick={() => setSelectedDiagramId(d.id)}
                     className={cn(
                       'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                       activeDiagramId === d.id
@@ -568,7 +536,6 @@ export const PortfolioPage = () => {
                 ))}
               </div>
 
-              {/* Asset list card */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -639,7 +606,6 @@ export const PortfolioPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Score answers dialog */}
               <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
                 <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
@@ -650,9 +616,9 @@ export const PortfolioPage = () => {
                       Responda Sim ou Não para cada critério. Pontuação:{' '}
                       <strong
                         className={cn(
-                          editYes / editTotal >= 0.75
+                          editTotal > 0 && editYes / editTotal >= 0.75
                             ? 'text-success'
-                            : editYes / editTotal >= 0.5
+                            : editTotal > 0 && editYes / editTotal >= 0.5
                               ? 'text-warning'
                               : 'text-destructive',
                         )}
@@ -663,7 +629,7 @@ export const PortfolioPage = () => {
                   </DialogHeader>
                   <div className="space-y-3 mt-2">
                     {diagram.questions.map((q, i) => {
-                      const val = editingAnswers[q.id] ?? 0
+                      const val = editingAnswers[q.id] ?? -1
                       return (
                         <div
                           key={q.id}
@@ -689,7 +655,7 @@ export const PortfolioPage = () => {
                               onClick={() => setAnswer(q.id, 0)}
                               className={cn(
                                 'px-2.5 py-1 rounded text-xs font-semibold transition-colors',
-                                val === 0 && q.id in (answers[editingAsset?.id ?? ''] ?? {})
+                                val === 0
                                   ? 'bg-destructive/80 text-white'
                                   : 'bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive',
                               )}
@@ -704,7 +670,6 @@ export const PortfolioPage = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* Edit questions dialog */}
               <Dialog
                 open={editQuestionsOpen}
                 onOpenChange={(open) => {

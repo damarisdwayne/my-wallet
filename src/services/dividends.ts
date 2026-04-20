@@ -1,10 +1,10 @@
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Dividend } from '@/types'
 
 export const subscribeToMonthlyDividends = (
   userId: string,
-  month: string, // YYYY-MM
+  month: string,
   cb: (dividends: Dividend[]) => void,
 ) => {
   const q = query(
@@ -13,6 +13,12 @@ export const subscribeToMonthlyDividends = (
     where('paymentDate', '<=', `${month}-31`),
   )
   return onSnapshot(q, (snap) =>
-    cb(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Dividend)),
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Dividend)),
   )
 }
+
+export const subscribeToAllDividends = (userId: string, cb: (dividends: Dividend[]) => void) =>
+  onSnapshot(
+    query(collection(db, 'users', userId, 'dividends'), orderBy('paymentDate', 'desc')),
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Dividend)),
+  )

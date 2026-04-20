@@ -4,8 +4,10 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DividendsPage } from '@/pages/DividendsPage'
 import { ExpensesPage } from '@/pages/ExpensesPage'
+import { LoginPage } from '@/pages/LoginPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
 import { TaxPage } from '@/pages/TaxPage'
+import { useAuth, useAuthInit } from '@/store/auth'
 
 const pageTitles: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -16,7 +18,19 @@ const pageTitles: Record<string, string> = {
 }
 
 const App = () => {
+  useAuthInit()
+  const { user, loading } = useAuth()
   const [page, setPage] = useState('dashboard')
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user) return <LoginPage />
 
   const renderPage = () => {
     switch (page) {

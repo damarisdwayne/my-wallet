@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/Badge'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { useAuth } from '@/store/auth'
 import { formatCurrency, formatDate } from '@/lib/utils'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'

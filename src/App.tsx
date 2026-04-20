@@ -1,5 +1,5 @@
 import { useAuthInit } from '@/store/auth'
-import { Router } from '@/routes/Router'
+import { Router } from '@/routes/router'
 
 const App = () => {
   useAuthInit()

@@ -6,7 +6,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu'
+} from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/store/auth'
 import { useTheme } from '@/store/theme'
 

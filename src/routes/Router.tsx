@@ -1,13 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { DividendsPage } from '@/pages/DividendsPage'
-import { ExpensesPage } from '@/pages/ExpensesPage'
-import { LoginPage } from '@/pages/LoginPage'
-import { PortfolioPage } from '@/pages/PortfolioPage'
-import { TaxPage } from '@/pages/TaxPage'
+import { DashboardPage } from '@/pages/dashboard'
+import { DividendsPage } from '@/pages/dividends'
+import { ExpensesPage } from '@/pages/expenses'
+import { LoginPage } from '@/pages/login'
+import { PortfolioPage } from '@/pages/portfolio'
+import { TaxPage } from '@/pages/tax'
 import { useAuth } from '@/store/auth'
-import { AppLayout } from './AppLayout'
-import { ProtectedRoute } from './ProtectedRoute'
+import { AppLayout } from './app-layout'
+import { ProtectedRoute } from './protected-route'
 
 export const Router = () => {
   const { user } = useAuth()

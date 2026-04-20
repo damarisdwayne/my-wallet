@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pencil, PlusCircle } from 'lucide-react'
-import { Badge } from '@/components/ui/Badge'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/Dialog'
-import { useExpenses } from '@/hooks/useExpenses'
+} from '@/components/ui/dialog'
+import { useExpenses } from '@/hooks/use-expenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { ExpenseCategory } from '@/types'
 

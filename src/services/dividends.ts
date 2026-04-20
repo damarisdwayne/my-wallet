@@ -12,9 +12,7 @@ export const subscribeToMonthlyDividends = (
     where('paymentDate', '>=', `${month}-01`),
     where('paymentDate', '<=', `${month}-31`),
   )
-  return onSnapshot(q, (snap) =>
-    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Dividend)),
-  )
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Dividend)))
 }
 
 export const subscribeToAllDividends = (userId: string, cb: (dividends: Dividend[]) => void) =>

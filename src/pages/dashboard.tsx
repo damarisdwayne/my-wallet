@@ -1,6 +1,6 @@
 import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/Card'
-import { useDashboard } from '@/hooks/useDashboard'
+import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { useDashboard } from '@/hooks/use-dashboard'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 
 const StatCard = ({

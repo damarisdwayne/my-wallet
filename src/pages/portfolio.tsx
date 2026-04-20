@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/Badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/Dialog'
-import { usePortfolio } from '@/hooks/usePortfolio'
+} from '@/components/ui/dialog'
+import { usePortfolio } from '@/hooks/use-portfolio'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 import type { Asset, AssetAnswers, AssetType, DiagramQuestion, PortfolioCategory } from '@/types'
 

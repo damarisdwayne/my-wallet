@@ -2,34 +2,12 @@ import { useMemo, useState } from 'react'
 import { Plus, RefreshCw, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 import type { B3Asset } from '@/services/b3-import'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
-import { ALL, ASSET_TYPES, typeLabel } from '../constants'
+import { ALL, typeLabel } from '../constants'
+import { AddAssetDialog } from './add-asset-dialog'
 import { B3ImportDialog } from './b3-import-dialog'
-
-const emptyNewAsset = () => ({
-  ticker: '',
-  name: '',
-  type: 'stock' as AssetType,
-  quantity: '',
-  avgPrice: '',
-  currentPrice: '',
-  targetPercent: '10',
-  categoryId: '',
-  autoCategory: true,
-})
-
-const inputClass =
-  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
 interface Props {
   assets: Asset[]
@@ -55,7 +33,6 @@ export const OverviewTab = ({
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [b3ImportOpen, setB3ImportOpen] = useState(false)
-  const [newAsset, setNewAsset] = useState(emptyNewAsset())
 
   const availableTypes = useMemo(
     () => [...new Set(assets.map((a) => a.type))] as AssetType[],
@@ -82,33 +59,6 @@ export const OverviewTab = ({
   )
 
   const filteredTotal = filteredAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
-
-  const handleAddAsset = async () => {
-    const ticker = newAsset.ticker.trim().toUpperCase()
-    const name = newAsset.name.trim()
-    if (!ticker || !name) return
-    const autoCatId = categories.find((c) => c.type === newAsset.type)?.id ?? ''
-    const resolvedCategoryId = newAsset.autoCategory ? autoCatId : newAsset.categoryId
-    const asset: Asset = {
-      id: `asset-${Date.now()}`,
-      ticker,
-      name,
-      type: newAsset.type,
-      categoryId: resolvedCategoryId,
-      quantity: parseFloat(newAsset.quantity) || 0,
-      avgPrice: parseFloat(newAsset.avgPrice) || 0,
-      currentPrice: parseFloat(newAsset.currentPrice) || 0,
-      targetPercent: parseFloat(newAsset.targetPercent) || 0,
-    }
-    await addAsset(asset)
-    setNewAsset(emptyNewAsset())
-    setAddAssetOpen(false)
-  }
-
-  const autoCatId = categories.find((c) => c.type === newAsset.type)?.id ?? ''
-  const resolvedCatName = newAsset.autoCategory
-    ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma categoria encontrada')
-    : (categories.find((c) => c.id === newAsset.categoryId)?.name ?? '—')
 
   return (
     <div className="space-y-5">
@@ -177,9 +127,7 @@ export const OverviewTab = ({
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        {priceError && (
-          <p className="text-xs text-destructive">{priceError}</p>
-        )}
+        {priceError && <p className="text-xs text-destructive">{priceError}</p>}
         <button
           onClick={refreshPrices}
           disabled={refreshingPrices}
@@ -259,176 +207,12 @@ export const OverviewTab = ({
         </table>
       </div>
 
-      <Dialog
+      <AddAssetDialog
         open={addAssetOpen}
-        onOpenChange={(open) => {
-          setAddAssetOpen(open)
-          if (!open) setNewAsset(emptyNewAsset())
-        }}
-      >
-        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Adicionar ativo</DialogTitle>
-            <DialogDescription>
-              Preencha os dados do ativo e vincule uma categoria.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Ticker</label>
-                <input
-                  className={inputClass}
-                  placeholder="PETR4"
-                  value={newAsset.ticker}
-                  onChange={(e) => setNewAsset((p) => ({ ...p, ticker: e.target.value }))}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
-                <select
-                  className={inputClass}
-                  value={newAsset.type}
-                  onChange={(e) =>
-                    setNewAsset((p) => ({
-                      ...p,
-                      type: e.target.value as AssetType,
-                      categoryId: '',
-                    }))
-                  }
-                >
-                  {ASSET_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {typeLabel[t]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
-              <input
-                className={inputClass}
-                placeholder="Petrobras PN"
-                value={newAsset.name}
-                onChange={(e) => setNewAsset((p) => ({ ...p, name: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Quantidade</label>
-                <input
-                  className={inputClass}
-                  type="number"
-                  min={0}
-                  placeholder="100"
-                  value={newAsset.quantity}
-                  onChange={(e) => setNewAsset((p) => ({ ...p, quantity: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">PM (R$)</label>
-                <input
-                  className={inputClass}
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  placeholder="30.00"
-                  value={newAsset.avgPrice}
-                  onChange={(e) => setNewAsset((p) => ({ ...p, avgPrice: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Atual (R$)</label>
-                <input
-                  className={inputClass}
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  placeholder="35.00"
-                  value={newAsset.currentPrice}
-                  onChange={(e) => setNewAsset((p) => ({ ...p, currentPrice: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                % alvo na categoria
-              </label>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                value={newAsset.targetPercent}
-                onChange={(e) => setNewAsset((p) => ({ ...p, targetPercent: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Categoria</label>
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setNewAsset((p) => ({ ...p, autoCategory: true, categoryId: '' }))}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
-                    newAsset.autoCategory
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  Detectar automaticamente
-                </button>
-                <button
-                  onClick={() => setNewAsset((p) => ({ ...p, autoCategory: false }))}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
-                    !newAsset.autoCategory
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  Selecionar manualmente
-                </button>
-              </div>
-              {newAsset.autoCategory ? (
-                <p className="text-xs px-3 py-2 rounded-md bg-muted text-muted-foreground">
-                  Categoria detectada:{' '}
-                  <span className="text-foreground font-medium">{resolvedCatName}</span>
-                </p>
-              ) : (
-                <select
-                  className={inputClass}
-                  value={newAsset.categoryId}
-                  onChange={(e) => setNewAsset((p) => ({ ...p, categoryId: e.target.value }))}
-                >
-                  <option value="">Selecione uma categoria...</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({typeLabel[c.type]})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="mt-4">
-            <button
-              onClick={() => setAddAssetOpen(false)}
-              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleAddAsset}
-              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Adicionar
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setAddAssetOpen}
+        categories={categories}
+        onAdd={addAsset}
+      />
 
       <B3ImportDialog
         open={b3ImportOpen}

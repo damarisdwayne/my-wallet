@@ -23,7 +23,7 @@ export interface Expense {
 
 /* ─── Investments ──────────────────────────────────────────────── */
 
-export type AssetType = 'stock' | 'fii' | 'bdr' | 'etf' | 'fixed_income' | 'crypto' | 'other'
+export type AssetType = 'stock' | 'fii' | 'bdr' | 'etf' | 'fixed_income' | 'crypto' | 'stock_us' | 'other'
 
 export type PortfolioCategory = {
   id: string
@@ -32,6 +32,21 @@ export type PortfolioCategory = {
   type: AssetType
   color: string
 }
+
+export type FixedIncomeType =
+  | 'CDB'
+  | 'LCI'
+  | 'LCA'
+  | 'LCE'
+  | 'CRI'
+  | 'CRA'
+  | 'Debenture'
+  | 'Tesouro IPCA+'
+  | 'Tesouro Selic'
+  | 'Tesouro Prefixado'
+  | 'Outros'
+
+export type RateType = 'prefixado' | 'pos_cdi' | 'ipca_plus' | 'igpm_plus' | 'pos_selic'
 
 export interface Asset {
   id: string
@@ -42,8 +57,17 @@ export interface Asset {
   quantity: number
   avgPrice: number
   currentPrice: number
-  targetPercent: number // within category
-  score?: number // diagrama do cerrado score (1–10)
+  targetPercent: number
+  score?: number
+  // Fixed income optional fields
+  institution?: string
+  fixedIncomeType?: FixedIncomeType
+  rateType?: RateType
+  indexerRate?: number
+  prefixedRate?: number
+  maturityDate?: string
+  operationDate?: string
+  issuer?: string
 }
 
 export interface Dividend {

@@ -156,7 +156,10 @@ export const OverviewTab = ({
               >
                 <CardHeader className="p-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+                    <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: cat.color }}
+                    />
                     <CardTitle>{cat.name}</CardTitle>
                   </div>
                   <p className="text-base font-bold text-foreground mt-1">{formatCurrency(val)}</p>
@@ -206,7 +209,9 @@ export const OverviewTab = ({
               <th className="pb-2 font-medium text-right">Total</th>
               <th className="pb-2 font-medium text-right">Recomendado</th>
               <th className="pb-2 font-medium text-right">Resultado</th>
-              <th className="pb-2 font-medium text-right">{filterCatId === ALL ? '% Cart.' : '% Cat.'}</th>
+              <th className="pb-2 font-medium text-right">
+                {filterCatId === ALL ? '% Cart.' : '% Cat.'}
+              </th>
               <th className="pb-2" />
             </tr>
           </thead>
@@ -233,7 +238,10 @@ export const OverviewTab = ({
                     {(() => {
                       const cat = categories.find((c) => c.id === a.categoryId)
                       return cat ? (
-                        <Badge variant="secondary" style={{ borderColor: cat.color, color: cat.color }}>
+                        <Badge
+                          variant="secondary"
+                          style={{ borderColor: cat.color, color: cat.color }}
+                        >
                           {cat.name}
                         </Badge>
                       ) : (
@@ -254,7 +262,8 @@ export const OverviewTab = ({
                   <td className="py-3 text-right">
                     <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
                     <p className={`text-xs ${diff >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
+                      {diff >= 0 ? '+' : ''}
+                      {formatCurrency(diff)}
                     </p>
                   </td>
                   <td
@@ -310,7 +319,9 @@ export const OverviewTab = ({
               >
                 <option value="">Sem categoria</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </div>

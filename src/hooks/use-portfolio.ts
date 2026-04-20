@@ -112,6 +112,13 @@ export const usePortfolio = () => {
     return updateAssetService(user.uid, assetId, data)
   }
 
+  const deleteAsset = async (assetId: string) => {
+    if (!user) return
+    const { deleteDoc, doc } = await import('firebase/firestore')
+    const { db } = await import('@/lib/firestore')
+    await deleteDoc(doc(db, 'users', user.uid, 'assets', assetId))
+  }
+
   const saveCategory = (cat: PortfolioCategory) => {
     if (!user) return Promise.resolve()
     return saveCategoryService(user.uid, cat)
@@ -352,6 +359,7 @@ export const usePortfolio = () => {
     importFromB3,
     revertImport,
     editAsset,
+    deleteAsset,
     saveCategory,
     deleteCategory,
     saveDiagram,

@@ -29,6 +29,7 @@ interface Props {
   addAsset: (asset: Asset) => Promise<void>
   addManualTrade: (trade: Omit<import('@/types').Trade, 'id' | 'source'>) => Promise<void>
   editAsset: (assetId: string, data: Partial<Asset>) => Promise<void>
+  deleteAsset: (assetId: string) => Promise<void>
   importFromB3: (
     assets: B3Asset[],
     trades: import('@/services/b3-import').B3RawTrade[],
@@ -48,6 +49,7 @@ export const OverviewTab = ({
   addAsset,
   addManualTrade,
   editAsset,
+  deleteAsset,
   importFromB3,
   refreshPrices,
   refreshingPrices,
@@ -77,17 +79,36 @@ export const OverviewTab = ({
     if (!editingAsset) return
     setSaving(true)
     try {
+      const newTicker = editTicker.trim().toUpperCase()
       const ratio = splitRatio ? Number(splitRatio) : null
-      const updates: Partial<Asset> = {
-        categoryId: editCategoryId,
-        ticker: editTicker.trim().toUpperCase(),
-        name: editName.trim(),
+      const srcQty =
+        ratio && ratio > 0 && ratio !== 1
+          ? Math.round(editingAsset.quantity * ratio)
+          : editingAsset.quantity
+      const srcAvg =
+        ratio && ratio > 0 && ratio !== 1 ? editingAsset.avgPrice / ratio : editingAsset.avgPrice
+
+      const duplicate = assets.find(
+        (a) => a.id !== editingAsset.id && a.ticker.toUpperCase() === newTicker,
+      )
+
+      if (duplicate) {
+        const mergedQty = duplicate.quantity + srcQty
+        const mergedAvg = (duplicate.quantity * duplicate.avgPrice + srcQty * srcAvg) / mergedQty
+        await editAsset(duplicate.id, { quantity: mergedQty, avgPrice: mergedAvg })
+        await deleteAsset(editingAsset.id)
+      } else {
+        const updates: Partial<Asset> = {
+          categoryId: editCategoryId,
+          ticker: newTicker,
+          name: editName.trim(),
+        }
+        if (ratio && ratio > 0 && ratio !== 1) {
+          updates.quantity = srcQty
+          updates.avgPrice = srcAvg
+        }
+        await editAsset(editingAsset.id, updates)
       }
-      if (ratio && ratio > 0 && ratio !== 1) {
-        updates.quantity = Math.round(editingAsset.quantity * ratio)
-        updates.avgPrice = editingAsset.avgPrice / ratio
-      }
-      await editAsset(editingAsset.id, updates)
       setEditingAsset(null)
     } finally {
       setSaving(false)

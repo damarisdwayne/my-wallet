@@ -29,6 +29,7 @@ export const PortfolioPage = () => {
     addAsset,
     addManualTrade,
     editAsset,
+    deleteAsset,
     importFromB3,
     revertImport,
     saveCategory,
@@ -77,6 +78,7 @@ export const PortfolioPage = () => {
           addAsset={addAsset}
           addManualTrade={addManualTrade}
           editAsset={editAsset}
+          deleteAsset={deleteAsset}
           importFromB3={importFromB3}
           refreshPrices={refreshPrices}
           refreshingPrices={refreshingPrices}

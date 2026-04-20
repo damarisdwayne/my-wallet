@@ -14,64 +14,7 @@ import {
 import { useExpenses } from '@/hooks/use-expenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { ExpenseCategory } from '@/types'
-
-const categoryLabel: Record<ExpenseCategory, string> = {
-  housing: 'Moradia',
-  food: 'Alimentação',
-  transport: 'Transporte',
-  health: 'Saúde',
-  education: 'Educação',
-  entertainment: 'Lazer',
-  clothing: 'Vestuário',
-  subscriptions: 'Assinaturas',
-  investments: 'Investimentos',
-  other: 'Outros',
-}
-
-const categoryColors: Record<
-  ExpenseCategory,
-  'default' | 'success' | 'warning' | 'destructive' | 'secondary'
-> = {
-  housing: 'destructive',
-  food: 'warning',
-  transport: 'default',
-  health: 'success',
-  education: 'default',
-  entertainment: 'secondary',
-  clothing: 'secondary',
-  subscriptions: 'warning',
-  investments: 'success',
-  other: 'secondary',
-}
-
-const emptyForm = {
-  description: '',
-  amount: '',
-  category: 'food' as ExpenseCategory,
-  date: new Date().toISOString().slice(0, 10),
-}
-
-const MONTH_LABELS: Record<string, string> = {
-  '01': 'Jan',
-  '02': 'Fev',
-  '03': 'Mar',
-  '04': 'Abr',
-  '05': 'Mai',
-  '06': 'Jun',
-  '07': 'Jul',
-  '08': 'Ago',
-  '09': 'Set',
-  '10': 'Out',
-  '11': 'Nov',
-  '12': 'Dez',
-}
-
-const formatMonthLabel = (ym: string) => {
-  const [y, m] = ym.split('-')
-  return `${MONTH_LABELS[m]}/${y.slice(2)}`
-}
-
-const todayMonth = new Date().toISOString().slice(0, 7)
+import { categoryColors, categoryLabel, emptyForm, formatMonthLabel, todayMonth } from './utils'
 
 export const ExpensesPage = () => {
   const { expenses, salaryByMonth, addExpense, updateSalary } = useExpenses()

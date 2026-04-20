@@ -67,8 +67,7 @@ async function fetchStockPrices(tickers: string[]): Promise<Record<string, numbe
   const prices: Record<string, number> = {}
 
   for (const data of results) {
-    if (!data) continue
-    if ('error' in data) throw new Error(data.message)
+    if (!data || 'error' in data) continue // skip failed tickers, don't abort all
     const item = data.results?.[0]
     if (item?.regularMarketPrice) prices[item.symbol.toUpperCase()] = item.regularMarketPrice
   }

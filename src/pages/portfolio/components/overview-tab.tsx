@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -34,9 +34,20 @@ interface Props {
   categories: PortfolioCategory[]
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
+  refreshPrices: () => Promise<void>
+  refreshingPrices: boolean
+  priceError: string | null
 }
 
-export const OverviewTab = ({ assets, categories, totalValue, addAsset }: Props) => {
+export const OverviewTab = ({
+  assets,
+  categories,
+  totalValue,
+  addAsset,
+  refreshPrices,
+  refreshingPrices,
+  priceError,
+}: Props) => {
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [newAsset, setNewAsset] = useState(emptyNewAsset())
@@ -160,7 +171,18 @@ export const OverviewTab = ({ assets, categories, totalValue, addAsset }: Props)
         })}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {priceError && (
+          <p className="text-xs text-destructive">{priceError}</p>
+        )}
+        <button
+          onClick={refreshPrices}
+          disabled={refreshingPrices}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={cn(refreshingPrices && 'animate-spin')} />
+          {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
+        </button>
         <button
           onClick={() => setAddAssetOpen(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"

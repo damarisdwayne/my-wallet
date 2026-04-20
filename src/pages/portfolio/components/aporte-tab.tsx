@@ -136,7 +136,14 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
       {aporte > 0 && distribution.length > 0 && (
         <div className="space-y-2">
           {distribution.map(
-            ({ cat, catCurrentValue, catAporte, catPercentBefore, catPercentAfter, assetAllocations }) => {
+            ({
+              cat,
+              catCurrentValue,
+              catAporte,
+              catPercentBefore,
+              catPercentAfter,
+              assetAllocations,
+            }) => {
               const isOpen = !collapsed.has(cat.id)
               return (
                 <div key={cat.id} className="border border-border rounded-lg overflow-hidden">
@@ -183,7 +190,9 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
                             </span>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="font-medium text-foreground">{formatCurrency(assetAporte)}</p>
+                            <p className="font-medium text-foreground">
+                              {formatCurrency(assetAporte)}
+                            </p>
                             {asset.currentPrice > 0 && (
                               <p className="text-xs text-muted-foreground">
                                 ~{Math.floor(quantityToBuy)} unid. (

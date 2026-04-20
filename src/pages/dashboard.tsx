@@ -1,5 +1,6 @@
 import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { MarketIndicators } from '@/components/market-indicators'
 import { useDashboard } from '@/hooks/use-dashboard'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 
@@ -53,6 +54,12 @@ export const DashboardPage = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <Card>
+        <CardContent className="pt-4">
+          <MarketIndicators />
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           loading={loading}

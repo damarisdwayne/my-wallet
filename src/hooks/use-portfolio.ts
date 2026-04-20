@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
-import { addAsset as addAssetService, subscribeToAssets } from '@/services/assets'
+import {
+  addAsset as addAssetService,
+  subscribeToAssets,
+  updateAssetPrice as updateAssetPriceService,
+} from '@/services/assets'
 import { saveAnswers as saveAnswersService, subscribeToAnswers } from '@/services/answers'
 import { saveCategory as saveCategoryService, subscribeToCategories } from '@/services/categories'
 import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
+import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
 
@@ -13,6 +18,8 @@ export const usePortfolio = () => {
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [answers, setAnswers] = useState<Record<string, AssetAnswers>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshingPrices, setRefreshingPrices] = useState(false)
+  const [priceError, setPriceError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -62,6 +69,28 @@ export const usePortfolio = () => {
     return saveAnswersService(user.uid, assetId, assetAnswers)
   }
 
+  const refreshPrices = async () => {
+    if (!user || assets.length === 0) return
+    setRefreshingPrices(true)
+    setPriceError(null)
+    clearQuoteCache()
+    try {
+      const priceable = assets.filter((a) => a.type !== 'fixed_income' && a.type !== 'other')
+      const prices = await fetchLivePrices(
+        priceable.map((a) => ({ ticker: a.ticker, type: a.type })),
+      )
+      await Promise.all(
+        priceable
+          .filter((a) => prices[a.ticker.toUpperCase()] !== undefined)
+          .map((a) => updateAssetPriceService(user.uid, a.id, prices[a.ticker.toUpperCase()])),
+      )
+    } catch (err) {
+      setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
+    } finally {
+      setRefreshingPrices(false)
+    }
+  }
+
   return {
     loading,
     assets,
@@ -72,5 +101,8 @@ export const usePortfolio = () => {
     saveCategory,
     saveDiagram,
     saveAnswers,
+    refreshPrices,
+    refreshingPrices,
+    priceError,
   }
 }

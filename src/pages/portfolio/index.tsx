@@ -17,6 +17,9 @@ export const PortfolioPage = () => {
     saveCategory,
     saveDiagram,
     saveAnswers,
+    refreshPrices,
+    refreshingPrices,
+    priceError,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -50,6 +53,9 @@ export const PortfolioPage = () => {
           categories={categories}
           totalValue={totalValue}
           addAsset={addAsset}
+          refreshPrices={refreshPrices}
+          refreshingPrices={refreshingPrices}
+          priceError={priceError}
         />
       )}
       {activeTab === 1 && (

@@ -1,0 +1,16 @@
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '@/store/auth'
+
+export const ProtectedRoute = () => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  return user ? <Outlet /> : <Navigate to="/login" replace />
+}

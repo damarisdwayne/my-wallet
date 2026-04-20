@@ -1,26 +1,16 @@
 import { BarChart3, Home, LayoutDashboard, Receipt, TrendingUp } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
-interface NavItem {
-  id: string
-  label: string
-  icon: React.ReactNode
-}
-
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { id: 'expenses', label: 'Gastos', icon: <Receipt size={18} /> },
-  { id: 'portfolio', label: 'Carteira', icon: <TrendingUp size={18} /> },
-  { id: 'dividends', label: 'Proventos', icon: <BarChart3 size={18} /> },
-  { id: 'tax', label: 'Imposto de Renda', icon: <Home size={18} /> },
+const navItems = [
+  { to: '/', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+  { to: '/expenses', label: 'Gastos', icon: <Receipt size={18} /> },
+  { to: '/portfolio', label: 'Carteira', icon: <TrendingUp size={18} /> },
+  { to: '/dividends', label: 'Proventos', icon: <BarChart3 size={18} /> },
+  { to: '/tax', label: 'Imposto de Renda', icon: <Home size={18} /> },
 ]
 
-interface SidebarProps {
-  activePage: string
-  onNavigate: (page: string) => void
-}
-
-export const Sidebar = ({ activePage, onNavigate }: SidebarProps) => (
+export const Sidebar = () => (
   <aside className="hidden md:flex flex-col w-56 shrink-0 border-r border-border bg-card min-h-screen">
     <div className="flex items-center gap-2 px-5 py-5 border-b border-border">
       <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
@@ -31,19 +21,22 @@ export const Sidebar = ({ activePage, onNavigate }: SidebarProps) => (
 
     <nav className="flex-1 p-3 space-y-0.5">
       {navItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => onNavigate(item.id)}
-          className={cn(
-            'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-left',
-            activePage === item.id
-              ? 'bg-primary/10 text-primary font-medium'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-          )}
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.to === '/'}
+          className={({ isActive }) =>
+            cn(
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+              isActive
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            )
+          }
         >
           {item.icon}
           {item.label}
-        </button>
+        </NavLink>
       ))}
     </nav>
   </aside>

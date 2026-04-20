@@ -1,0 +1,28 @@
+import { Outlet, useLocation } from 'react-router-dom'
+import { Header } from '@/components/layout/Header'
+import { Sidebar } from '@/components/layout/Sidebar'
+
+const pageTitles: Record<string, string> = {
+  '/': 'Dashboard',
+  '/expenses': 'Gastos',
+  '/portfolio': 'Carteira',
+  '/dividends': 'Proventos',
+  '/tax': 'Imposto de Renda',
+}
+
+export const AppLayout = () => {
+  const { pathname } = useLocation()
+  const title = pageTitles[pathname] ?? 'My Wallet'
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <div className="flex flex-col flex-1 min-w-0">
+        <Header title={title} />
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}

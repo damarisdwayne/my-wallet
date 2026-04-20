@@ -175,6 +175,20 @@ export interface FiiManualData {
   updatedAt: string
 }
 
+/* ─── CVM Documents ────────────────────────────────────────────── */
+
+export interface CvmDocument {
+  cnpj: string
+  company: string
+  cvmCode: string
+  category: string
+  type: string
+  subject: string
+  referenceDate: string
+  deliveryDate: string
+  downloadUrl: string
+}
+
 /* ─── Theme ────────────────────────────────────────────────────── */
 
 export type Theme = 'light' | 'dark' | 'system'

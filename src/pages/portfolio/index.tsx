@@ -29,9 +29,6 @@ export const PortfolioPage = () => {
     priceError,
     fundamentals,
     fiiManual,
-    refreshingFundamentals,
-    fundamentalErrors,
-    refreshFundamentals,
     saveManualSnapshot,
     saveFiiManual,
   } = usePortfolio()
@@ -106,9 +103,6 @@ export const PortfolioPage = () => {
           assets={assets}
           fundamentals={fundamentals}
           fiiManual={fiiManual}
-          refreshingFundamentals={refreshingFundamentals}
-          fundamentalErrors={fundamentalErrors}
-          refreshFundamentals={refreshFundamentals}
           saveFiiManual={saveFiiManual}
           saveManualSnapshot={saveManualSnapshot}
         />

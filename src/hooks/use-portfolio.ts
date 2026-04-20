@@ -244,7 +244,8 @@ export const usePortfolio = () => {
   const saveManualSnapshot = async (ticker: string, partial: Partial<import('@/types').FundamentalSnapshot>) => {
     if (!user) return
     const existing = fundamentals[ticker.toUpperCase()] ?? null
-    await upsertMonthlySnapshot(user.uid, ticker, partial, existing)
+    const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
+    await upsertMonthlySnapshot(user.uid, ticker, partial, existing, asset?.currentPrice)
   }
 
   const saveFiiManual = (data: FiiManualData) => {

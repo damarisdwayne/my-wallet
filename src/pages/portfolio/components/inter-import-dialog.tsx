@@ -59,10 +59,13 @@ export const InterImportDialog = ({ open, onOpenChange, existingAssets, onImport
   const handleFile = (file: File) => {
     reset()
     setFilename(file.name)
-    file.arrayBuffer().then(processBuffer).catch(() => {
-      setParseError('Não foi possível ler o arquivo.')
-      setParsing(false)
-    })
+    file
+      .arrayBuffer()
+      .then(processBuffer)
+      .catch(() => {
+        setParseError('Não foi possível ler o arquivo.')
+        setParsing(false)
+      })
   }
 
   const handleDrop = (e: React.DragEvent) => {

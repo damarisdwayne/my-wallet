@@ -53,9 +53,12 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
   const handleFile = (file: File) => {
     reset()
     setFilename(file.name)
-    file.arrayBuffer().then(processBuffer).catch(() => {
-      setParseError('Não foi possível ler o arquivo.')
-    })
+    file
+      .arrayBuffer()
+      .then(processBuffer)
+      .catch(() => {
+        setParseError('Não foi possível ler o arquivo.')
+      })
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -191,7 +194,8 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
             </div>
 
             <p className="text-xs text-muted-foreground">
-              PM calculado pela média ponderada das compras. Ativos existentes terão qtd e PM atualizados.
+              PM calculado pela média ponderada das compras. Ativos existentes terão qtd e PM
+              atualizados.
             </p>
           </>
         )}

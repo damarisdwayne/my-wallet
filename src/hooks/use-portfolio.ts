@@ -241,7 +241,10 @@ export const usePortfolio = () => {
     setRefreshingFundamentals({})
   }
 
-  const saveManualSnapshot = async (ticker: string, partial: Partial<import('@/types').FundamentalSnapshot>) => {
+  const saveManualSnapshot = async (
+    ticker: string,
+    partial: Partial<import('@/types').FundamentalSnapshot>,
+  ) => {
     if (!user) return
     const existing = fundamentals[ticker.toUpperCase()] ?? null
     const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())

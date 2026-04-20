@@ -2,13 +2,57 @@ import type { AssetType } from '@/types'
 import type { B3Asset } from './b3-import'
 
 const US_ETF_TICKERS = new Set([
-  'SPY', 'VOO', 'VTI', 'QQQ', 'IVV', 'VNQ', 'TLT', 'BIL', 'GLD', 'SLV',
-  'EEM', 'EFA', 'AGG', 'BND', 'LQD', 'HYG', 'XLK', 'XLF', 'XLE', 'XLV',
-  'VIG', 'SCHD', 'JEPI', 'JEPQ', 'SCHI', 'SCHA', 'SCHX', 'SCHB',
-  'ARKK', 'ARKG', 'ARKW', 'ARKF', 'ARKE',
-  'DIA', 'SOXX', 'SMH', 'CIBR', 'BOTZ',
-  'VGT', 'VHT', 'VFH', 'VCR', 'VDC', 'VDE', 'VIS', 'VAW',
-  'ITOT', 'IEFA', 'IEMG', 'IAGG', 'ISTB',
+  'SPY',
+  'VOO',
+  'VTI',
+  'QQQ',
+  'IVV',
+  'VNQ',
+  'TLT',
+  'BIL',
+  'GLD',
+  'SLV',
+  'EEM',
+  'EFA',
+  'AGG',
+  'BND',
+  'LQD',
+  'HYG',
+  'XLK',
+  'XLF',
+  'XLE',
+  'XLV',
+  'VIG',
+  'SCHD',
+  'JEPI',
+  'JEPQ',
+  'SCHI',
+  'SCHA',
+  'SCHX',
+  'SCHB',
+  'ARKK',
+  'ARKG',
+  'ARKW',
+  'ARKF',
+  'ARKE',
+  'DIA',
+  'SOXX',
+  'SMH',
+  'CIBR',
+  'BOTZ',
+  'VGT',
+  'VHT',
+  'VFH',
+  'VCR',
+  'VDC',
+  'VDE',
+  'VIS',
+  'VAW',
+  'ITOT',
+  'IEFA',
+  'IEMG',
+  'IAGG',
+  'ISTB',
 ])
 
 function inferUsType(ticker: string): AssetType {
@@ -24,7 +68,10 @@ interface TradeRow {
 
 function parseTradeRows(text: string): TradeRow[] {
   const rows: TradeRow[] = []
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
 
   // Pattern: TICKER ...words... M Buy/Sell HH:MM:SS AM/PM QTY PRICE DATE DATE ...
   // Example: "BIL SPDR SERIES TRUST ... M Buy 2:45:47 PM 0.42006888 91.5088 4/13/2026 ..."

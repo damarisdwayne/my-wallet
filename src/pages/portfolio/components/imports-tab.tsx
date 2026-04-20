@@ -74,10 +74,7 @@ export const ImportsTab = ({ records, onRevert }: Props) => {
 
           <div className="divide-y divide-border">
             {record.items.map((item) => (
-              <div
-                key={item.assetId}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm"
-              >
+              <div key={item.assetId} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                 <span className="font-semibold text-foreground w-20 shrink-0">{item.ticker}</span>
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
@@ -101,7 +98,12 @@ export const ImportsTab = ({ records, onRevert }: Props) => {
         </div>
       ))}
 
-      <Dialog open={!!confirmRecord} onOpenChange={(v) => { if (!v) setConfirmRecord(null) }}>
+      <Dialog
+        open={!!confirmRecord}
+        onOpenChange={(v) => {
+          if (!v) setConfirmRecord(null)
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Reverter importação?</DialogTitle>

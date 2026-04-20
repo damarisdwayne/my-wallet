@@ -33,18 +33,17 @@ const BROKERS: Broker[] = [
       <p className="text-sm text-muted-foreground">
         Acesse{' '}
         <a
-            href="https://www.investidor.b3.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
-          >
-            investidor.b3.com.br
-          </a>{' '}
-          →{' '}
-        <span className="font-medium text-foreground">Extratos</span> →{' '}
+          href="https://www.investidor.b3.com.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+        >
+          investidor.b3.com.br
+        </a>{' '}
+        → <span className="font-medium text-foreground">Extratos</span> →{' '}
         <span className="font-medium text-foreground">Negociação</span> →{' '}
-        <span className="font-medium text-foreground">Baixar → Excel</span>.
-        O app calculará sua posição atual e preço médio automaticamente.
+        <span className="font-medium text-foreground">Baixar → Excel</span>. O app calculará sua
+        posição atual e preço médio automaticamente.
       </p>
     ),
     fileAccept: '.xlsx,.xls',
@@ -59,8 +58,8 @@ const BROKERS: Broker[] = [
       <p className="text-sm text-muted-foreground">
         No app da Inter, acesse{' '}
         <span className="font-medium text-foreground">Investimentos → Extrato</span> e exporte a{' '}
-        <span className="font-medium text-foreground">nota de corretagem em PDF</span>.
-        Quantidades e PM serão calculados automaticamente.
+        <span className="font-medium text-foreground">nota de corretagem em PDF</span>. Quantidades
+        e PM serão calculados automaticamente.
       </p>
     ),
     fileAccept: '.pdf',
@@ -204,30 +203,29 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
               onDragOver={(e) => e.preventDefault()}
               className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-lg p-10 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
             >
-            <Upload size={28} className="text-muted-foreground" />
-            <p className="text-sm text-muted-foreground text-center">
-              Arraste o arquivo aqui ou{' '}
-              <span className="text-primary font-medium">clique para selecionar</span>
-            </p>
-            <p className="text-xs text-muted-foreground">{broker.fileHint}</p>
-            <input
-              ref={inputRef}
-              type="file"
-              accept={broker.fileAccept}
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleFile(file, broker)
-              }}
-            />
+              <Upload size={28} className="text-muted-foreground" />
+              <p className="text-sm text-muted-foreground text-center">
+                Arraste o arquivo aqui ou{' '}
+                <span className="text-primary font-medium">clique para selecionar</span>
+              </p>
+              <p className="text-xs text-muted-foreground">{broker.fileHint}</p>
+              <input
+                ref={inputRef}
+                type="file"
+                accept={broker.fileAccept}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFile(file, broker)
+                }}
+              />
             </label>
           </div>
         )}
 
         {parsing && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <span className="animate-spin">⏳</span>{' '}
-            Lendo arquivo…
+            <span className="animate-spin">⏳</span> Lendo arquivo…
           </div>
         )}
 

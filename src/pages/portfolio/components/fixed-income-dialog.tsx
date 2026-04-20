@@ -88,8 +88,14 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
         institution: form.institution || undefined,
         fixedIncomeType: form.fixedIncomeType,
         rateType: form.rateType,
-        indexerRate: form.rateType !== 'prefixado' ? Number.parseFloat(form.indexerRate) || undefined : undefined,
-        prefixedRate: form.rateType === 'prefixado' ? Number.parseFloat(form.prefixedRate) || undefined : undefined,
+        indexerRate:
+          form.rateType !== 'prefixado'
+            ? Number.parseFloat(form.indexerRate) || undefined
+            : undefined,
+        prefixedRate:
+          form.rateType === 'prefixado'
+            ? Number.parseFloat(form.prefixedRate) || undefined
+            : undefined,
         maturityDate: form.maturityDate || undefined,
         operationDate: form.operationDate || undefined,
         issuer: form.issuer || undefined,

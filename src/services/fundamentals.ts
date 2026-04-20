@@ -38,7 +38,6 @@ export const fetchBrapiSummary = async (
   }
 }
 
-
 /* ─── Firestore – monthly snapshot upsert ──────────────────────── */
 
 const currentMonth = () => new Date().toISOString().slice(0, 7) // "2025-04"
@@ -100,7 +99,6 @@ export const upsertMonthlySnapshot = (
 
   return setDoc(doc(db, 'users', userId, 'fundamentals', ticker.toUpperCase()), record)
 }
-
 
 export const subscribeToFundamentals = (
   userId: string,

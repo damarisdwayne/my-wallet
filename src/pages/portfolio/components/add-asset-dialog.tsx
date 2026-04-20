@@ -20,8 +20,17 @@ const TYPE_GROUPS: { label: string; types: AssetType[] }[] = [
 ]
 
 const FIXED_INCOME_TYPES: FixedIncomeType[] = [
-  'CDB', 'LCI', 'LCA', 'LCE', 'CRI', 'CRA', 'Debenture',
-  'Tesouro IPCA+', 'Tesouro Selic', 'Tesouro Prefixado', 'Outros',
+  'CDB',
+  'LCI',
+  'LCA',
+  'LCE',
+  'CRI',
+  'CRA',
+  'Debenture',
+  'Tesouro IPCA+',
+  'Tesouro Selic',
+  'Tesouro Prefixado',
+  'Outros',
 ]
 
 const RATE_TYPES: { value: RateType; label: string }[] = [
@@ -52,13 +61,7 @@ const KNOWN_CRYPTOS = [
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
-const Field = ({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) => (
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div>
     <p className="text-xs text-muted-foreground mb-1">{label}</p>
     {children}
@@ -303,18 +306,39 @@ function FixedIncomeForm({
       </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Tipo">
-          <select className={inputClass} value={form.fixedIncomeType} onChange={(e) => set('fixedIncomeType', e.target.value)}>
-            {FIXED_INCOME_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          <select
+            className={inputClass}
+            value={form.fixedIncomeType}
+            onChange={(e) => set('fixedIncomeType', e.target.value)}
+          >
+            {FIXED_INCOME_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label="Instituição">
-          <input className={inputClass} placeholder="Nubank, Inter..." value={form.institution} onChange={(e) => set('institution', e.target.value)} />
+          <input
+            className={inputClass}
+            placeholder="Nubank, Inter..."
+            value={form.institution}
+            onChange={(e) => set('institution', e.target.value)}
+          />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Tipo de Taxa">
-          <select className={inputClass} value={form.rateType} onChange={(e) => set('rateType', e.target.value)}>
-            {RATE_TYPES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          <select
+            className={inputClass}
+            value={form.rateType}
+            onChange={(e) => set('rateType', e.target.value)}
+          >
+            {RATE_TYPES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label={rateLabel[form.rateType]}>
@@ -325,30 +349,63 @@ function FixedIncomeForm({
             step={0.01}
             placeholder={form.rateType === 'pos_cdi' ? '110' : '12.5'}
             value={form.rateType === 'prefixado' ? form.prefixedRate : form.indexerRate}
-            onChange={(e) => set(form.rateType === 'prefixado' ? 'prefixedRate' : 'indexerRate', e.target.value)}
+            onChange={(e) =>
+              set(form.rateType === 'prefixado' ? 'prefixedRate' : 'indexerRate', e.target.value)
+            }
           />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Data de aplicação">
-          <input className={inputClass} type="date" value={form.operationDate} onChange={(e) => set('operationDate', e.target.value)} />
+          <input
+            className={inputClass}
+            type="date"
+            value={form.operationDate}
+            onChange={(e) => set('operationDate', e.target.value)}
+          />
         </Field>
         <Field label="Vencimento">
-          <input className={inputClass} type="date" value={form.maturityDate} onChange={(e) => set('maturityDate', e.target.value)} />
+          <input
+            className={inputClass}
+            type="date"
+            value={form.maturityDate}
+            onChange={(e) => set('maturityDate', e.target.value)}
+          />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Total investido (R$)">
-          <input className={inputClass} type="number" min={0} step={0.01} placeholder="5000.00" value={form.totalInvested} onChange={(e) => set('totalInvested', e.target.value)} />
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="5000.00"
+            value={form.totalInvested}
+            onChange={(e) => set('totalInvested', e.target.value)}
+          />
         </Field>
         <Field label="Emissor (opcional)">
-          <input className={inputClass} placeholder="Banco XYZ" value={form.issuer} onChange={(e) => set('issuer', e.target.value)} />
+          <input
+            className={inputClass}
+            placeholder="Banco XYZ"
+            value={form.issuer}
+            onChange={(e) => set('issuer', e.target.value)}
+          />
         </Field>
       </div>
       <Field label="Categoria">
-        <select className={inputClass} value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
+        <select
+          className={inputClass}
+          value={form.categoryId}
+          onChange={(e) => set('categoryId', e.target.value)}
+        >
           <option value="">Sem categoria</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </Field>
       <button
@@ -368,8 +425,14 @@ function FixedIncomeForm({
             institution: form.institution || undefined,
             fixedIncomeType: form.fixedIncomeType,
             rateType: form.rateType,
-            indexerRate: form.rateType !== 'prefixado' ? Number.parseFloat(form.indexerRate) || undefined : undefined,
-            prefixedRate: form.rateType === 'prefixado' ? Number.parseFloat(form.prefixedRate) || undefined : undefined,
+            indexerRate:
+              form.rateType !== 'prefixado'
+                ? Number.parseFloat(form.indexerRate) || undefined
+                : undefined,
+            prefixedRate:
+              form.rateType === 'prefixado'
+                ? Number.parseFloat(form.prefixedRate) || undefined
+                : undefined,
             maturityDate: form.maturityDate || undefined,
             operationDate: form.operationDate || undefined,
             issuer: form.issuer || undefined,
@@ -399,8 +462,11 @@ function CryptoForm({
   const [categoryId, setCategoryId] = useState('')
 
   const resolvedTicker = isCustom ? customTicker.toUpperCase() : ticker
-  const resolvedName = isCustom ? customTicker : (KNOWN_CRYPTOS.find((c) => c.ticker === ticker)?.name ?? ticker)
-  const canSave = resolvedTicker && Number.parseFloat(quantity) > 0 && Number.parseFloat(avgPrice) > 0
+  const resolvedName = isCustom
+    ? customTicker
+    : (KNOWN_CRYPTOS.find((c) => c.ticker === ticker)?.name ?? ticker)
+  const canSave =
+    resolvedTicker && Number.parseFloat(quantity) > 0 && Number.parseFloat(avgPrice) > 0
 
   return (
     <div className="space-y-3 mt-2">
@@ -410,7 +476,10 @@ function CryptoForm({
           {KNOWN_CRYPTOS.map((c) => (
             <button
               key={c.ticker}
-              onClick={() => { setIsCustom(false); setTicker(c.ticker) }}
+              onClick={() => {
+                setIsCustom(false)
+                setTicker(c.ticker)
+              }}
               className={cn(
                 'py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-left',
                 !isCustom && ticker === c.ticker
@@ -423,10 +492,15 @@ function CryptoForm({
             </button>
           ))}
           <button
-            onClick={() => { setIsCustom(true); setTicker('') }}
+            onClick={() => {
+              setIsCustom(true)
+              setTicker('')
+            }}
             className={cn(
               'py-1.5 px-1 rounded-md text-xs font-medium border transition-colors',
-              isCustom ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground',
+              isCustom
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-muted-foreground hover:text-foreground',
             )}
           >
             <span className="font-bold block">Outro</span>
@@ -445,16 +519,40 @@ function CryptoForm({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Quantidade">
-          <input className={inputClass} type="number" min={0} step="any" placeholder="0.5" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            step="any"
+            placeholder="0.5"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+          />
         </Field>
         <Field label="PM em R$">
-          <input className={inputClass} type="number" min={0} step={0.01} placeholder="350000" value={avgPrice} onChange={(e) => setAvgPrice(e.target.value)} />
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="350000"
+            value={avgPrice}
+            onChange={(e) => setAvgPrice(e.target.value)}
+          />
         </Field>
       </div>
       <Field label="Categoria">
-        <select className={inputClass} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+        <select
+          className={inputClass}
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+        >
           <option value="">Sem categoria</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </Field>
       <button
@@ -547,9 +645,7 @@ export const AddAssetDialog = ({ open, onOpenChange, categories, onAdd }: Props)
           <FixedIncomeForm categories={categories} onSave={handleSave} />
         )}
 
-        {selectedType === 'crypto' && (
-          <CryptoForm categories={categories} onSave={handleSave} />
-        )}
+        {selectedType === 'crypto' && <CryptoForm categories={categories} onSave={handleSave} />}
 
         {saving && (
           <DialogFooter>

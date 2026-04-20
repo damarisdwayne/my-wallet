@@ -23,7 +23,6 @@ import { formatCurrency } from '@/lib/utils'
 import type {
   Asset,
   CvmDocument,
-  FiiManualData,
   FundamentalRecord,
   FundamentalSnapshot,
   PricePoint,
@@ -37,8 +36,6 @@ const inputClass =
 interface Props {
   assets: Asset[]
   fundamentals: Record<string, FundamentalRecord>
-  fiiManual: Record<string, FiiManualData>
-  saveFiiManual: (data: FiiManualData) => Promise<void>
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
 }
 
@@ -145,41 +142,6 @@ const STOCK_INDICATORS: IndicatorDef[] = [
     trendType: 'up-good',
     inputStep: '0.001',
     inputLabel: 'Cresc. Receita decimal',
-  },
-]
-
-const FII_INDICATORS: IndicatorDef[] = [
-  {
-    key: 'dividendYield',
-    label: 'DY',
-    format: pct,
-    trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'DY decimal (ex: 0.08 = 8%)',
-  },
-  {
-    key: 'priceToBook',
-    label: 'P/VP',
-    format: ratio,
-    trendType: 'up-bad',
-    inputStep: '0.01',
-    inputLabel: 'P/VP (ex: 0.95)',
-  },
-  {
-    key: 'profitMargins',
-    label: 'Mg. Líquida',
-    format: pct,
-    trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Margem Líquida decimal',
-  },
-  {
-    key: 'returnOnEquity',
-    label: 'ROE',
-    format: pct,
-    trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'ROE decimal',
   },
 ]
 
@@ -420,18 +382,16 @@ const IndicatorCard = ({
 
 const ManualSnapshotDialog = ({
   ticker,
-  isFii,
   open,
   onOpenChange,
   onSave,
 }: {
   ticker: string
-  isFii: boolean
   open: boolean
   onOpenChange: (v: boolean) => void
   onSave: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
 }) => {
-  const indicators = isFii ? FII_INDICATORS : STOCK_INDICATORS
+  const indicators = STOCK_INDICATORS
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
@@ -490,170 +450,6 @@ const ManualSnapshotDialog = ({
             className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
           >
             {saving ? 'Salvando...' : 'Registrar'}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-/* ─── FII edit dialog ───────────────────────────────────────────── */
-
-const emptyFiiForm = (): Omit<FiiManualData, 'ticker' | 'updatedAt'> => ({
-  vacancy: null,
-  propertyCount: null,
-  location: '',
-  manager: '',
-  adminFee: null,
-  avgContractDuration: '',
-  propertyQuality: '',
-})
-
-const FiiEditDialog = ({
-  ticker,
-  existing,
-  open,
-  onOpenChange,
-  onSave,
-}: {
-  ticker: string
-  existing: FiiManualData | undefined
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  onSave: (data: FiiManualData) => Promise<void>
-}) => {
-  const [form, setForm] = useState(() =>
-    existing
-      ? {
-          vacancy: existing.vacancy,
-          propertyCount: existing.propertyCount,
-          location: existing.location,
-          manager: existing.manager,
-          adminFee: existing.adminFee,
-          avgContractDuration: existing.avgContractDuration,
-          propertyQuality: existing.propertyQuality,
-        }
-      : emptyFiiForm(),
-  )
-  const [saving, setSaving] = useState(false)
-
-  const setNum = (k: 'vacancy' | 'propertyCount' | 'adminFee', v: string) =>
-    setForm((p) => ({ ...p, [k]: v === '' ? null : Number(v) }))
-  const setStr = (
-    k: 'location' | 'manager' | 'avgContractDuration' | 'propertyQuality',
-    v: string,
-  ) => setForm((p) => ({ ...p, [k]: v }))
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await onSave({ ticker, ...form, updatedAt: new Date().toISOString() })
-      onOpenChange(false)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Dados manuais FII — {ticker}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3 mt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Vacância (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                placeholder="5.2"
-                value={form.vacancy ?? ''}
-                onChange={(e) => setNum('vacancy', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Qtd. imóveis</label>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                step={1}
-                placeholder="12"
-                value={form.propertyCount ?? ''}
-                onChange={(e) => setNum('propertyCount', e.target.value)}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Gestora / Adm.</label>
-            <input
-              className={inputClass}
-              placeholder="BTG Pactual"
-              value={form.manager}
-              onChange={(e) => setStr('manager', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Localização</label>
-            <input
-              className={inputClass}
-              placeholder="SP, RJ, MG"
-              value={form.location}
-              onChange={(e) => setStr('location', e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Taxa adm. (% a.a.)</label>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                step={0.01}
-                placeholder="0.75"
-                value={form.adminFee ?? ''}
-                onChange={(e) => setNum('adminFee', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Prazo médio</label>
-              <input
-                className={inputClass}
-                placeholder="7 anos"
-                value={form.avgContractDuration}
-                onChange={(e) => setStr('avgContractDuration', e.target.value)}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">
-              Qualidade dos imóveis
-            </label>
-            <input
-              className={inputClass}
-              placeholder="AAA, Lajes Corp."
-              value={form.propertyQuality}
-              onChange={(e) => setStr('propertyQuality', e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter className="mt-4">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -756,106 +552,41 @@ const DocumentsList = ({
   </div>
 )
 
-/* ─── FII manual section (read-only) ────────────────────────────── */
-
-const FiiManualReadSection = ({
-  data,
-  onEdit,
-}: {
-  data: FiiManualData | undefined
-  onEdit: () => void
-}) => (
-  <div>
-    <div className="flex justify-end mb-2">
-      <button
-        onClick={onEdit}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Pencil size={11} />
-        {data ? 'Editar' : 'Preencher'}
-      </button>
-    </div>
-    {data ? (
-      <div className="space-y-0.5">
-        {data.vacancy !== null && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Vacância</span>
-            <span className="text-xs font-medium">{data.vacancy.toFixed(1)}%</span>
-          </div>
-        )}
-        {data.propertyCount !== null && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Imóveis</span>
-            <span className="text-xs font-medium">{data.propertyCount}</span>
-          </div>
-        )}
-        {data.manager && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Gestora</span>
-            <span className="text-xs font-medium truncate ml-2">{data.manager}</span>
-          </div>
-        )}
-        {data.location && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Localização</span>
-            <span className="text-xs font-medium">{data.location}</span>
-          </div>
-        )}
-        {data.adminFee !== null && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Taxa adm.</span>
-            <span className="text-xs font-medium">{data.adminFee.toFixed(2)}% a.a.</span>
-          </div>
-        )}
-        {data.avgContractDuration && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Prazo médio</span>
-            <span className="text-xs font-medium">{data.avgContractDuration}</span>
-          </div>
-        )}
-        {data.propertyQuality && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-xs text-muted-foreground">Qualidade</span>
-            <span className="text-xs font-medium">{data.propertyQuality}</span>
-          </div>
-        )}
-      </div>
-    ) : (
-      <p className="text-xs text-muted-foreground italic">Nenhum dado preenchido.</p>
-    )}
-  </div>
-)
-
 /* ─── Asset detail view (inline) ───────────────────────────────── */
 
 const AssetDetailView = ({
   asset,
   record,
-  fiiData,
-  isFii,
   onBack,
   onSaveSnapshot,
-  onSaveFii,
 }: {
   asset: Asset
   record: FundamentalRecord | undefined
-  fiiData: FiiManualData | undefined
-  isFii: boolean
   onBack: () => void
   onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
-  onSaveFii: (data: FiiManualData) => Promise<void>
 }) => {
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [fiiEditOpen, setFiiEditOpen] = useState(false)
+  const [docsFilter, setDocsFilter] = useState('')
   const {
     docs,
     loading: docsLoading,
     error: docsError,
     reload: reloadDocs,
   } = useDocuments(asset.name)
+
+  const filteredDocs = docs
+    ? docs.filter((d) => {
+        const q = docsFilter.toLowerCase()
+        return (
+          d.category.toLowerCase().includes(q) ||
+          (d.subject ?? '').toLowerCase().includes(q) ||
+          (d.type ?? '').toLowerCase().includes(q)
+        )
+      })
+    : null
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
-  const indicators = isFii ? FII_INDICATORS : STOCK_INDICATORS
+  const indicators = STOCK_INDICATORS
 
   return (
     <>
@@ -922,55 +653,38 @@ const AssetDetailView = ({
           )}
         </div>
 
-        {/* Secondary: FII manual + CVM docs */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {isFii && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                Dados FII
-              </p>
-              <div className="rounded-lg border border-border p-3">
-                <FiiManualReadSection data={fiiData} onEdit={() => setFiiEditOpen(true)} />
-              </div>
-            </div>
-          )}
-          <div className={isFii ? 'lg:col-span-2' : 'lg:col-span-3'}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Documentos CVM
-              </p>
-              <button
-                onClick={reloadDocs}
-                disabled={docsLoading}
-                className="text-muted-foreground/50 hover:text-muted-foreground transition-colors disabled:opacity-40"
-              >
-                <RefreshCw size={11} className={docsLoading ? 'animate-spin' : ''} />
-              </button>
-            </div>
-            <div className="rounded-lg border border-border p-3">
-              <DocumentsList docs={docs} loading={docsLoading} error={docsError} />
-            </div>
+        {/* CVM docs */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Documentos CVM
+            </p>
+            <button
+              onClick={reloadDocs}
+              disabled={docsLoading}
+              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors disabled:opacity-40"
+            >
+              <RefreshCw size={11} className={docsLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          <input
+            className={`${inputClass} mb-2`}
+            placeholder="Filtrar documentos..."
+            value={docsFilter}
+            onChange={(e) => setDocsFilter(e.target.value)}
+          />
+          <div className="rounded-lg border border-border p-3">
+            <DocumentsList docs={filteredDocs} loading={docsLoading} error={docsError} />
           </div>
         </div>
       </div>
 
       <ManualSnapshotDialog
         ticker={asset.ticker}
-        isFii={isFii}
         open={registerOpen}
         onOpenChange={setRegisterOpen}
         onSave={onSaveSnapshot}
       />
-
-      {isFii && (
-        <FiiEditDialog
-          ticker={asset.ticker}
-          existing={fiiData}
-          open={fiiEditOpen}
-          onOpenChange={setFiiEditOpen}
-          onSave={onSaveFii}
-        />
-      )}
     </>
   )
 }
@@ -990,7 +704,7 @@ const AssetCompactCard = ({
 }) => {
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
-  const indicators = isFii ? FII_INDICATORS : STOCK_INDICATORS
+  const indicators = STOCK_INDICATORS
 
   // Show up to 2 key indicators at a glance
   const keyDefs = isFii
@@ -1050,13 +764,7 @@ const AssetCompactCard = ({
 
 /* ─── Main tab ──────────────────────────────────────────────────── */
 
-export const AnalysisTab = ({
-  assets,
-  fundamentals,
-  fiiManual,
-  saveFiiManual,
-  saveManualSnapshot,
-}: Props) => {
+export const AnalysisTab = ({ assets, fundamentals, saveManualSnapshot }: Props) => {
   const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
 
@@ -1078,11 +786,8 @@ export const AnalysisTab = ({
       <AssetDetailView
         asset={selectedAsset}
         record={fundamentals[selectedAsset.ticker.toUpperCase()]}
-        fiiData={fiiManual[selectedAsset.ticker.toUpperCase()]}
-        isFii={subTab === 'fii'}
         onBack={() => setSelectedTicker(null)}
         onSaveSnapshot={saveManualSnapshot}
-        onSaveFii={saveFiiManual}
       />
     )
   }

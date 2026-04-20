@@ -28,9 +28,7 @@ export const PortfolioPage = () => {
     refreshingPrices,
     priceError,
     fundamentals,
-    fiiManual,
     saveManualSnapshot,
-    saveFiiManual,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -102,8 +100,6 @@ export const PortfolioPage = () => {
         <AnalysisTab
           assets={assets}
           fundamentals={fundamentals}
-          fiiManual={fiiManual}
-          saveFiiManual={saveFiiManual}
           saveManualSnapshot={saveManualSnapshot}
         />
       )}

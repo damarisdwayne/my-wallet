@@ -1,11 +1,19 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+} from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { SaleItem } from '@/types'
 
 export const subscribeToAllSales = (userId: string, cb: (items: SaleItem[]) => void) =>
-  onSnapshot(
-    query(collection(db, 'users', userId, 'sales'), orderBy('boughtAt', 'desc')),
-    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as SaleItem)),
+  onSnapshot(query(collection(db, 'users', userId, 'sales'), orderBy('boughtAt', 'desc')), (snap) =>
+    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as SaleItem)),
   )
 
 export const addSale = (userId: string, item: Omit<SaleItem, 'id'>) =>

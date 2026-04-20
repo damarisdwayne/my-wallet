@@ -5,9 +5,10 @@ export interface B3Asset {
   ticker: string
   name: string
   type: AssetType
-  quantity: number
-  avgPrice: number
+  quantity: number // net delta for this period (can be negative)
+  avgPrice: number // buy avg for this period (0 if no buys)
   currentPrice: number
+  boughtQty: number // total units bought in this period
 }
 
 const ETF_TICKERS = new Set([
@@ -103,8 +104,9 @@ function findCols(headers: string[]): Cols {
 }
 
 interface Accumulator {
-  qty: number
-  totalCost: number
+  netQty: number
+  buysQty: number
+  totalBuyCost: number
 }
 
 function applyRow(row: unknown[], cols: Cols, positions: Map<string, Accumulator>) {
@@ -118,31 +120,33 @@ function applyRow(row: unknown[], cols: Cols, positions: Map<string, Accumulator
   const mercado = cellStr(row[cols.mercado])
   const ticker = normalizeTicker(rawTicker.toUpperCase(), mercado)
   const price = cols.price === -1 ? 0 : parsePrice(row[cols.price])
-  const prev = positions.get(ticker) ?? { qty: 0, totalCost: 0 }
+  const prev = positions.get(ticker) ?? { netQty: 0, buysQty: 0, totalBuyCost: 0 }
 
   if (tipo.includes('compra')) {
-    positions.set(ticker, { qty: prev.qty + qty, totalCost: prev.totalCost + qty * price })
+    positions.set(ticker, {
+      netQty: prev.netQty + qty,
+      buysQty: prev.buysQty + qty,
+      totalBuyCost: prev.totalBuyCost + qty * price,
+    })
   } else if (tipo.includes('venda')) {
-    const newQty = Math.max(0, prev.qty - qty)
-    const newCost = newQty > 0 && prev.qty > 0 ? prev.totalCost * (newQty / prev.qty) : 0
-    positions.set(ticker, { qty: newQty, totalCost: newCost })
+    positions.set(ticker, { ...prev, netQty: prev.netQty - qty })
   }
 }
 
 function positionsToAssets(positions: Map<string, Accumulator>): B3Asset[] {
   const result: B3Asset[] = []
-  for (const [ticker, { qty, totalCost }] of positions) {
-    if (qty > 0) {
-      const avgPrice = totalCost / qty
-      result.push({
-        ticker,
-        name: ticker,
-        type: inferType(ticker),
-        quantity: qty,
-        avgPrice,
-        currentPrice: avgPrice,
-      })
-    }
+  for (const [ticker, { netQty, buysQty, totalBuyCost }] of positions) {
+    if (netQty === 0) continue
+    const avgPrice = buysQty > 0 ? totalBuyCost / buysQty : 0
+    result.push({
+      ticker,
+      name: ticker,
+      type: inferType(ticker),
+      quantity: netQty,
+      avgPrice,
+      currentPrice: avgPrice,
+      boughtQty: buysQty,
+    })
   }
   return result
 }
@@ -168,10 +172,13 @@ export function parseB3Excel(buffer: ArrayBuffer): B3Asset[] {
     throw new Error('Formato inválido: colunas obrigatórias não encontradas.')
   }
 
+  const dataRows = rows.slice(headerIdx + 1).filter((r) => r.some((c) => cellStr(c).trim()))
+
+  // Two-pass: buys first, then sells — avoids ordering issues in the spreadsheet
   const positions = new Map<string, Accumulator>()
-  for (let i = headerIdx + 1; i < rows.length; i++) {
-    applyRow(rows[i], cols, positions)
-  }
+  const isBuy = (row: unknown[]) => cellStr(row[cols.tipo]).toLowerCase().includes('compra')
+  for (const row of dataRows) if (isBuy(row)) applyRow(row, cols, positions)
+  for (const row of dataRows) if (!isBuy(row)) applyRow(row, cols, positions)
 
   const result = positionsToAssets(positions)
   if (result.length === 0) {

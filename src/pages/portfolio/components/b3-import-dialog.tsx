@@ -21,7 +21,7 @@ interface Props {
   onImport: (assets: B3Asset[], filename: string) => Promise<void>
 }
 
-type ParsedRow = B3Asset & { action: 'new' | 'update' }
+type ParsedRow = B3Asset & { action: 'new' | 'update' | 'sell' }
 
 export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -40,10 +40,16 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
   const processBuffer = (buffer: ArrayBuffer) => {
     try {
       const parsed = parseB3Excel(buffer)
-      const withAction: ParsedRow[] = parsed.map((a) => ({
-        ...a,
-        action: existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker) ? 'update' : 'new',
-      }))
+      const withAction: ParsedRow[] = parsed
+        .filter((a) => {
+          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
+          return a.quantity > 0 || exists // skip pure sells with no existing position
+        })
+        .map((a) => {
+          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
+          const action = a.quantity < 0 ? 'sell' : exists ? 'update' : 'new'
+          return { ...a, action } as ParsedRow
+        })
       setRows(withAction)
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Erro ao processar arquivo.')
@@ -81,6 +87,7 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
 
   const newCount = rows?.filter((r) => r.action === 'new').length ?? 0
   const updateCount = rows?.filter((r) => r.action === 'update').length ?? 0
+  const sellCount = rows?.filter((r) => r.action === 'sell').length ?? 0
 
   return (
     <Dialog
@@ -143,6 +150,9 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
               {updateCount > 0 && (
                 <span className="text-foreground font-medium">{updateCount} a atualizar</span>
               )}
+              {sellCount > 0 && (
+                <span className="text-destructive font-medium">-{sellCount} vendas</span>
+              )}
               <button onClick={reset} className="ml-auto underline hover:text-foreground">
                 Trocar arquivo
               </button>
@@ -171,7 +181,14 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
                       <td className="px-3 py-2">
                         <Badge variant="secondary">{typeLabel[row.type]}</Badge>
                       </td>
-                      <td className="px-3 py-2 text-right text-foreground">{row.quantity}</td>
+                      <td
+                        className={cn(
+                          'px-3 py-2 text-right',
+                          row.action === 'sell' ? 'text-destructive' : 'text-foreground',
+                        )}
+                      >
+                        {row.quantity}
+                      </td>
                       <td className="px-3 py-2 text-right text-muted-foreground">
                         {row.avgPrice > 0 ? formatCurrency(row.avgPrice) : '—'}
                       </td>
@@ -181,10 +198,16 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
                             'text-xs font-medium px-2 py-0.5 rounded-full',
                             row.action === 'new'
                               ? 'bg-success/15 text-success'
-                              : 'bg-muted text-muted-foreground',
+                              : row.action === 'sell'
+                                ? 'bg-destructive/15 text-destructive'
+                                : 'bg-muted text-muted-foreground',
                           )}
                         >
-                          {row.action === 'new' ? 'Novo' : 'Atualizar'}
+                          {row.action === 'new'
+                            ? 'Novo'
+                            : row.action === 'sell'
+                              ? 'Venda'
+                              : 'Atualizar'}
                         </span>
                       </td>
                     </tr>

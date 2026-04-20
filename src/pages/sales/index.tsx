@@ -153,7 +153,9 @@ export const SalesPage = () => {
   const monthlySold = useMemo(
     () =>
       sales
-        .filter((s): s is SaleItem & { soldAt: string } => s.soldAt?.startsWith(selectedMonth) ?? false)
+        .filter(
+          (s): s is SaleItem & { soldAt: string } => s.soldAt?.startsWith(selectedMonth) ?? false,
+        )
         .sort((a, b) => b.soldAt.localeCompare(a.soldAt)),
     [sales, selectedMonth],
   )
@@ -297,7 +299,9 @@ export const SalesPage = () => {
               <ShoppingCart size={15} className="text-primary" />
               <CardTitle>Em estoque</CardTitle>
             </div>
-            <span className="text-xs text-muted-foreground">{stock.length} {stock.length === 1 ? 'item' : 'itens'}</span>
+            <span className="text-xs text-muted-foreground">
+              {stock.length} {stock.length === 1 ? 'item' : 'itens'}
+            </span>
           </div>
         </CardHeader>
         <CardContent>
@@ -326,7 +330,9 @@ export const SalesPage = () => {
                       <p className="text-sm font-medium text-foreground">
                         {formatCurrency(item.buyPrice)}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">{formatDate(item.boughtAt)}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatDate(item.boughtAt)}
+                      </p>
                     </div>
                     <button
                       onClick={() => openSell(item)}
@@ -440,7 +446,9 @@ export const SalesPage = () => {
             <Card key={cat} className="text-center">
               <CardHeader className="p-4">
                 <CardTitle>{saleCategories[cat as SaleCategory]}</CardTitle>
-                <p className={`text-lg font-bold ${profit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                <p
+                  className={`text-lg font-bold ${profit >= 0 ? 'text-success' : 'text-destructive'}`}
+                >
                   {formatCurrency(profit)}
                 </p>
                 <p className="text-xs text-muted-foreground">

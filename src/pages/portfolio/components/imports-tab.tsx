@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { ChevronDown, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,14 @@ interface Props {
 export const ImportsTab = ({ records, onRevert }: Props) => {
   const [confirmRecord, setConfirmRecord] = useState<ImportRecord | null>(null)
   const [reverting, setReverting] = useState(false)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (id: string) =>
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   const handleRevert = async () => {
     if (!confirmRecord) return
@@ -47,7 +55,10 @@ export const ImportsTab = ({ records, onRevert }: Props) => {
     <div className="space-y-4">
       {sorted.map((record) => (
         <div key={record.id} className="border border-border rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
+          <button
+            onClick={() => toggleExpanded(record.id)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+          >
             <div>
               <p className="text-sm font-medium text-foreground">{record.filename}</p>
               <p className="text-xs text-muted-foreground">
@@ -62,39 +73,50 @@ export const ImportsTab = ({ records, onRevert }: Props) => {
                 {record.items.length} ativo(s)
               </p>
             </div>
-            <button
-              onClick={() => setConfirmRecord(record)}
-              title="Reverter importação"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <Trash2 size={13} />
-              Reverter
-            </button>
-          </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setConfirmRecord(record)
+                }}
+                title="Reverter importação"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 size={13} />
+                Reverter
+              </button>
+              <ChevronDown
+                size={15}
+                className={`text-muted-foreground transition-transform ${expandedIds.has(record.id) ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </button>
 
-          <div className="divide-y divide-border">
-            {record.items.map((item) => (
-              <div key={item.assetId} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                <span className="font-semibold text-foreground w-20 shrink-0">{item.ticker}</span>
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                    item.wasCreated
-                      ? 'bg-success/15 text-success'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {item.wasCreated ? 'Criado' : 'Atualizado'}
-                </span>
-                <span className="text-muted-foreground text-xs flex-1">
-                  {item.quantityDelta > 0 ? '+' : ''}
-                  {item.quantityDelta} unid.
-                </span>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  PM {formatCurrency(item.importAvgPrice)}
-                </span>
-              </div>
-            ))}
-          </div>
+          {expandedIds.has(record.id) && (
+            <div className="divide-y divide-border">
+              {record.items.map((item) => (
+                <div key={item.assetId} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <span className="font-semibold text-foreground w-20 shrink-0">{item.ticker}</span>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                      item.wasCreated
+                        ? 'bg-success/15 text-success'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {item.wasCreated ? 'Criado' : 'Atualizado'}
+                  </span>
+                  <span className="text-muted-foreground text-xs flex-1">
+                    {item.quantityDelta > 0 ? '+' : ''}
+                    {item.quantityDelta} unid.
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    PM {formatCurrency(item.importAvgPrice)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 

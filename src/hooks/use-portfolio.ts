@@ -139,16 +139,18 @@ export const usePortfolio = () => {
         if (existing) {
           const prevQty = existing.quantity
           const prevAvg = existing.avgPrice
-          const newQty = prevQty + b3.quantity
+          const newQty = Math.max(0, prevQty + b3.quantity)
 
-          // Only update avgPrice when net buying; selling keeps the existing PM
+          // PM only changes on buys; sells don't affect average cost
           const newAvg =
-            b3.quantity > 0 ? (prevQty * prevAvg + b3.quantity * b3.avgPrice) / newQty : prevAvg
+            b3.boughtQty > 0
+              ? (prevQty * prevAvg + b3.boughtQty * b3.avgPrice) / (prevQty + b3.boughtQty)
+              : prevAvg
 
           await updateAssetService(user.uid, existing.id, {
             quantity: newQty,
             avgPrice: newAvg,
-            currentPrice: b3.currentPrice,
+            currentPrice: b3.currentPrice > 0 ? b3.currentPrice : existing.currentPrice,
           })
 
           items.push({
@@ -160,7 +162,7 @@ export const usePortfolio = () => {
             previousAvgPrice: prevAvg,
             wasCreated: false,
           })
-        } else {
+        } else if (b3.quantity > 0) {
           const autoCatId = categories.find((c) => c.type === b3.type)?.id ?? ''
           const newAsset: Asset = {
             id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -205,10 +207,13 @@ export const usePortfolio = () => {
           const { db } = await import('@/lib/firestore')
           await deleteDoc(doc(db, 'users', user.uid, 'assets', item.assetId))
         } else {
-          await updateAssetService(user.uid, item.assetId, {
-            quantity: item.previousQuantity,
-            avgPrice: item.previousAvgPrice,
-          })
+          const stillExists = assets.some((a) => a.id === item.assetId)
+          if (stillExists) {
+            await updateAssetService(user.uid, item.assetId, {
+              quantity: item.previousQuantity,
+              avgPrice: item.previousAvgPrice,
+            })
+          }
         }
       }),
     )

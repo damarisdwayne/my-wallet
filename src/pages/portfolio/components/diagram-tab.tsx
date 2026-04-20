@@ -47,8 +47,10 @@ export const DiagramTab = ({
   const [editingQuestion, setEditingQuestion] = useState<DiagramQuestion | null>(null)
   const [editingQuestionText, setEditingQuestionText] = useState('')
 
-  const activeDiagramId = selectedDiagramId || diagrams[0]?.id || ''
-  const diagram = diagrams.find((d) => d.id === activeDiagramId) ?? diagrams[0]
+  const visibleDiagrams = diagrams.filter((d) => d.appliesTo.some((t) => t !== 'fixed_income'))
+
+  const activeDiagramId = selectedDiagramId || visibleDiagrams[0]?.id || ''
+  const diagram = visibleDiagrams.find((d) => d.id === activeDiagramId) ?? visibleDiagrams[0]
 
   if (!diagram) {
     return (
@@ -58,7 +60,9 @@ export const DiagramTab = ({
     )
   }
 
-  const diagramAssets = assets.filter((a) => diagram.appliesTo.includes(a.type))
+  const diagramAssets = assets.filter(
+    (a) => diagram.appliesTo.includes(a.type) && a.type !== 'fixed_income',
+  )
   const editingAnswers = (editingAsset && answers[editingAsset.id]) || {}
   const { yes: editYes, total: editTotal } = calcScore(editingAnswers, diagram.questions)
 

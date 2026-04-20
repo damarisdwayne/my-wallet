@@ -99,6 +99,52 @@ export const OverviewTab = ({
   const filteredTotal = filteredAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
   const activeCat = filterCatId === ALL ? null : categories.find((c) => c.id === filterCatId)
 
+  const fixedIncomeCatId = useMemo(
+    () => categories.find((c) => c.type === 'fixed_income')?.id ?? null,
+    [categories],
+  )
+  const showingFixedIncomeDetail = filterCatId !== ALL && filterCatId === fixedIncomeCatId
+
+  type AssetRow = { kind: 'asset'; asset: Asset }
+  type GroupRow = {
+    kind: 'group'
+    label: string
+    subtitle: string
+    total: number
+    cost: number
+    recommended: number
+    diff: number
+    pct: number
+  }
+  type TableRow = AssetRow | GroupRow
+
+  const tableRows = useMemo((): TableRow[] => {
+    if (showingFixedIncomeDetail) {
+      return filteredAssets.map((a) => ({ kind: 'asset', asset: a }))
+    }
+    const fixedItems = filteredAssets.filter((a) => a.type === 'fixed_income')
+    const otherItems = filteredAssets.filter((a) => a.type !== 'fixed_income')
+    const rows: TableRow[] = otherItems.map((a) => ({ kind: 'asset', asset: a }))
+    if (fixedItems.length > 0) {
+      const total = fixedItems.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+      const cost = fixedItems.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
+      const fiCat = categories.find((c) => c.type === 'fixed_income')
+      const recommended = fiCat ? (fiCat.targetPercent / 100) * totalValue : 0
+      const baseValue = filterCatId === ALL ? totalValue : filteredTotal
+      rows.push({
+        kind: 'group',
+        label: 'Renda Fixa',
+        subtitle: `${fixedItems.length} ${fixedItems.length === 1 ? 'ativo' : 'ativos'}`,
+        total,
+        cost,
+        recommended,
+        diff: total - recommended,
+        pct: baseValue > 0 ? (total / baseValue) * 100 : 0,
+      })
+    }
+    return rows
+  }, [filteredAssets, showingFixedIncomeDetail, categories, totalValue, filteredTotal, filterCatId])
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -216,7 +262,50 @@ export const OverviewTab = ({
             </tr>
           </thead>
           <tbody>
-            {filteredAssets.map((a) => {
+            {tableRows.map((row) => {
+              if (row.kind === 'group') {
+                const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
+                return (
+                  <tr
+                    key="fi-group"
+                    className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors cursor-pointer"
+                    onClick={() => fixedIncomeCatId && setFilterCatId(fixedIncomeCatId)}
+                  >
+                    <td className="py-3">
+                      <p className="font-semibold text-foreground">{row.label}</p>
+                      <p className="text-xs text-muted-foreground">{row.subtitle}</p>
+                    </td>
+                    <td className="py-3">
+                      <Badge variant="secondary">Renda Fixa</Badge>
+                    </td>
+                    <td className="py-3 text-right text-muted-foreground">—</td>
+                    <td className="py-3 text-right text-muted-foreground">—</td>
+                    <td className="py-3 text-right text-muted-foreground">—</td>
+                    <td className="py-3 text-right font-medium text-foreground">
+                      {formatCurrency(row.total)}
+                    </td>
+                    <td className="py-3 text-right">
+                      <p className="font-medium text-foreground">
+                        {formatCurrency(row.recommended)}
+                      </p>
+                      <p
+                        className={`text-xs ${row.diff >= 0 ? 'text-success' : 'text-destructive'}`}
+                      >
+                        {row.diff >= 0 ? '+' : ''}
+                        {formatCurrency(row.diff)}
+                      </p>
+                    </td>
+                    <td
+                      className={`py-3 text-right font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}
+                    >
+                      {formatPercent(ret)}
+                    </td>
+                    <td className="py-3 text-right text-muted-foreground">{row.pct.toFixed(1)}%</td>
+                    <td />
+                  </tr>
+                )
+              }
+              const a = row.asset
               const total = a.currentPrice * a.quantity
               const cost = a.avgPrice * a.quantity
               const ret = cost > 0 ? ((total - cost) / cost) * 100 : 0

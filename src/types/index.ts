@@ -244,8 +244,8 @@ export interface SaleItem {
   name: string
   category: SaleCategory
   buyPrice: number
-  boughtAt: string  // YYYY-MM-DD
+  boughtAt: string // YYYY-MM-DD
   notes?: string
   sellPrice?: number
-  soldAt?: string   // set when sold; undefined = still in stock
+  soldAt?: string // set when sold; undefined = still in stock
 }

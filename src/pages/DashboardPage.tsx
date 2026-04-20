@@ -98,23 +98,35 @@ export const DashboardPage = () => {
               Nenhum histórico registrado ainda.
             </div>
           ) : (
-            <div className="flex items-end gap-1 h-40">
-              {patrimonyHistory.map((p) => {
-                const max = Math.max(...patrimonyHistory.map((x) => x.value))
-                const pct = (p.value / max) * 100
-                return (
-                  <div key={p.month} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      className="w-full rounded-t bg-primary/70 hover:bg-primary transition-colors"
-                      style={{ height: `${pct}%` }}
-                      title={formatCurrency(p.value)}
-                    />
-                    <span className="text-[10px] text-muted-foreground rotate-45 origin-left whitespace-nowrap">
-                      {p.month}
-                    </span>
-                  </div>
-                )
-              })}
+            <div className="space-y-1">
+              <div className="flex items-end gap-1 h-36">
+                {patrimonyHistory.map((p) => {
+                  const max = Math.max(...patrimonyHistory.map((x) => x.value))
+                  const pct = (p.value / max) * 100
+                  return (
+                    <div key={p.month} className="relative flex-1 h-full flex items-end">
+                      <div
+                        className="group relative w-full rounded-t bg-primary/70 hover:bg-primary transition-colors cursor-default"
+                        style={{ height: `${pct}%` }}
+                      >
+                        <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-[10px] text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                          {formatCurrency(p.value)}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex gap-1">
+                {patrimonyHistory.map((p) => (
+                  <span
+                    key={p.month}
+                    className="flex-1 text-[9px] text-center text-muted-foreground truncate"
+                  >
+                    {p.month.slice(5)}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

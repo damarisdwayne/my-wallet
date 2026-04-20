@@ -8,6 +8,7 @@ const pageTitles: Record<string, string> = {
   '/portfolio': 'Carteira',
   '/dividends': 'Proventos',
   '/tax': 'Imposto de Renda',
+  '/sales': 'Vendas',
 }
 
 export const AppLayout = () => {

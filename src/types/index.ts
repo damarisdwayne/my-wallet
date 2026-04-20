@@ -224,3 +224,28 @@ export interface CvmDocument {
 /* ─── Theme ────────────────────────────────────────────────────── */
 
 export type Theme = 'light' | 'dark' | 'system'
+
+/* ─── Sales ─────────────────────────────────────────────────────── */
+
+export type SaleCategory =
+  | 'gpu'
+  | 'cpu'
+  | 'ram'
+  | 'ssd'
+  | 'hdd'
+  | 'notebook'
+  | 'smartphone'
+  | 'console'
+  | 'periferico'
+  | 'outro'
+
+export interface SaleItem {
+  id: string
+  name: string
+  category: SaleCategory
+  buyPrice: number
+  boughtAt: string  // YYYY-MM-DD
+  notes?: string
+  sellPrice?: number
+  soldAt?: string   // set when sold; undefined = still in stock
+}

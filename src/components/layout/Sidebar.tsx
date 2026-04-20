@@ -1,4 +1,4 @@
-import { BarChart3, Home, LayoutDashboard, Receipt, TrendingUp } from 'lucide-react'
+import { BarChart3, Home, LayoutDashboard, Receipt, ShoppingBag, TrendingUp } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/portfolio', label: 'Carteira', icon: <TrendingUp size={18} /> },
   { to: '/dividends', label: 'Proventos', icon: <BarChart3 size={18} /> },
   { to: '/tax', label: 'Imposto de Renda', icon: <Home size={18} /> },
+  { to: '/sales', label: 'Vendas', icon: <ShoppingBag size={18} /> },
 ]
 
 export const Sidebar = () => (

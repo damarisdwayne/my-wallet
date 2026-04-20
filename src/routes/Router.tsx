@@ -4,6 +4,7 @@ import { DividendsPage } from '@/pages/dividends'
 import { ExpensesPage } from '@/pages/expenses'
 import { LoginPage } from '@/pages/login'
 import { PortfolioPage } from '@/pages/portfolio'
+import { SalesPage } from '@/pages/sales'
 import { TaxPage } from '@/pages/tax'
 import { useAuth } from '@/store/auth'
 import { AppLayout } from './app-layout'
@@ -23,6 +24,7 @@ export const Router = () => {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/dividends" element={<DividendsPage />} />
           <Route path="/tax" element={<TaxPage />} />
+          <Route path="/sales" element={<SalesPage />} />
         </Route>
       </Route>
 

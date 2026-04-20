@@ -57,3 +57,15 @@ export const formatMonthLabel = (ym: string) => {
 }
 
 export const todayMonth = new Date().toISOString().slice(0, 7)
+
+export const monthDiff = (from: string, to: string): number => {
+  const [fy, fm] = from.split('-').map(Number)
+  const [ty, tm] = to.split('-').map(Number)
+  return (ty - fy) * 12 + (tm - fm)
+}
+
+export const addMonthStr = (month: string, n: number): string => {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(y, m - 1 + n, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}

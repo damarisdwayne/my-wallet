@@ -21,6 +21,38 @@ export interface Expense {
   source: 'manual' | 'bank'
 }
 
+export interface FixedExpense {
+  id: string
+  description: string
+  amount: number
+  category: ExpenseCategory
+  startMonth: string // YYYY-MM
+  endMonth?: string // undefined = indefinite
+  createdAt: string
+}
+
+export interface InstallmentExpense {
+  id: string
+  description: string
+  totalAmount: number
+  installments: number
+  installmentAmount: number
+  startMonth: string // YYYY-MM
+  category: ExpenseCategory
+  createdAt: string
+}
+
+export interface DisplayExpense {
+  id: string
+  description: string
+  amount: number
+  category: ExpenseCategory
+  date: string
+  source: 'manual' | 'bank' | 'fixed' | 'installment'
+  installmentNumber?: number
+  totalInstallments?: number
+}
+
 /* ─── Investments ──────────────────────────────────────────────── */
 
 export type AssetType =

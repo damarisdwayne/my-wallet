@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { AllocationTab } from './components/allocation-tab'
+import { AnalysisTab } from './components/analysis-tab'
 import { AporteTab } from './components/aporte-tab'
 import { DiagramTab } from './components/diagram-tab'
 import { ImportsTab } from './components/imports-tab'
@@ -26,6 +27,13 @@ export const PortfolioPage = () => {
     refreshPrices,
     refreshingPrices,
     priceError,
+    fundamentals,
+    fiiManual,
+    refreshingFundamentals,
+    fundamentalErrors,
+    refreshFundamentals,
+    saveManualSnapshot,
+    saveFiiManual,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -92,13 +100,18 @@ export const PortfolioPage = () => {
       {activeTab === 3 && (
         <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
       )}
-      {activeTab === 4 && (
-        <ImportsTab records={importRecords} onRevert={revertImport} />
-      )}
+      {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}
       {activeTab === 5 && (
-        <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-          Análise de ativos — em breve
-        </div>
+        <AnalysisTab
+          assets={assets}
+          fundamentals={fundamentals}
+          fiiManual={fiiManual}
+          refreshingFundamentals={refreshingFundamentals}
+          fundamentalErrors={fundamentalErrors}
+          refreshFundamentals={refreshFundamentals}
+          saveFiiManual={saveFiiManual}
+          saveManualSnapshot={saveManualSnapshot}
+        />
       )}
     </div>
   )

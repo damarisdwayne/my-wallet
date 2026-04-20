@@ -23,7 +23,15 @@ export interface Expense {
 
 /* ─── Investments ──────────────────────────────────────────────── */
 
-export type AssetType = 'stock' | 'fii' | 'bdr' | 'etf' | 'fixed_income' | 'crypto' | 'stock_us' | 'other'
+export type AssetType =
+  | 'stock'
+  | 'fii'
+  | 'bdr'
+  | 'etf'
+  | 'fixed_income'
+  | 'crypto'
+  | 'stock_us'
+  | 'other'
 
 export type PortfolioCategory = {
   id: string
@@ -122,6 +130,49 @@ export interface ImportRecord {
   filename: string
   importedAt: string
   items: ImportItem[]
+}
+
+/* ─── Fundamentals ─────────────────────────────────────────────── */
+
+export interface FundamentalSnapshot {
+  fetchedAt: string
+  priceEarnings: number | null
+  priceToBook: number | null
+  returnOnEquity: number | null
+  profitMargins: number | null
+  debtToEquity: number | null
+  dividendYield: number | null
+  earningsGrowth: number | null
+  revenueGrowth: number | null
+  grossMargins: number | null
+  ebitdaMargins: number | null
+  returnOnAssets: number | null
+  sector: string | null
+  industry: string | null
+}
+
+export interface PricePoint {
+  date: string
+  close: number
+}
+
+export interface FundamentalRecord {
+  ticker: string
+  updatedAt: string
+  snapshots: FundamentalSnapshot[]
+  priceHistory?: PricePoint[]
+}
+
+export interface FiiManualData {
+  ticker: string
+  vacancy: number | null
+  propertyCount: number | null
+  location: string
+  manager: string
+  adminFee: number | null
+  avgContractDuration: string
+  propertyQuality: string
+  updatedAt: string
 }
 
 /* ─── Theme ────────────────────────────────────────────────────── */

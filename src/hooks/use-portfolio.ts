@@ -12,6 +12,13 @@ import {
   subscribeToCategories,
 } from '@/services/categories'
 import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
+import {
+  fetchBrapiSummary,
+  saveFiiManualData,
+  subscribeToFiiManual,
+  subscribeToFundamentals,
+  upsertMonthlySnapshot,
+} from '@/services/fundamentals'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
@@ -19,6 +26,8 @@ import type {
   Asset,
   AssetAnswers,
   Diagram,
+  FiiManualData,
+  FundamentalRecord,
   ImportItem,
   ImportRecord,
   PortfolioCategory,
@@ -45,6 +54,10 @@ export const usePortfolio = () => {
   const [loading, setLoading] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
+  const [fundamentals, setFundamentals] = useState<Record<string, FundamentalRecord>>({})
+  const [fiiManual, setFiiManual] = useState<Record<string, FiiManualData>>({})
+  const [refreshingFundamentals, setRefreshingFundamentals] = useState<Record<string, boolean>>({})
+  const [fundamentalErrors, setFundamentalErrors] = useState<Record<string, string>>({})
   const seededRef = useRef(false)
 
   useEffect(() => {
@@ -79,6 +92,8 @@ export const usePortfolio = () => {
         setImportRecords(data)
         onLoad()
       }),
+      subscribeToFundamentals(user.uid, setFundamentals),
+      subscribeToFiiManual(user.uid, setFiiManual),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -200,6 +215,43 @@ export const usePortfolio = () => {
     await deleteImportRecord(user.uid, record.id)
   }
 
+  const refreshFundamentals = async (tickers: string[]) => {
+    if (!user || tickers.length === 0) return
+    setRefreshingFundamentals(Object.fromEntries(tickers.map((t) => [t, true])))
+    const errors: Record<string, string> = {}
+    await Promise.all(
+      tickers.map(async (ticker) => {
+        try {
+          const existing = fundamentals[ticker.toUpperCase()] ?? null
+          const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
+          const brapi = await fetchBrapiSummary(ticker)
+          await upsertMonthlySnapshot(
+            user.uid,
+            ticker,
+            { priceEarnings: brapi.priceEarnings, sector: brapi.sector, industry: brapi.industry },
+            existing,
+            asset?.currentPrice,
+          )
+        } catch (err) {
+          errors[ticker] = err instanceof Error ? err.message : 'Erro'
+        }
+      }),
+    )
+    setFundamentalErrors(errors)
+    setRefreshingFundamentals({})
+  }
+
+  const saveManualSnapshot = async (ticker: string, partial: Partial<import('@/types').FundamentalSnapshot>) => {
+    if (!user) return
+    const existing = fundamentals[ticker.toUpperCase()] ?? null
+    await upsertMonthlySnapshot(user.uid, ticker, partial, existing)
+  }
+
+  const saveFiiManual = (data: FiiManualData) => {
+    if (!user) return Promise.resolve()
+    return saveFiiManualData(user.uid, data)
+  }
+
   const refreshPrices = async () => {
     if (!user || assets.length === 0) return
     setRefreshingPrices(true)
@@ -240,5 +292,12 @@ export const usePortfolio = () => {
     refreshPrices,
     refreshingPrices,
     priceError,
+    fundamentals,
+    fiiManual,
+    refreshingFundamentals,
+    fundamentalErrors,
+    refreshFundamentals,
+    saveManualSnapshot,
+    saveFiiManual,
   }
 }

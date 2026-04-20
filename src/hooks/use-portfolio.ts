@@ -2,14 +2,21 @@ import { useEffect, useState } from 'react'
 import {
   addAsset as addAssetService,
   subscribeToAssets,
+  updateAsset as updateAssetService,
   updateAssetPrice as updateAssetPriceService,
 } from '@/services/assets'
 import { saveAnswers as saveAnswersService, subscribeToAnswers } from '@/services/answers'
 import { saveCategory as saveCategoryService, subscribeToCategories } from '@/services/categories'
 import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
+import {
+  deleteImportRecord,
+  saveImportRecord,
+  subscribeToImports,
+} from '@/services/imports'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
-import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
+import type { Asset, AssetAnswers, Diagram, ImportItem, ImportRecord, PortfolioCategory } from '@/types'
+import type { B3Asset } from '@/services/b3-import'
 
 export const usePortfolio = () => {
   const { user } = useAuth()
@@ -17,6 +24,7 @@ export const usePortfolio = () => {
   const [categories, setCategories] = useState<PortfolioCategory[]>([])
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [answers, setAnswers] = useState<Record<string, AssetAnswers>>({})
+  const [importRecords, setImportRecords] = useState<ImportRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
@@ -26,25 +34,14 @@ export const usePortfolio = () => {
     let resolved = 0
     const onLoad = () => {
       resolved++
-      if (resolved === 4) setLoading(false)
+      if (resolved === 5) setLoading(false)
     }
     const unsubs = [
-      subscribeToAssets(user.uid, (data) => {
-        setAssets(data)
-        onLoad()
-      }),
-      subscribeToCategories(user.uid, (data) => {
-        setCategories(data)
-        onLoad()
-      }),
-      subscribeToDiagrams(user.uid, (data) => {
-        setDiagrams(data)
-        onLoad()
-      }),
-      subscribeToAnswers(user.uid, (data) => {
-        setAnswers(data)
-        onLoad()
-      }),
+      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
+      subscribeToCategories(user.uid, (data) => { setCategories(data); onLoad() }),
+      subscribeToDiagrams(user.uid, (data) => { setDiagrams(data); onLoad() }),
+      subscribeToAnswers(user.uid, (data) => { setAnswers(data); onLoad() }),
+      subscribeToImports(user.uid, (data) => { setImportRecords(data); onLoad() }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -67,6 +64,95 @@ export const usePortfolio = () => {
   const saveAnswers = (assetId: string, assetAnswers: AssetAnswers) => {
     if (!user) return Promise.resolve()
     return saveAnswersService(user.uid, assetId, assetAnswers)
+  }
+
+  const importFromB3 = async (b3Assets: B3Asset[], filename: string) => {
+    if (!user) return
+    const items: ImportItem[] = []
+
+    await Promise.all(
+      b3Assets.map(async (b3) => {
+        const existing = assets.find((a) => a.ticker.toUpperCase() === b3.ticker)
+
+        if (existing) {
+          const prevQty = existing.quantity
+          const prevAvg = existing.avgPrice
+          const newQty = prevQty + b3.quantity
+
+          // Only update avgPrice when net buying; selling keeps the existing PM
+          const newAvg =
+            b3.quantity > 0
+              ? (prevQty * prevAvg + b3.quantity * b3.avgPrice) / newQty
+              : prevAvg
+
+          await updateAssetService(user.uid, existing.id, {
+            quantity: newQty,
+            avgPrice: newAvg,
+            currentPrice: b3.currentPrice,
+          })
+
+          items.push({
+            assetId: existing.id,
+            ticker: b3.ticker,
+            quantityDelta: b3.quantity,
+            importAvgPrice: b3.avgPrice,
+            previousQuantity: prevQty,
+            previousAvgPrice: prevAvg,
+            wasCreated: false,
+          })
+        } else {
+          const autoCatId = categories.find((c) => c.type === b3.type)?.id ?? ''
+          const newAsset: Asset = {
+            id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            ticker: b3.ticker,
+            name: b3.name,
+            type: b3.type,
+            categoryId: autoCatId,
+            quantity: b3.quantity,
+            avgPrice: b3.avgPrice,
+            currentPrice: b3.currentPrice,
+            targetPercent: 0,
+          }
+          await addAssetService(user.uid, newAsset)
+          items.push({
+            assetId: newAsset.id,
+            ticker: b3.ticker,
+            quantityDelta: b3.quantity,
+            importAvgPrice: b3.avgPrice,
+            previousQuantity: 0,
+            previousAvgPrice: 0,
+            wasCreated: true,
+          })
+        }
+      }),
+    )
+
+    const record: ImportRecord = {
+      id: `import-${Date.now()}`,
+      filename,
+      importedAt: new Date().toISOString(),
+      items,
+    }
+    await saveImportRecord(user.uid, record)
+  }
+
+  const revertImport = async (record: ImportRecord) => {
+    if (!user) return
+    await Promise.all(
+      record.items.map(async (item) => {
+        if (item.wasCreated) {
+          const { deleteDoc, doc } = await import('firebase/firestore')
+          const { db } = await import('@/lib/firestore')
+          await deleteDoc(doc(db, 'users', user.uid, 'assets', item.assetId))
+        } else {
+          await updateAssetService(user.uid, item.assetId, {
+            quantity: item.previousQuantity,
+            avgPrice: item.previousAvgPrice,
+          })
+        }
+      }),
+    )
+    await deleteImportRecord(user.uid, record.id)
   }
 
   const refreshPrices = async () => {
@@ -97,7 +183,10 @@ export const usePortfolio = () => {
     categories,
     diagrams,
     answers,
+    importRecords,
     addAsset,
+    importFromB3,
+    revertImport,
     saveCategory,
     saveDiagram,
     saveAnswers,

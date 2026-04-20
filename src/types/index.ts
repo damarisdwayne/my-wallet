@@ -81,6 +81,25 @@ export interface Diagram {
 
 export type AssetAnswers = Record<string, 0 | 1> // questionId → 0 (não) | 1 (sim)
 
+/* ─── Import Records ───────────────────────────────────────────── */
+
+export interface ImportItem {
+  assetId: string
+  ticker: string
+  quantityDelta: number
+  importAvgPrice: number
+  previousQuantity: number
+  previousAvgPrice: number
+  wasCreated: boolean
+}
+
+export interface ImportRecord {
+  id: string
+  filename: string
+  importedAt: string
+  items: ImportItem[]
+}
+
 /* ─── Theme ────────────────────────────────────────────────────── */
 
 export type Theme = 'light' | 'dark' | 'system'

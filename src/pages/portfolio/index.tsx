@@ -3,9 +3,10 @@ import { usePortfolio } from '@/hooks/use-portfolio'
 import { AllocationTab } from './components/allocation-tab'
 import { AporteTab } from './components/aporte-tab'
 import { DiagramTab } from './components/diagram-tab'
+import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
 
-const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Aporte', 'Análise']
+const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Aporte', 'Importações', 'Análise']
 
 export const PortfolioPage = () => {
   const {
@@ -13,7 +14,10 @@ export const PortfolioPage = () => {
     categories,
     diagrams,
     answers,
+    importRecords,
     addAsset,
+    importFromB3,
+    revertImport,
     saveCategory,
     saveDiagram,
     saveAnswers,
@@ -53,6 +57,7 @@ export const PortfolioPage = () => {
           categories={categories}
           totalValue={totalValue}
           addAsset={addAsset}
+          importFromB3={importFromB3}
           refreshPrices={refreshPrices}
           refreshingPrices={refreshingPrices}
           priceError={priceError}
@@ -79,6 +84,9 @@ export const PortfolioPage = () => {
         <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
       )}
       {activeTab === 4 && (
+        <ImportsTab records={importRecords} onRevert={revertImport} />
+      )}
+      {activeTab === 5 && (
         <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
           Análise de ativos — em breve
         </div>

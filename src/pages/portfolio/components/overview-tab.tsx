@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -11,8 +11,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
+import type { B3Asset } from '@/services/b3-import'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import { ALL, ASSET_TYPES, typeLabel } from '../constants'
+import { B3ImportDialog } from './b3-import-dialog'
 
 const emptyNewAsset = () => ({
   ticker: '',
@@ -34,6 +36,7 @@ interface Props {
   categories: PortfolioCategory[]
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
+  importFromB3: (assets: B3Asset[], filename: string) => Promise<void>
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean
   priceError: string | null
@@ -44,12 +47,14 @@ export const OverviewTab = ({
   categories,
   totalValue,
   addAsset,
+  importFromB3,
   refreshPrices,
   refreshingPrices,
   priceError,
 }: Props) => {
   const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
+  const [b3ImportOpen, setB3ImportOpen] = useState(false)
   const [newAsset, setNewAsset] = useState(emptyNewAsset())
 
   const availableTypes = useMemo(
@@ -182,6 +187,13 @@ export const OverviewTab = ({
         >
           <RefreshCw size={14} className={cn(refreshingPrices && 'animate-spin')} />
           {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
+        </button>
+        <button
+          onClick={() => setB3ImportOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
+        >
+          <Upload size={14} />
+          Importar B3
         </button>
         <button
           onClick={() => setAddAssetOpen(true)}
@@ -417,6 +429,13 @@ export const OverviewTab = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <B3ImportDialog
+        open={b3ImportOpen}
+        onOpenChange={setB3ImportOpen}
+        existingAssets={assets}
+        onImport={importFromB3}
+      />
     </div>
   )
 }

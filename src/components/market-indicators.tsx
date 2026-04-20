@@ -9,10 +9,8 @@ function fmtNum(value: number, decimals = 2) {
   })
 }
 
-function fmtBtc(value: number) {
-  if (value >= 1_000_000) return `R$ ${fmtNum(value / 1_000_000)}M`
-  if (value >= 1_000) return `R$ ${fmtNum(value / 1_000)}k`
-  return `R$ ${fmtNum(value)}`
+function fmtUsd(value: number) {
+  return `$ ${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
 interface ItemProps {
@@ -68,7 +66,7 @@ export const MarketIndicators = () => {
       />
       <Item
         label="BTC"
-        value={data ? fmtBtc(data.btcBrl) : '—'}
+        value={data && data.usdBrl > 0 ? fmtUsd(data.btcBrl / data.usdBrl) : '—'}
         change={data?.btcBrlChange}
         loading={loading}
       />

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
-import { type B3Asset, parseB3Excel } from '@/services/b3-import'
+import { type B3Asset, type B3RawTrade, parseB3Excel } from '@/services/b3-import'
 import { parseInterPdf } from '@/services/inter-import'
 import type { Asset } from '@/types'
 import { typeLabel } from '../constants'
@@ -21,7 +21,7 @@ interface Broker {
   instructions: React.ReactNode
   fileAccept: string
   fileHint: string
-  parse: (buffer: ArrayBuffer) => Promise<B3Asset[]>
+  parse: (buffer: ArrayBuffer) => Promise<{ assets: B3Asset[]; trades: B3RawTrade[] }>
 }
 
 const BROKERS: Broker[] = [
@@ -64,7 +64,7 @@ const BROKERS: Broker[] = [
     ),
     fileAccept: '.pdf',
     fileHint: 'PDF — Transaction Confirmation da Inter Co Securities',
-    parse: parseInterPdf,
+    parse: async (buf) => ({ assets: await parseInterPdf(buf), trades: [] }),
   },
 ]
 
@@ -72,15 +72,16 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   existingAssets: Asset[]
-  onImport: (assets: B3Asset[], filename: string) => Promise<void>
+  onImport: (assets: B3Asset[], trades: B3RawTrade[], filename: string) => Promise<void>
 }
 
-type ParsedRow = B3Asset & { action: 'new' | 'update' }
+type ParsedRow = B3Asset & { action: 'new' | 'update' | 'sell' }
 
 export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [broker, setBroker] = useState<Broker | null>(null)
   const [rows, setRows] = useState<ParsedRow[] | null>(null)
+  const [pendingTrades, setPendingTrades] = useState<B3RawTrade[]>([])
   const [filename, setFilename] = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
@@ -88,6 +89,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
 
   const resetFile = () => {
     setRows(null)
+    setPendingTrades([])
     setFilename('')
     setParseError(null)
     setParsing(false)
@@ -102,11 +104,18 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const processBuffer = async (buffer: ArrayBuffer, selectedBroker: Broker) => {
     setParsing(true)
     try {
-      const parsed = await selectedBroker.parse(buffer)
-      const withAction: ParsedRow[] = parsed.map((a) => ({
-        ...a,
-        action: existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker) ? 'update' : 'new',
-      }))
+      const { assets, trades } = await selectedBroker.parse(buffer)
+      setPendingTrades(trades)
+      const withAction: ParsedRow[] = assets
+        .filter((a) => {
+          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
+          return a.quantity > 0 || exists
+        })
+        .map((a) => {
+          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
+          const action = a.quantity < 0 ? 'sell' : exists ? 'update' : 'new'
+          return { ...a, action } as ParsedRow
+        })
       setRows(withAction)
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Erro ao processar arquivo.')
@@ -137,7 +146,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     if (!rows) return
     setImporting(true)
     try {
-      await onImport(rows, filename)
+      await onImport(rows, pendingTrades, filename)
       onOpenChange(false)
       resetAll()
     } finally {
@@ -147,6 +156,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
 
   const newCount = rows?.filter((r) => r.action === 'new').length ?? 0
   const updateCount = rows?.filter((r) => r.action === 'update').length ?? 0
+  const sellCount = rows?.filter((r) => r.action === 'sell').length ?? 0
 
   const isUsd = broker?.id === 'inter'
 
@@ -245,6 +255,9 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
               {newCount > 0 && <span className="text-success font-medium">+{newCount} novos</span>}
               {updateCount > 0 && (
                 <span className="text-foreground font-medium">{updateCount} a atualizar</span>
+              )}
+              {sellCount > 0 && (
+                <span className="text-destructive font-medium">-{sellCount} vendas</span>
               )}
               <button onClick={resetFile} className="ml-auto underline hover:text-foreground">
                 Trocar arquivo

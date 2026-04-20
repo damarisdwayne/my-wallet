@@ -6,8 +6,17 @@ import { AporteTab } from './components/aporte-tab'
 import { DiagramTab } from './components/diagram-tab'
 import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
+import { TradesTab } from './components/trades-tab'
 
-const tabs = ['Visão Geral', 'Alocação', 'Diagrama do Cerrado', 'Aporte', 'Importações', 'Análise']
+const tabs = [
+  'Visão Geral',
+  'Alocação',
+  'Diagrama do Cerrado',
+  'Aporte',
+  'Movimentações',
+  'Importações',
+  'Análise',
+]
 
 export const PortfolioPage = () => {
   const {
@@ -16,7 +25,9 @@ export const PortfolioPage = () => {
     diagrams,
     answers,
     importRecords,
+    trades,
     addAsset,
+    addManualTrade,
     editAsset,
     importFromB3,
     revertImport,
@@ -64,6 +75,7 @@ export const PortfolioPage = () => {
           answers={answers}
           totalValue={totalValue}
           addAsset={addAsset}
+          addManualTrade={addManualTrade}
           editAsset={editAsset}
           importFromB3={importFromB3}
           refreshPrices={refreshPrices}
@@ -95,8 +107,9 @@ export const PortfolioPage = () => {
       {activeTab === 3 && (
         <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
       )}
-      {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}
-      {activeTab === 5 && (
+      {activeTab === 4 && <TradesTab trades={trades} />}
+      {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
+      {activeTab === 6 && (
         <AnalysisTab
           assets={assets}
           fundamentals={fundamentals}

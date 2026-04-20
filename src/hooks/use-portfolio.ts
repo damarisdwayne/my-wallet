@@ -20,6 +20,7 @@ import {
   upsertMonthlySnapshot,
 } from '@/services/fundamentals'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
+import { addTrades, subscribeToTrades } from '@/services/trades'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import type {
@@ -31,8 +32,9 @@ import type {
   ImportItem,
   ImportRecord,
   PortfolioCategory,
+  Trade,
 } from '@/types'
-import type { B3Asset } from '@/services/b3-import'
+import type { B3Asset, B3RawTrade } from '@/services/b3-import'
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -51,6 +53,7 @@ export const usePortfolio = () => {
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [answers, setAnswers] = useState<Record<string, AssetAnswers>>({})
   const [importRecords, setImportRecords] = useState<ImportRecord[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
@@ -94,6 +97,7 @@ export const usePortfolio = () => {
       }),
       subscribeToFundamentals(user.uid, setFundamentals),
       subscribeToFiiManual(user.uid, setFiiManual),
+      subscribeToTrades(user.uid, setTrades),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -128,7 +132,7 @@ export const usePortfolio = () => {
     return saveAnswersService(user.uid, assetId, assetAnswers)
   }
 
-  const importFromB3 = async (b3Assets: B3Asset[], filename: string) => {
+  const importFromB3 = async (b3Assets: B3Asset[], rawTrades: B3RawTrade[], filename: string) => {
     if (!user) return
     const items: ImportItem[] = []
 
@@ -141,17 +145,22 @@ export const usePortfolio = () => {
           const prevAvg = existing.avgPrice
           const newQty = Math.max(0, prevQty + b3.quantity)
 
-          // PM only changes on buys; sells don't affect average cost
-          const newAvg =
-            b3.boughtQty > 0
-              ? (prevQty * prevAvg + b3.boughtQty * b3.avgPrice) / (prevQty + b3.boughtQty)
-              : prevAvg
-
-          await updateAssetService(user.uid, existing.id, {
-            quantity: newQty,
-            avgPrice: newAvg,
-            currentPrice: b3.currentPrice > 0 ? b3.currentPrice : existing.currentPrice,
-          })
+          if (newQty === 0) {
+            const { deleteDoc, doc } = await import('firebase/firestore')
+            const { db } = await import('@/lib/firestore')
+            await deleteDoc(doc(db, 'users', user.uid, 'assets', existing.id))
+          } else {
+            // PM only changes on buys; sells don't affect average cost
+            const newAvg =
+              b3.boughtQty > 0
+                ? (prevQty * prevAvg + b3.boughtQty * b3.avgPrice) / (prevQty + b3.boughtQty)
+                : prevAvg
+            await updateAssetService(user.uid, existing.id, {
+              quantity: newQty,
+              avgPrice: newAvg,
+              currentPrice: b3.currentPrice > 0 ? b3.currentPrice : existing.currentPrice,
+            })
+          }
 
           items.push({
             assetId: existing.id,
@@ -189,13 +198,60 @@ export const usePortfolio = () => {
       }),
     )
 
+    const importId = `import-${Date.now()}`
     const record: ImportRecord = {
-      id: `import-${Date.now()}`,
+      id: importId,
       filename,
       importedAt: new Date().toISOString(),
       items,
     }
-    await saveImportRecord(user.uid, record)
+    await Promise.all([
+      saveImportRecord(user.uid, record),
+      rawTrades.length > 0 &&
+        addTrades(
+          user.uid,
+          rawTrades.map((t) => ({ ...t, source: 'b3_import' as const, importId })),
+        ),
+    ])
+  }
+
+  const addManualTrade = async (trade: Omit<Trade, 'id' | 'source'>) => {
+    if (!user) return
+    await addTrades(user.uid, [{ ...trade, source: 'manual' as const }])
+
+    const existing = assets.find((a) => a.ticker.toUpperCase() === trade.ticker.toUpperCase())
+    if (existing) {
+      const newQty =
+        trade.type === 'buy'
+          ? existing.quantity + trade.quantity
+          : Math.max(0, existing.quantity - trade.quantity)
+
+      if (newQty === 0) {
+        const { deleteDoc, doc } = await import('firebase/firestore')
+        const { db } = await import('@/lib/firestore')
+        await deleteDoc(doc(db, 'users', user.uid, 'assets', existing.id))
+      } else {
+        const newAvg =
+          trade.type === 'buy'
+            ? (existing.quantity * existing.avgPrice + trade.quantity * trade.price) /
+              (existing.quantity + trade.quantity)
+            : existing.avgPrice
+        await updateAssetService(user.uid, existing.id, { quantity: newQty, avgPrice: newAvg })
+      }
+    } else if (trade.type === 'buy') {
+      const newAsset: Asset = {
+        id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        ticker: trade.ticker.toUpperCase(),
+        name: trade.ticker.toUpperCase(),
+        type: 'stock',
+        categoryId: '',
+        quantity: trade.quantity,
+        avgPrice: trade.price,
+        currentPrice: trade.price,
+        targetPercent: 0,
+      }
+      await addAssetService(user.uid, newAsset)
+    }
   }
 
   const revertImport = async (record: ImportRecord) => {
@@ -290,7 +346,9 @@ export const usePortfolio = () => {
     diagrams,
     answers,
     importRecords,
+    trades,
     addAsset,
+    addManualTrade,
     importFromB3,
     revertImport,
     editAsset,

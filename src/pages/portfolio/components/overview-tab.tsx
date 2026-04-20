@@ -27,8 +27,13 @@ interface Props {
   answers: Record<string, AssetAnswers>
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
+  addManualTrade: (trade: Omit<import('@/types').Trade, 'id' | 'source'>) => Promise<void>
   editAsset: (assetId: string, data: Partial<Asset>) => Promise<void>
-  importFromB3: (assets: B3Asset[], filename: string) => Promise<void>
+  importFromB3: (
+    assets: B3Asset[],
+    trades: import('@/services/b3-import').B3RawTrade[],
+    filename: string,
+  ) => Promise<void>
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean
   priceError: string | null
@@ -41,6 +46,7 @@ export const OverviewTab = ({
   answers,
   totalValue,
   addAsset,
+  addManualTrade,
   editAsset,
   importFromB3,
   refreshPrices,
@@ -54,18 +60,34 @@ export const OverviewTab = ({
   const [brokerImportOpen, setBrokerImportOpen] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [editCategoryId, setEditCategoryId] = useState('')
+  const [editTicker, setEditTicker] = useState('')
+  const [editName, setEditName] = useState('')
+  const [splitRatio, setSplitRatio] = useState('')
   const [saving, setSaving] = useState(false)
 
   const openEdit = (a: Asset) => {
     setEditingAsset(a)
     setEditCategoryId(a.categoryId)
+    setEditTicker(a.ticker)
+    setEditName(a.name)
+    setSplitRatio('')
   }
 
   const handleEditSave = async () => {
     if (!editingAsset) return
     setSaving(true)
     try {
-      await editAsset(editingAsset.id, { categoryId: editCategoryId })
+      const ratio = splitRatio ? Number(splitRatio) : null
+      const updates: Partial<Asset> = {
+        categoryId: editCategoryId,
+        ticker: editTicker.trim().toUpperCase(),
+        name: editName.trim(),
+      }
+      if (ratio && ratio > 0 && ratio !== 1) {
+        updates.quantity = Math.round(editingAsset.quantity * ratio)
+        updates.avgPrice = editingAsset.avgPrice / ratio
+      }
+      await editAsset(editingAsset.id, updates)
       setEditingAsset(null)
     } finally {
       setSaving(false)
@@ -380,7 +402,9 @@ export const OverviewTab = ({
         open={addAssetOpen}
         onOpenChange={setAddAssetOpen}
         categories={categories}
+        assets={assets}
         onAdd={addAsset}
+        onAddTrade={addManualTrade}
       />
 
       <BrokerImportDialog
@@ -391,11 +415,35 @@ export const OverviewTab = ({
       />
 
       <Dialog open={!!editingAsset} onOpenChange={(v) => !v && setEditingAsset(null)}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Editar {editingAsset?.ticker}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="edit-ticker" className="text-xs text-muted-foreground mb-1 block">
+                  Ticker
+                </label>
+                <input
+                  id="edit-ticker"
+                  className={inputClass}
+                  value={editTicker}
+                  onChange={(e) => setEditTicker(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-name" className="text-xs text-muted-foreground mb-1 block">
+                  Nome
+                </label>
+                <input
+                  id="edit-name"
+                  className={inputClass}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+            </div>
             <div>
               <label htmlFor="edit-category" className="text-xs text-muted-foreground mb-1 block">
                 Categoria
@@ -413,6 +461,29 @@ export const OverviewTab = ({
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label htmlFor="edit-split" className="text-xs text-muted-foreground mb-1 block">
+                Desdobramento / Grupamento{' '}
+                <span className="text-muted-foreground/60">(ex: 2 = dobra qtd, 0.5 = agrupa)</span>
+              </label>
+              <input
+                id="edit-split"
+                type="number"
+                min="0.01"
+                step="any"
+                placeholder="1 = sem alteração"
+                className={inputClass}
+                value={splitRatio}
+                onChange={(e) => setSplitRatio(e.target.value)}
+              />
+              {splitRatio && Number(splitRatio) > 0 && Number(splitRatio) !== 1 && editingAsset && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editingAsset.quantity} → {Math.round(editingAsset.quantity * Number(splitRatio))}{' '}
+                  cotas · PM {formatCurrency(editingAsset.avgPrice)} →{' '}
+                  {formatCurrency(editingAsset.avgPrice / Number(splitRatio))}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter className="mt-4">

@@ -84,12 +84,27 @@ function normalizeTicker(ticker: string, mercado: string): string {
   return ticker
 }
 
+export interface B3RawTrade {
+  ticker: string
+  type: 'buy' | 'sell'
+  quantity: number
+  price: number
+  total: number
+  date: string // YYYY-MM-DD or '' if column not present
+}
+
+export interface B3ParseResult {
+  assets: B3Asset[]
+  trades: B3RawTrade[]
+}
+
 interface Cols {
   tipo: number
   mercado: number
   ticker: number
   qty: number
   price: number
+  date: number
 }
 
 function findCols(headers: string[]): Cols {
@@ -100,7 +115,20 @@ function findCols(headers: string[]): Cols {
     ticker: col('Código de Negociação'),
     qty: col('Quantidade'),
     price: col('Preço'),
+    date: col('Data'),
   }
+}
+
+function parseRowDate(raw: unknown): string {
+  if (typeof raw === 'number') {
+    // Excel serial date — convert to YYYY-MM-DD
+    const d = new Date(Math.round((raw - 25569) * 86400 * 1000))
+    return d.toISOString().slice(0, 10)
+  }
+  const s = cellStr(raw).trim()
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`
+  return s
 }
 
 interface Accumulator {
@@ -109,7 +137,12 @@ interface Accumulator {
   totalBuyCost: number
 }
 
-function applyRow(row: unknown[], cols: Cols, positions: Map<string, Accumulator>) {
+function applyRow(
+  row: unknown[],
+  cols: Cols,
+  positions: Map<string, Accumulator>,
+  trades: B3RawTrade[],
+) {
   const rawTicker = cellStr(row[cols.ticker]).trim()
   if (rawTicker.length < 2) return
 
@@ -120,6 +153,7 @@ function applyRow(row: unknown[], cols: Cols, positions: Map<string, Accumulator
   const mercado = cellStr(row[cols.mercado])
   const ticker = normalizeTicker(rawTicker.toUpperCase(), mercado)
   const price = cols.price === -1 ? 0 : parsePrice(row[cols.price])
+  const date = cols.date === -1 ? '' : parseRowDate(row[cols.date])
   const prev = positions.get(ticker) ?? { netQty: 0, buysQty: 0, totalBuyCost: 0 }
 
   if (tipo.includes('compra')) {
@@ -128,8 +162,10 @@ function applyRow(row: unknown[], cols: Cols, positions: Map<string, Accumulator
       buysQty: prev.buysQty + qty,
       totalBuyCost: prev.totalBuyCost + qty * price,
     })
+    trades.push({ ticker, type: 'buy', quantity: qty, price, total: qty * price, date })
   } else if (tipo.includes('venda')) {
     positions.set(ticker, { ...prev, netQty: prev.netQty - qty })
+    trades.push({ ticker, type: 'sell', quantity: qty, price, total: qty * price, date })
   }
 }
 
@@ -151,7 +187,7 @@ function positionsToAssets(positions: Map<string, Accumulator>): B3Asset[] {
   return result
 }
 
-export function parseB3Excel(buffer: ArrayBuffer): B3Asset[] {
+export function parseB3Excel(buffer: ArrayBuffer): B3ParseResult {
   const workbook = XLSX.read(buffer, { type: 'array' })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
@@ -176,13 +212,14 @@ export function parseB3Excel(buffer: ArrayBuffer): B3Asset[] {
 
   // Two-pass: buys first, then sells — avoids ordering issues in the spreadsheet
   const positions = new Map<string, Accumulator>()
+  const trades: B3RawTrade[] = []
   const isBuy = (row: unknown[]) => cellStr(row[cols.tipo]).toLowerCase().includes('compra')
-  for (const row of dataRows) if (isBuy(row)) applyRow(row, cols, positions)
-  for (const row of dataRows) if (!isBuy(row)) applyRow(row, cols, positions)
+  for (const row of dataRows) if (isBuy(row)) applyRow(row, cols, positions, trades)
+  for (const row of dataRows) if (!isBuy(row)) applyRow(row, cols, positions, trades)
 
-  const result = positionsToAssets(positions)
-  if (result.length === 0) {
+  const assets = positionsToAssets(positions)
+  if (assets.length === 0 && trades.length === 0) {
     throw new Error('Nenhuma posição encontrada. Verifique se o arquivo contém negociações.')
   }
-  return result
+  return { assets, trades }
 }

@@ -225,6 +225,21 @@ export interface CvmDocument {
 
 export type Theme = 'light' | 'dark' | 'system'
 
+/* ─── Trades (investment transaction log) ─────────────────────── */
+
+export interface Trade {
+  id: string
+  ticker: string
+  type: 'buy' | 'sell'
+  quantity: number
+  price: number
+  total: number
+  date: string // YYYY-MM-DD
+  source: 'b3_import' | 'inter_import' | 'manual'
+  importId?: string
+  label?: string // e.g. 'bonificacao', 'amortizacao'
+}
+
 /* ─── Sales ─────────────────────────────────────────────────────── */
 
 export type SaleCategory =

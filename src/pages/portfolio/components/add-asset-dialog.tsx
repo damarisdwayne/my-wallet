@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import type { Asset, AssetType, FixedIncomeType, PortfolioCategory, RateType } from '@/types'
+import type { Asset, AssetType, FixedIncomeType, PortfolioCategory, RateType, Trade } from '@/types'
 import { typeLabel } from '../constants'
 
 /* ─── Constants ─────────────────────────────────────────────────── */
@@ -56,6 +56,17 @@ const KNOWN_CRYPTOS = [
   { ticker: 'ATOM', name: 'Cosmos' },
 ]
 
+type OpMode = 'buy' | 'sell' | 'bonificacao' | 'amortizacao'
+
+const OP_MODES: { value: OpMode; label: string; desc: string }[] = [
+  { value: 'buy', label: 'Compra', desc: 'Registrar compra ou adicionar ativo' },
+  { value: 'sell', label: 'Venda', desc: 'Registrar venda de ativo' },
+  { value: 'bonificacao', label: 'Bonificação', desc: 'Cotas recebidas como bonificação' },
+  { value: 'amortizacao', label: 'Amortização', desc: 'Amortização de ativo' },
+]
+
+const todayStr = new Date().toISOString().slice(0, 10)
+
 /* ─── Helpers ───────────────────────────────────────────────────── */
 
 const inputClass =
@@ -74,37 +85,146 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   categories: PortfolioCategory[]
+  assets: Asset[]
   onAdd: (asset: Asset) => Promise<void>
+  onAddTrade: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
 }
 
-/* ─── Step 1: Type selector ─────────────────────────────────────── */
+/* ─── Step 0: Op selector ───────────────────────────────────────── */
 
-function TypeSelector({ onSelect }: { onSelect: (t: AssetType) => void }) {
-  return (
-    <div className="space-y-4 mt-2">
-      {TYPE_GROUPS.map((group) => (
-        <div key={group.label}>
-          <p className="text-xs text-muted-foreground mb-2">{group.label}</p>
-          <div className="grid grid-cols-4 gap-2">
-            {group.types.map((t) => (
-              <button
-                key={t}
-                onClick={() => onSelect(t)}
-                className="py-2 px-1 rounded-md border border-border text-xs font-medium text-muted-foreground hover:border-primary/60 hover:text-foreground hover:bg-muted/40 transition-colors text-center"
-              >
-                {typeLabel[t]}
-              </button>
-            ))}
-          </div>
+const OpSelector = ({ onSelect }: { onSelect: (op: OpMode) => void }) => (
+  <div className="grid grid-cols-2 gap-2 mt-3">
+    {OP_MODES.map((op) => (
+      <button
+        key={op.value}
+        onClick={() => onSelect(op.value)}
+        className="py-3 px-3 rounded-md border border-border text-left hover:border-primary/60 hover:bg-muted/40 transition-colors"
+      >
+        <p className="text-sm font-medium text-foreground">{op.label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{op.desc}</p>
+      </button>
+    ))}
+  </div>
+)
+
+/* ─── Step 1: Asset type selector (buy only) ────────────────────── */
+
+const TypeSelector = ({ onSelect }: { onSelect: (t: AssetType) => void }) => (
+  <div className="space-y-4 mt-2">
+    {TYPE_GROUPS.map((group) => (
+      <div key={group.label}>
+        <p className="text-xs text-muted-foreground mb-2">{group.label}</p>
+        <div className="grid grid-cols-4 gap-2">
+          {group.types.map((t) => (
+            <button
+              key={t}
+              onClick={() => onSelect(t)}
+              className="py-2 px-1 rounded-md border border-border text-xs font-medium text-muted-foreground hover:border-primary/60 hover:text-foreground hover:bg-muted/40 transition-colors text-center"
+            >
+              {typeLabel[t]}
+            </button>
+          ))}
         </div>
-      ))}
+      </div>
+    ))}
+  </div>
+)
+
+/* ─── Trade form (sell / bonificação / amortização) ─────────────── */
+
+const TradeForm = ({
+  opMode,
+  assets,
+  onSave,
+}: {
+  opMode: 'sell' | 'bonificacao' | 'amortizacao'
+  assets: Asset[]
+  onSave: (trade: Omit<Trade, 'id' | 'source'>) => void
+}) => {
+  const [form, setForm] = useState({ ticker: '', quantity: '', price: '', date: todayStr })
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+
+  const canSave = form.ticker.trim() && Number(form.quantity) > 0 && form.date
+
+  const handleSave = () => {
+    if (!canSave) return
+    const qty = Number(form.quantity)
+    const price = Number(form.price)
+    const ticker = form.ticker.trim().toUpperCase()
+    const type = opMode === 'sell' ? 'sell' : 'buy'
+    const label =
+      opMode === 'bonificacao'
+        ? 'bonificacao'
+        : opMode === 'amortizacao'
+          ? 'amortizacao'
+          : undefined
+    onSave({ ticker, type, quantity: qty, price, total: qty * price, date: form.date, label })
+  }
+
+  const priceLabel =
+    opMode === 'bonificacao' || opMode === 'amortizacao' ? 'Preço (pode ser R$0)' : 'Preço (R$)'
+
+  return (
+    <div className="space-y-3 mt-2">
+      <Field label="Ativo">
+        <input
+          list="trade-ticker-list"
+          className={inputClass}
+          placeholder="Ex: SAPR4"
+          value={form.ticker}
+          onChange={(e) => set('ticker', e.target.value)}
+          autoFocus
+        />
+        <datalist id="trade-ticker-list">
+          {assets.map((a) => (
+            <option key={a.id} value={a.ticker} />
+          ))}
+        </datalist>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Quantidade">
+          <input
+            type="number"
+            min="0"
+            step="any"
+            className={inputClass}
+            value={form.quantity}
+            onChange={(e) => set('quantity', e.target.value)}
+          />
+        </Field>
+        <Field label={priceLabel}>
+          <input
+            type="number"
+            min="0"
+            step="any"
+            className={inputClass}
+            value={form.price}
+            onChange={(e) => set('price', e.target.value)}
+          />
+        </Field>
+      </div>
+      <Field label="Data">
+        <input
+          type="date"
+          className={inputClass}
+          value={form.date}
+          onChange={(e) => set('date', e.target.value)}
+        />
+      </Field>
+      <button
+        onClick={handleSave}
+        disabled={!canSave}
+        className="w-full py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+      >
+        Salvar
+      </button>
     </div>
   )
 }
 
-/* ─── Step 2: Forms ─────────────────────────────────────────────── */
+/* ─── Step 2: Asset forms ───────────────────────────────────────── */
 
-function StandardForm({
+const StandardForm = ({
   type,
   categories,
   onSave,
@@ -112,7 +232,7 @@ function StandardForm({
   type: AssetType
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
-}) {
+}) => {
   const [form, setForm] = useState({
     ticker: '',
     name: '',
@@ -260,13 +380,13 @@ function StandardForm({
   )
 }
 
-function FixedIncomeForm({
+const FixedIncomeForm = ({
   categories,
   onSave,
 }: {
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
-}) {
+}) => {
   const [form, setForm] = useState({
     name: '',
     fixedIncomeType: 'CDB' as FixedIncomeType,
@@ -410,33 +530,35 @@ function FixedIncomeForm({
       </Field>
       <button
         onClick={() => {
-          if (!canSave) return
-          const invested = Number.parseFloat(form.totalInvested)
-          const ticker = `${form.fixedIncomeType}${form.institution ? `-${form.institution.slice(0, 8).toUpperCase()}` : ''}`
-          onSave({
-            ticker,
-            name: form.name,
-            type: 'fixed_income',
-            categoryId: form.categoryId,
-            quantity: 1,
-            avgPrice: invested,
-            currentPrice: invested,
-            targetPercent: 0,
-            institution: form.institution || undefined,
-            fixedIncomeType: form.fixedIncomeType,
-            rateType: form.rateType,
-            indexerRate:
-              form.rateType !== 'prefixado'
-                ? Number.parseFloat(form.indexerRate) || undefined
-                : undefined,
-            prefixedRate:
-              form.rateType === 'prefixado'
-                ? Number.parseFloat(form.prefixedRate) || undefined
-                : undefined,
-            maturityDate: form.maturityDate || undefined,
-            operationDate: form.operationDate || undefined,
-            issuer: form.issuer || undefined,
-          })
+          if (canSave) {
+            const invested = Number.parseFloat(form.totalInvested)
+            const suffix = form.institution ? `-${form.institution.slice(0, 8).toUpperCase()}` : ''
+            const ticker = `${form.fixedIncomeType}${suffix}`
+            onSave({
+              ticker,
+              name: form.name,
+              type: 'fixed_income',
+              categoryId: form.categoryId,
+              quantity: 1,
+              avgPrice: invested,
+              currentPrice: invested,
+              targetPercent: 0,
+              institution: form.institution || undefined,
+              fixedIncomeType: form.fixedIncomeType,
+              rateType: form.rateType,
+              indexerRate:
+                form.rateType !== 'prefixado'
+                  ? Number.parseFloat(form.indexerRate) || undefined
+                  : undefined,
+              prefixedRate:
+                form.rateType === 'prefixado'
+                  ? Number.parseFloat(form.prefixedRate) || undefined
+                  : undefined,
+              maturityDate: form.maturityDate || undefined,
+              operationDate: form.operationDate || undefined,
+              issuer: form.issuer || undefined,
+            })
+          }
         }}
         disabled={!canSave}
         className="w-full py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
@@ -447,13 +569,13 @@ function FixedIncomeForm({
   )
 }
 
-function CryptoForm({
+const CryptoForm = ({
   categories,
   onSave,
 }: {
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
-}) {
+}) => {
   const [ticker, setTicker] = useState('')
   const [customTicker, setCustomTicker] = useState('')
   const [isCustom, setIsCustom] = useState(false)
@@ -580,13 +702,32 @@ function CryptoForm({
 
 /* ─── Main dialog ───────────────────────────────────────────────── */
 
-export const AddAssetDialog = ({ open, onOpenChange, categories, onAdd }: Props) => {
+export const AddAssetDialog = ({
+  open,
+  onOpenChange,
+  categories,
+  assets,
+  onAdd,
+  onAddTrade,
+}: Props) => {
+  const [opMode, setOpMode] = useState<OpMode | null>(null)
   const [selectedType, setSelectedType] = useState<AssetType | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const reset = () => setSelectedType(null)
+  const reset = () => {
+    setOpMode(null)
+    setSelectedType(null)
+  }
 
-  const handleSave = async (partial: Partial<Asset>) => {
+  const handleBack = () => {
+    if (opMode === 'buy' && selectedType) {
+      setSelectedType(null)
+    } else {
+      setOpMode(null)
+    }
+  }
+
+  const handleSaveAsset = async (partial: Partial<Asset>) => {
     setSaving(true)
     try {
       const asset: Asset = {
@@ -609,7 +750,29 @@ export const AddAssetDialog = ({ open, onOpenChange, categories, onAdd }: Props)
     }
   }
 
-  const title = selectedType ? `Adicionar ${typeLabel[selectedType]}` : 'Adicionar ativo'
+  const handleSaveTrade = async (trade: Omit<Trade, 'id' | 'source'>) => {
+    setSaving(true)
+    try {
+      await onAddTrade(trade)
+      reset()
+      onOpenChange(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const opTitles: Record<string, string> = {
+    sell: 'Venda',
+    bonificacao: 'Bonificação',
+    amortizacao: 'Amortização',
+  }
+  const title = opMode
+    ? opMode === 'buy'
+      ? selectedType
+        ? `Adicionar ${typeLabel[selectedType]}`
+        : 'Compra – Tipo de ativo'
+      : opTitles[opMode]
+    : 'Nova operação'
 
   return (
     <Dialog
@@ -622,9 +785,9 @@ export const AddAssetDialog = ({ open, onOpenChange, categories, onAdd }: Props)
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {selectedType && (
+            {opMode && (
               <button
-                onClick={reset}
+                onClick={handleBack}
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Voltar"
               >
@@ -635,17 +798,28 @@ export const AddAssetDialog = ({ open, onOpenChange, categories, onAdd }: Props)
           </DialogTitle>
         </DialogHeader>
 
-        {!selectedType && <TypeSelector onSelect={setSelectedType} />}
+        {!opMode && <OpSelector onSelect={setOpMode} />}
 
-        {selectedType && selectedType !== 'fixed_income' && selectedType !== 'crypto' && (
-          <StandardForm type={selectedType} categories={categories} onSave={handleSave} />
+        {opMode === 'buy' && !selectedType && <TypeSelector onSelect={setSelectedType} />}
+
+        {opMode === 'buy' &&
+          selectedType &&
+          selectedType !== 'fixed_income' &&
+          selectedType !== 'crypto' && (
+            <StandardForm type={selectedType} categories={categories} onSave={handleSaveAsset} />
+          )}
+
+        {opMode === 'buy' && selectedType === 'fixed_income' && (
+          <FixedIncomeForm categories={categories} onSave={handleSaveAsset} />
         )}
 
-        {selectedType === 'fixed_income' && (
-          <FixedIncomeForm categories={categories} onSave={handleSave} />
+        {opMode === 'buy' && selectedType === 'crypto' && (
+          <CryptoForm categories={categories} onSave={handleSaveAsset} />
         )}
 
-        {selectedType === 'crypto' && <CryptoForm categories={categories} onSave={handleSave} />}
+        {(opMode === 'sell' || opMode === 'bonificacao' || opMode === 'amortizacao') && (
+          <TradeForm opMode={opMode} assets={assets} onSave={handleSaveTrade} />
+        )}
 
         {saving && (
           <DialogFooter>

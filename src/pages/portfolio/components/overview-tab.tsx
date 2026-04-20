@@ -1,14 +1,24 @@
 import { useMemo, useState } from 'react'
-import { Plus, RefreshCw, Upload } from 'lucide-react'
+import { Pencil, Plus, RefreshCw, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 import type { B3Asset } from '@/services/b3-import'
-import type { Asset, AssetAnswers, AssetType, Diagram, PortfolioCategory } from '@/types'
+import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
 import { ALL, typeLabel } from '../constants'
 import { computeAssetTargets } from '../compute-targets'
 import { AddAssetDialog } from './add-asset-dialog'
 import { BrokerImportDialog } from './broker-import-dialog'
+
+const inputClass =
+  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
 interface Props {
   assets: Asset[]
@@ -17,6 +27,7 @@ interface Props {
   answers: Record<string, AssetAnswers>
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
+  editAsset: (assetId: string, data: Partial<Asset>) => Promise<void>
   importFromB3: (assets: B3Asset[], filename: string) => Promise<void>
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean
@@ -30,6 +41,7 @@ export const OverviewTab = ({
   answers,
   totalValue,
   addAsset,
+  editAsset,
   importFromB3,
   refreshPrices,
   refreshingPrices,
@@ -37,45 +49,65 @@ export const OverviewTab = ({
 }: Props) => {
   const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
 
-  const [filterType, setFilterType] = useState<AssetType | typeof ALL>(ALL)
+  const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
   const [addAssetOpen, setAddAssetOpen] = useState(false)
   const [brokerImportOpen, setBrokerImportOpen] = useState(false)
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
+  const [editCategoryId, setEditCategoryId] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  const availableTypes = useMemo(
-    () => [...new Set(assets.map((a) => a.type))] as AssetType[],
-    [assets],
+  const openEdit = (a: Asset) => {
+    setEditingAsset(a)
+    setEditCategoryId(a.categoryId)
+  }
+
+  const handleEditSave = async () => {
+    if (!editingAsset) return
+    setSaving(true)
+    try {
+      await editAsset(editingAsset.id, { categoryId: editCategoryId })
+      setEditingAsset(null)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const activeCategories = useMemo(
+    () => categories.filter((c) => assets.some((a) => a.categoryId === c.id)),
+    [categories, assets],
   )
 
   const filteredAssets = useMemo(
-    () => (filterType === ALL ? assets : assets.filter((a) => a.type === filterType)),
-    [filterType, assets],
+    () => (filterCatId === ALL ? assets : assets.filter((a) => a.categoryId === filterCatId)),
+    [filterCatId, assets],
   )
 
-  const valueByType = useMemo(
+  const valueByCat = useMemo(
     () =>
-      availableTypes.reduce(
-        (acc, type) => {
+      activeCategories.reduce(
+        (acc, cat) => {
           const v = assets
-            .filter((a) => a.type === type)
+            .filter((a) => a.categoryId === cat.id)
             .reduce((s, a) => s + a.currentPrice * a.quantity, 0)
-          return { ...acc, [type]: v }
+          return { ...acc, [cat.id]: v }
         },
         {} as Record<string, number>,
       ),
-    [availableTypes, assets],
+    [activeCategories, assets],
   )
 
   const filteredTotal = filteredAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+  const activeCat = filterCatId === ALL ? null : categories.find((c) => c.id === filterCatId)
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">
-            {filterType === ALL ? 'Patrimônio total' : typeLabel[filterType]}
+            {activeCat ? activeCat.name : 'Patrimônio total'}
           </p>
           <p className="text-2xl font-bold text-foreground">{formatCurrency(filteredTotal)}</p>
-          {filterType !== ALL && (
+          {activeCat && (
             <p className="text-xs text-muted-foreground">
               {((filteredTotal / totalValue) * 100).toFixed(1)}% da carteira
             </p>
@@ -83,47 +115,50 @@ export const OverviewTab = ({
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setFilterType(ALL)}
+            onClick={() => setFilterCatId(ALL)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterType === ALL
+              filterCatId === ALL
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
             Todos
           </button>
-          {availableTypes.map((type) => (
+          {activeCategories.map((cat) => (
             <button
-              key={type}
-              onClick={() => setFilterType(type)}
+              key={cat.id}
+              onClick={() => setFilterCatId(cat.id)}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filterType === type
+                filterCatId === cat.id
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
-              {typeLabel[type]}
+              {cat.name}
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {availableTypes.map((type) => {
-          const val = valueByType[type] ?? 0
+        {activeCategories.map((cat) => {
+          const val = valueByCat[cat.id] ?? 0
           const pct = (val / totalValue) * 100
-          const isActive = filterType === type
+          const isActive = filterCatId === cat.id
           return (
             <button
-              key={type}
-              onClick={() => setFilterType(filterType === type ? ALL : type)}
+              key={cat.id}
+              onClick={() => setFilterCatId(filterCatId === cat.id ? ALL : cat.id)}
               className="text-left"
             >
               <Card
                 className={`transition-colors ${isActive ? 'border-primary bg-primary/5' : 'hover:border-primary/40'}`}
               >
                 <CardHeader className="p-4">
-                  <CardTitle>{typeLabel[type]}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+                    <CardTitle>{cat.name}</CardTitle>
+                  </div>
                   <p className="text-base font-bold text-foreground mt-1">{formatCurrency(val)}</p>
                   <p className="text-xs text-muted-foreground">{pct.toFixed(1)}% da carteira</p>
                 </CardHeader>
@@ -171,7 +206,8 @@ export const OverviewTab = ({
               <th className="pb-2 font-medium text-right">Total</th>
               <th className="pb-2 font-medium text-right">Recomendado</th>
               <th className="pb-2 font-medium text-right">Resultado</th>
-              <th className="pb-2 font-medium text-right">{filterType === ALL ? '% Cart.' : '% Cat.'}</th>
+              <th className="pb-2 font-medium text-right">{filterCatId === ALL ? '% Cart.' : '% Cat.'}</th>
+              <th className="pb-2" />
             </tr>
           </thead>
           <tbody>
@@ -179,7 +215,7 @@ export const OverviewTab = ({
               const total = a.currentPrice * a.quantity
               const cost = a.avgPrice * a.quantity
               const ret = cost > 0 ? ((total - cost) / cost) * 100 : 0
-              const baseValue = filterType === ALL ? totalValue : filteredTotal
+              const baseValue = filterCatId === ALL ? totalValue : filteredTotal
               const pct = baseValue > 0 ? (total / baseValue) * 100 : 0
               const targetPct = assetTargets.get(a.id) ?? 0
               const recommended = (targetPct / 100) * totalValue
@@ -194,7 +230,16 @@ export const OverviewTab = ({
                     <p className="text-xs text-muted-foreground">{a.name}</p>
                   </td>
                   <td className="py-3">
-                    <Badge variant="secondary">{typeLabel[a.type]}</Badge>
+                    {(() => {
+                      const cat = categories.find((c) => c.id === a.categoryId)
+                      return cat ? (
+                        <Badge variant="secondary" style={{ borderColor: cat.color, color: cat.color }}>
+                          {cat.name}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">{typeLabel[a.type]}</Badge>
+                      )
+                    })()}
                   </td>
                   <td className="py-3 text-right text-foreground">{a.quantity}</td>
                   <td className="py-3 text-right text-muted-foreground">
@@ -218,6 +263,14 @@ export const OverviewTab = ({
                     {formatPercent(ret)}
                   </td>
                   <td className="py-3 text-right text-muted-foreground">{pct.toFixed(1)}%</td>
+                  <td className="py-3 text-center">
+                    <button
+                      onClick={() => openEdit(a)}
+                      className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </td>
                 </tr>
               )
             })}
@@ -238,6 +291,47 @@ export const OverviewTab = ({
         existingAssets={assets}
         onImport={importFromB3}
       />
+
+      <Dialog open={!!editingAsset} onOpenChange={(v) => !v && setEditingAsset(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Editar {editingAsset?.ticker}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <label htmlFor="edit-category" className="text-xs text-muted-foreground mb-1 block">
+                Categoria
+              </label>
+              <select
+                id="edit-category"
+                className={inputClass}
+                value={editCategoryId}
+                onChange={(e) => setEditCategoryId(e.target.value)}
+              >
+                <option value="">Sem categoria</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <button
+              onClick={() => setEditingAsset(null)}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleEditSave}
+              disabled={saving}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

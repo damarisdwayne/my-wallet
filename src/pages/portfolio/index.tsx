@@ -16,9 +16,11 @@ export const PortfolioPage = () => {
     answers,
     importRecords,
     addAsset,
+    editAsset,
     importFromB3,
     revertImport,
     saveCategory,
+    deleteCategory,
     saveDiagram,
     saveAnswers,
     refreshPrices,
@@ -59,6 +61,7 @@ export const PortfolioPage = () => {
           answers={answers}
           totalValue={totalValue}
           addAsset={addAsset}
+          editAsset={editAsset}
           importFromB3={importFromB3}
           refreshPrices={refreshPrices}
           refreshingPrices={refreshingPrices}
@@ -73,6 +76,7 @@ export const PortfolioPage = () => {
           diagrams={diagrams}
           answers={answers}
           saveCategory={saveCategory}
+          deleteCategory={deleteCategory}
         />
       )}
       {activeTab === 2 && (

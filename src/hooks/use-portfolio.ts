@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   addAsset as addAssetService,
   subscribeToAssets,
@@ -6,17 +6,34 @@ import {
   updateAssetPrice as updateAssetPriceService,
 } from '@/services/assets'
 import { saveAnswers as saveAnswersService, subscribeToAnswers } from '@/services/answers'
-import { saveCategory as saveCategoryService, subscribeToCategories } from '@/services/categories'
-import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
 import {
-  deleteImportRecord,
-  saveImportRecord,
-  subscribeToImports,
-} from '@/services/imports'
+  deleteCategory as deleteCategoryService,
+  saveCategory as saveCategoryService,
+  subscribeToCategories,
+} from '@/services/categories'
+import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
+import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
-import type { Asset, AssetAnswers, Diagram, ImportItem, ImportRecord, PortfolioCategory } from '@/types'
+import type {
+  Asset,
+  AssetAnswers,
+  Diagram,
+  ImportItem,
+  ImportRecord,
+  PortfolioCategory,
+} from '@/types'
 import type { B3Asset } from '@/services/b3-import'
+
+const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+
+const makeDefaultCategories = (): PortfolioCategory[] => [
+  { id: mkId(), name: 'Fundos Imobiliários', type: 'fii', targetPercent: 30, color: '#f97316' },
+  { id: mkId(), name: 'Renda Fixa', type: 'fixed_income', targetPercent: 30, color: '#3b82f6' },
+  { id: mkId(), name: 'Bolsa BR', type: 'stock', targetPercent: 20, color: '#22c55e' },
+  { id: mkId(), name: 'Exterior', type: 'stock_us', targetPercent: 17, color: '#8b5cf6' },
+  { id: mkId(), name: 'Cripto', type: 'crypto', targetPercent: 3, color: '#eab308' },
+]
 
 export const usePortfolio = () => {
   const { user } = useAuth()
@@ -28,6 +45,7 @@ export const usePortfolio = () => {
   const [loading, setLoading] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
+  const seededRef = useRef(false)
 
   useEffect(() => {
     if (!user) return
@@ -37,11 +55,30 @@ export const usePortfolio = () => {
       if (resolved === 5) setLoading(false)
     }
     const unsubs = [
-      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
-      subscribeToCategories(user.uid, (data) => { setCategories(data); onLoad() }),
-      subscribeToDiagrams(user.uid, (data) => { setDiagrams(data); onLoad() }),
-      subscribeToAnswers(user.uid, (data) => { setAnswers(data); onLoad() }),
-      subscribeToImports(user.uid, (data) => { setImportRecords(data); onLoad() }),
+      subscribeToAssets(user.uid, (data) => {
+        setAssets(data)
+        onLoad()
+      }),
+      subscribeToCategories(user.uid, (data) => {
+        if (data.length === 0 && !seededRef.current) {
+          seededRef.current = true
+          makeDefaultCategories().forEach((cat) => saveCategoryService(user.uid, cat))
+        }
+        setCategories(data)
+        onLoad()
+      }),
+      subscribeToDiagrams(user.uid, (data) => {
+        setDiagrams(data)
+        onLoad()
+      }),
+      subscribeToAnswers(user.uid, (data) => {
+        setAnswers(data)
+        onLoad()
+      }),
+      subscribeToImports(user.uid, (data) => {
+        setImportRecords(data)
+        onLoad()
+      }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -51,9 +88,19 @@ export const usePortfolio = () => {
     return addAssetService(user.uid, asset)
   }
 
+  const editAsset = (assetId: string, data: Partial<Asset>) => {
+    if (!user) return Promise.resolve()
+    return updateAssetService(user.uid, assetId, data)
+  }
+
   const saveCategory = (cat: PortfolioCategory) => {
     if (!user) return Promise.resolve()
     return saveCategoryService(user.uid, cat)
+  }
+
+  const deleteCategory = (catId: string) => {
+    if (!user) return Promise.resolve()
+    return deleteCategoryService(user.uid, catId)
   }
 
   const saveDiagram = (diagram: Diagram) => {
@@ -81,9 +128,7 @@ export const usePortfolio = () => {
 
           // Only update avgPrice when net buying; selling keeps the existing PM
           const newAvg =
-            b3.quantity > 0
-              ? (prevQty * prevAvg + b3.quantity * b3.avgPrice) / newQty
-              : prevAvg
+            b3.quantity > 0 ? (prevQty * prevAvg + b3.quantity * b3.avgPrice) / newQty : prevAvg
 
           await updateAssetService(user.uid, existing.id, {
             quantity: newQty,
@@ -187,7 +232,9 @@ export const usePortfolio = () => {
     addAsset,
     importFromB3,
     revertImport,
+    editAsset,
     saveCategory,
+    deleteCategory,
     saveDiagram,
     saveAnswers,
     refreshPrices,

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -15,15 +15,15 @@ import type { Asset, AssetAnswers, AssetType, Diagram, PortfolioCategory } from 
 import { ASSET_TYPES, typeLabel } from '../constants'
 import { computeAssetTargets } from '../compute-targets'
 
-const emptyNewCat = () => ({
+const inputClass =
+  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+
+const emptyForm = () => ({
   name: '',
   type: 'stock' as AssetType,
   targetPercent: '10',
   color: '#3b82f6',
 })
-
-const inputClass =
-  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
 interface Props {
   assets: Asset[]
@@ -32,40 +32,151 @@ interface Props {
   diagrams: Diagram[]
   answers: Record<string, AssetAnswers>
   saveCategory: (cat: PortfolioCategory) => Promise<void>
+  deleteCategory: (catId: string) => Promise<void>
 }
 
-export const AllocationTab = ({ assets, categories, totalValue, diagrams, answers, saveCategory }: Props) => {
+const CatFormFields = ({
+  form,
+  set,
+  prefix,
+}: {
+  form: ReturnType<typeof emptyForm>
+  set: (k: string, v: string) => void
+  prefix: string
+}) => (
+  <div className="space-y-3 mt-2">
+    <div>
+      <label htmlFor={`${prefix}-name`} className="text-xs text-muted-foreground mb-1 block">
+        Nome
+      </label>
+      <input
+        id={`${prefix}-name`}
+        className={inputClass}
+        placeholder="Ex: Ações Growth"
+        value={form.name}
+        onChange={(e) => set('name', e.target.value)}
+        autoFocus
+      />
+    </div>
+    <div>
+      <label htmlFor={`${prefix}-type`} className="text-xs text-muted-foreground mb-1 block">
+        Tipo de ativo
+      </label>
+      <select
+        id={`${prefix}-type`}
+        className={inputClass}
+        value={form.type}
+        onChange={(e) => set('type', e.target.value)}
+      >
+        {ASSET_TYPES.map((t) => (
+          <option key={t} value={t}>
+            {typeLabel[t]}
+          </option>
+        ))}
+      </select>
+    </div>
+    <div>
+      <label htmlFor={`${prefix}-target`} className="text-xs text-muted-foreground mb-1 block">
+        Meta de alocação (%)
+      </label>
+      <input
+        id={`${prefix}-target`}
+        className={inputClass}
+        type="number"
+        min={0}
+        max={100}
+        step={0.1}
+        value={form.targetPercent}
+        onChange={(e) => set('targetPercent', e.target.value)}
+      />
+    </div>
+    <div>
+      <label htmlFor={`${prefix}-color`} className="text-xs text-muted-foreground mb-1 block">
+        Cor
+      </label>
+      <div className="flex items-center gap-3">
+        <input
+          id={`${prefix}-color`}
+          type="color"
+          value={form.color}
+          onChange={(e) => set('color', e.target.value)}
+          className="w-10 h-10 rounded-md border border-input bg-background cursor-pointer p-0.5"
+        />
+        <span className="text-sm text-muted-foreground font-mono">{form.color}</span>
+      </div>
+    </div>
+  </div>
+)
+
+export const AllocationTab = ({
+  assets,
+  categories,
+  totalValue,
+  diagrams,
+  answers,
+  saveCategory,
+  deleteCategory,
+}: Props) => {
   const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
 
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
-  const [editTargetValue, setEditTargetValue] = useState('')
-  const [addCategoryOpen, setAddCategoryOpen] = useState(false)
-  const [newCat, setNewCat] = useState(emptyNewCat())
+  const [addOpen, setAddOpen] = useState(false)
+  const [addForm, setAddForm] = useState(emptyForm())
 
-  const saveTarget = async (id: string) => {
-    const n = parseFloat(editTargetValue)
-    if (!isNaN(n) && n >= 0 && n <= 100) {
-      const cat = categories.find((c) => c.id === id)
-      if (cat) await saveCategory({ ...cat, targetPercent: Math.round(n * 10) / 10 })
-    }
-    setEditingCategoryId(null)
-  }
+  const [editOpen, setEditOpen] = useState(false)
+  const [editingCat, setEditingCat] = useState<PortfolioCategory | null>(null)
+  const [editForm, setEditForm] = useState(emptyForm())
 
-  const handleAddCategory = async () => {
-    const name = newCat.name.trim()
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+  const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }))
+  const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }))
+
+  const handleAdd = async () => {
+    const name = addForm.name.trim()
     if (!name) return
-    const target = parseFloat(newCat.targetPercent)
-    const cat: PortfolioCategory = {
-      id: `cat-${Date.now()}`,
+    const target = Number.parseFloat(addForm.targetPercent)
+    await saveCategory({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name,
-      type: newCat.type,
-      targetPercent: isNaN(target) ? 0 : Math.round(target * 10) / 10,
-      color: newCat.color,
-    }
-    await saveCategory(cat)
-    setNewCat(emptyNewCat())
-    setAddCategoryOpen(false)
+      type: addForm.type,
+      targetPercent: Number.isNaN(target) ? 0 : Math.round(target * 10) / 10,
+      color: addForm.color,
+    })
+    setAddForm(emptyForm())
+    setAddOpen(false)
   }
+
+  const openEdit = (cat: PortfolioCategory) => {
+    setEditingCat(cat)
+    setEditForm({
+      name: cat.name,
+      type: cat.type,
+      targetPercent: String(cat.targetPercent),
+      color: cat.color,
+    })
+    setEditOpen(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!editingCat) return
+    const target = Number.parseFloat(editForm.targetPercent)
+    await saveCategory({
+      ...editingCat,
+      name: editForm.name.trim() || editingCat.name,
+      type: editForm.type,
+      targetPercent: Number.isNaN(target) ? editingCat.targetPercent : Math.round(target * 10) / 10,
+      color: editForm.color,
+    })
+    setEditOpen(false)
+    setEditingCat(null)
+  }
+
+  const handleDelete = async (catId: string) => {
+    await deleteCategory(catId)
+    setConfirmDeleteId(null)
+  }
+
+  const totalAllocated = categories.reduce((s, c) => s + c.targetPercent, 0)
 
   return (
     <div className="space-y-4">
@@ -75,17 +186,15 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
           <span
             className={cn(
               'font-semibold',
-              Math.abs(categories.reduce((s, c) => s + c.targetPercent, 0) - 100) < 0.1
-                ? 'text-success'
-                : 'text-warning',
+              Math.abs(totalAllocated - 100) < 0.1 ? 'text-success' : 'text-warning',
             )}
           >
-            {categories.reduce((s, c) => s + c.targetPercent, 0).toFixed(1)}%
+            {totalAllocated.toFixed(1)}%
           </span>{' '}
           de 100%
         </p>
         <button
-          onClick={() => setAddCategoryOpen(true)}
+          onClick={() => setAddOpen(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
         >
           <Plus size={14} />
@@ -104,7 +213,6 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
         const catValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
         const actualPct = totalValue > 0 ? (catValue / totalValue) * 100 : 0
         const diff = actualPct - cat.targetPercent
-        const isEditing = editingCategoryId === cat.id
 
         return (
           <Card key={cat.id}>
@@ -118,29 +226,7 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <span>Meta:</span>
-                    <button
-                      className="flex items-center gap-1 group"
-                      onClick={() => {
-                        setEditingCategoryId(cat.id)
-                        setEditTargetValue(String(cat.targetPercent))
-                      }}
-                    >
-                      <span className={isEditing ? 'text-primary font-semibold' : ''}>
-                        {isEditing
-                          ? `${parseFloat(editTargetValue || '0').toFixed(1)}%`
-                          : `${cat.targetPercent}%`}
-                      </span>
-                      <Pencil
-                        size={11}
-                        className={cn(
-                          'transition-colors',
-                          isEditing
-                            ? 'text-primary'
-                            : 'text-muted-foreground/40 group-hover:text-primary',
-                        )}
-                      />
-                    </button>
+                    <span>Meta: {cat.targetPercent}%</span>
                   </div>
                   <span className="font-medium text-foreground">
                     Atual: {actualPct.toFixed(1)}%
@@ -149,47 +235,47 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
                     {diff >= 0 ? '+' : ''}
                     {diff.toFixed(1)}%
                   </Badge>
+                  <button
+                    onClick={() => openEdit(cat)}
+                    className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    title="Editar categoria"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  {confirmDeleteId === cat.id ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-destructive">Confirmar?</span>
+                      <button
+                        onClick={() => handleDelete(cat.id)}
+                        className="px-1.5 py-0.5 rounded text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                      >
+                        Sim
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Não
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(cat.id)}
+                      className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-destructive"
+                      title="Excluir categoria"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {isEditing && (
-                <div className="mt-3 flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={editTargetValue}
-                    onChange={(e) => setEditTargetValue(e.target.value)}
-                    className="flex-1 accent-primary cursor-pointer"
-                    autoFocus
-                  />
-                  <span className="text-sm font-semibold text-primary w-12 text-right tabular-nums">
-                    {parseFloat(editTargetValue || '0').toFixed(1)}%
-                  </span>
-                  <button
-                    onClick={() => saveTarget(cat.id)}
-                    className="px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors"
-                  >
-                    OK
-                  </button>
-                  <button
-                    onClick={() => setEditingCategoryId(null)}
-                    className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs hover:text-foreground transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              {!isEditing && (
-                <div className="w-full bg-muted rounded-full h-2 mt-2">
-                  <div
-                    className="h-2 rounded-full transition-all"
-                    style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
-                  />
-                </div>
-              )}
+              <div className="w-full bg-muted rounded-full h-2 mt-2">
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -199,7 +285,9 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
                     <div key={a.id} className="text-xs p-2 rounded bg-muted">
                       <p className="font-semibold text-foreground">{a.ticker}</p>
                       <p className="text-muted-foreground">{formatCurrency(v)}</p>
-                      <p className="text-muted-foreground">Alvo: {(assetTargets.get(a.id) ?? 0).toFixed(1)}%</p>
+                      <p className="text-muted-foreground">
+                        Alvo: {(assetTargets.get(a.id) ?? 0).toFixed(1)}%
+                      </p>
                     </div>
                   )
                 })}
@@ -209,11 +297,12 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
         )
       })}
 
+      {/* Add dialog */}
       <Dialog
-        open={addCategoryOpen}
-        onOpenChange={(open) => {
-          setAddCategoryOpen(open)
-          if (!open) setNewCat(emptyNewCat())
+        open={addOpen}
+        onOpenChange={(v) => {
+          setAddOpen(v)
+          if (!v) setAddForm(emptyForm())
         }}
       >
         <DialogContent className="max-w-sm">
@@ -221,70 +310,51 @@ export const AllocationTab = ({ assets, categories, totalValue, diagrams, answer
             <DialogTitle>Nova categoria</DialogTitle>
             <DialogDescription>Defina nome, tipo, meta de alocação e cor.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
-              <input
-                className={inputClass}
-                placeholder="Ex: Ações Growth"
-                value={newCat.name}
-                onChange={(e) => setNewCat((p) => ({ ...p, name: e.target.value }))}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Tipo de ativo</label>
-              <select
-                className={inputClass}
-                value={newCat.type}
-                onChange={(e) => setNewCat((p) => ({ ...p, type: e.target.value as AssetType }))}
-              >
-                {ASSET_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {typeLabel[t]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                Meta de alocação (%)
-              </label>
-              <input
-                className={inputClass}
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                value={newCat.targetPercent}
-                onChange={(e) => setNewCat((p) => ({ ...p, targetPercent: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Cor</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={newCat.color}
-                  onChange={(e) => setNewCat((p) => ({ ...p, color: e.target.value }))}
-                  className="w-10 h-10 rounded-md border border-input bg-background cursor-pointer p-0.5"
-                />
-                <span className="text-sm text-muted-foreground font-mono">{newCat.color}</span>
-              </div>
-            </div>
-          </div>
+          <CatFormFields form={addForm} set={setAdd} prefix="add" />
           <DialogFooter className="mt-4">
             <button
-              onClick={() => setAddCategoryOpen(false)}
+              onClick={() => setAddOpen(false)}
               className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               Cancelar
             </button>
             <button
-              onClick={handleAddCategory}
-              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              onClick={handleAdd}
+              disabled={!addForm.name.trim()}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
             >
               Criar categoria
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog
+        open={editOpen}
+        onOpenChange={(v) => {
+          setEditOpen(v)
+          if (!v) setEditingCat(null)
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Editar categoria</DialogTitle>
+            <DialogDescription>Altere nome, tipo, meta ou cor.</DialogDescription>
+          </DialogHeader>
+          <CatFormFields form={editForm} set={setEdit} prefix="edit" />
+          <DialogFooter className="mt-4">
+            <button
+              onClick={() => setEditOpen(false)}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleEditSave}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Salvar
             </button>
           </DialogFooter>
         </DialogContent>

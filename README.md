@@ -1,73 +1,153 @@
-# React + TypeScript + Vite
+# My Wallet
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal finance and investment portfolio manager built for Brazilian investors. Track your assets across multiple asset classes, import brokerage statements, monitor dividends, and analyze your portfolio allocation — all in one place.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Portfolio Management
+- Track stocks (B3), FIIs, BDRs, ETFs, US stocks, crypto, fixed income (CDB, LCI, LCA, Tesouro Direto), and other assets
+- Automatic weighted average cost (PM) calculation on buys and sells
+- Real-time price updates via BrAPI, CoinGecko, and USD/BRL conversion
+- Target allocation per category with rebalancing suggestions
 
-## React Compiler
+### Broker Import
+- **B3** — Import from the official B3 Excel statement (Extrato de Negociação)
+- **Inter Co Securities** — Import Transaction Confirmation PDFs (supports Apex Clearing and the newer DriveWealth format). Prices are automatically converted from USD to BRL at the current exchange rate.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Dividends
+- Log dividends, JCP, and rendimentos
+- Import dividend history from B3 statements
+- Tax tracking (IR on JCP)
 
-## Expanding the ESLint configuration
+### Fundamental Analysis
+- P/L, sector, industry data via BrAPI
+- FII-specific metrics: vacancy, property count, DY, manager fees
+- Monthly snapshots for historical tracking
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Expenses
+- Manual expense entry with categories
+- Fixed recurring expenses
+- Installment purchases
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Sales Tracking
+- Track hardware/tech resales (GPUs, CPUs, smartphones, etc.)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Layer | Technology |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Routing | React Router 7 |
+| Build | Vite 8 |
+| State | Jotai |
+| Styling | Tailwind CSS 4 + Radix UI |
+| Database | Firebase Firestore |
+| Auth | Firebase Auth (Google, GitHub, Apple) |
+| PDF parsing | PDF.js |
+| Excel parsing | SheetJS (XLSX) |
+
+## External APIs
+
+| API | Purpose |
+|---|---|
+| [BrAPI](https://brapi.dev) | Brazilian stock, FII, BDR, ETF, and US stock quotes |
+| [CoinGecko](https://coingecko.com) | Cryptocurrency prices in BRL |
+| [AwesomeAPI](https://economia.awesomeapi.com.br) | USD/BRL exchange rate |
+| [BCB](https://api.bcb.gov.br) | CDI, Selic, IPCA, IGP-M rates for fixed income |
+| [Dados de Mercado](https://dadosdemercado.com.br) | Tesouro Direto bond prices |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Yarn
+- A Firebase project with Firestore and Authentication enabled
+- A [BrAPI](https://brapi.dev) account (free tier available)
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd my-wallet
+yarn install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Configure environment variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env` file in the project root:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+# Firebase
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+
+# BrAPI — required for stock/FII/ETF/US price refresh
+VITE_BRAPI_TOKEN=
+
+# Dados de Mercado — optional, enables Tesouro Direto price refresh
+VITE_DADOSDEMERCADO_TOKEN=
 ```
+
+### 3. Firebase setup
+
+In your Firebase console:
+1. Create a Firestore database (production mode)
+2. Enable Authentication and add providers: **Google**, **GitHub**, **Apple**
+3. Copy the project credentials into your `.env`
+
+### 4. Run
+
+```bash
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `yarn dev` | Start dev server on port 3000 |
+| `yarn build` | Type-check and build for production |
+| `yarn preview` | Preview the production build locally |
+| `yarn lint` | Run ESLint |
+| `yarn lint:fix` | Auto-fix lint issues |
+| `yarn format` | Format code with Prettier |
+| `yarn typecheck` | Type-check without building |
+
+## Project Structure
+
+```
+src/
+├── components/       # Shared UI components (shadcn/ui based)
+├── hooks/            # Custom React hooks (usePortfolio, etc.)
+├── lib/              # Firebase client, utilities
+├── pages/            # Page components (portfolio, dividends, expenses…)
+├── services/         # External API clients and data parsers
+│   ├── b3-import.ts      # B3 Excel statement parser
+│   ├── inter-import.ts   # Inter PDF parser (Apex + DriveWealth formats)
+│   ├── quotes.ts         # Live price fetching with localStorage cache
+│   ├── bcb-rates.ts      # BCB fixed income rate calculations
+│   └── fundamentals.ts   # BrAPI fundamentals integration
+├── store/            # Jotai atoms (auth, etc.)
+└── types/            # TypeScript type definitions
+```
+
+## Broker Import Guide
+
+### B3
+1. Go to [investidor.b3.com.br](https://investidor.b3.com.br)
+2. Navigate to **Extratos → Negociação → Baixar → Excel**
+3. Import the `.xlsx` file in the app under **Portfolio → Importações**
+
+### Inter Co Securities (US assets)
+1. In the Inter app, go to **Investimentos → Notas de corretagem Ações EUA**
+2. Download the PDF for each transaction confirmation
+3. Import each PDF in the app under **Portfolio → Importações → Inter Co Securities**
+
+> **Note:** Inter only provides downloadable PDFs from 08/28/2023 onward. For older trades, use manual entry or add the asset directly with your known average cost.

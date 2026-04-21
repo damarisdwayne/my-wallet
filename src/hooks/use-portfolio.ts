@@ -20,7 +20,8 @@ import {
   upsertMonthlySnapshot,
 } from '@/services/fundamentals'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
-import { addTrades, subscribeToTrades } from '@/services/trades'
+import { addTrades, deleteTrade as deleteTradeService, subscribeToTrades } from '@/services/trades'
+import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import type {
@@ -186,6 +187,9 @@ export const usePortfolio = () => {
           })
         } else if (b3.quantity > 0) {
           const autoCatId = categories.find((c) => c.type === b3.type)?.id ?? ''
+          const firstBuyDate = rawTrades
+            .filter((t) => t.ticker === b3.ticker && t.type === 'buy' && t.date)
+            .sort((a, b) => a.date.localeCompare(b.date))[0]?.date
           const newAsset: Asset = {
             id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             ticker: b3.ticker,
@@ -196,6 +200,7 @@ export const usePortfolio = () => {
             avgPrice: b3.avgPrice,
             currentPrice: b3.currentPrice,
             targetPercent: 0,
+            ...(firstBuyDate ? { operationDate: firstBuyDate } : {}),
           }
           await addAssetService(user.uid, newAsset)
           items.push({
@@ -337,6 +342,7 @@ export const usePortfolio = () => {
     setPriceError(null)
     clearQuoteCache()
     try {
+      // Stocks, FIIs, ETFs, BDRs, crypto
       const priceable = assets.filter((a) => a.type !== 'fixed_income' && a.type !== 'other')
       const prices = await fetchLivePrices(
         priceable.map((a) => ({ ticker: a.ticker, type: a.type })),
@@ -345,6 +351,29 @@ export const usePortfolio = () => {
         priceable
           .filter((a) => prices[a.ticker.toUpperCase()] !== undefined)
           .map((a) => updateAssetPriceService(user.uid, a.id, prices[a.ticker.toUpperCase()])),
+      )
+
+      // Flat fixed income (CDB, LCI, LCA…) — calculate via BCB rates API
+      const flatFI = assets.filter(
+        (a) => a.type === 'fixed_income' && !a.ticker.toUpperCase().startsWith('TESOURO'),
+      )
+      await Promise.all(
+        flatFI
+          .filter((a) => a.operationDate && a.rateType)
+          .map(async (a) => {
+            const rateType = a.rateType ?? ''
+            const operationDate = a.operationDate ?? ''
+            const newValue = await calcFixedIncomeValue(
+              a.avgPrice,
+              rateType,
+              a.indexerRate,
+              a.prefixedRate,
+              operationDate,
+            )
+            if (Math.abs(newValue - a.currentPrice) > 0.01) {
+              await updateAssetPriceService(user.uid, a.id, newValue)
+            }
+          }),
       )
     } catch (err) {
       setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
@@ -363,6 +392,7 @@ export const usePortfolio = () => {
     trades,
     addAsset,
     addManualTrade,
+    deleteTrade: (tradeId: string) => user ? deleteTradeService(user.uid, tradeId) : Promise.resolve(),
     importFromB3,
     revertImport,
     editAsset,

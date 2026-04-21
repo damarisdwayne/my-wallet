@@ -26,6 +26,7 @@ export const PortfolioPage = () => {
     trades,
     addAsset,
     addManualTrade,
+    deleteTrade,
     editAsset,
     deleteAsset,
     importFromB3,
@@ -100,7 +101,14 @@ export const PortfolioPage = () => {
       {activeTab === 2 && (
         <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
       )}
-      {activeTab === 3 && <TradesTab trades={trades} />}
+      {activeTab === 3 && (
+        <TradesTab
+          trades={trades}
+          assets={assets}
+          categories={categories}
+          onDeleteTrade={deleteTrade}
+        />
+      )}
       {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}
       {activeTab === 5 && (
         <AnalysisTab

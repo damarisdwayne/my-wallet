@@ -97,6 +97,32 @@ async function fetchCryptoPrices(tickers: string[]): Promise<Record<string, numb
 
 const STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr', 'etf'])
 
+interface DadosMercadoBond {
+  name: string
+  pu: number
+}
+
+async function fetchTesouroPrices(tickers: string[]): Promise<Record<string, number>> {
+  const token = import.meta.env.VITE_DADOSDEMERCADO_TOKEN as string | undefined
+  if (!token) return {}
+  try {
+    const res = await fetch('https://api.dadosdemercado.com.br/v1/treasury', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return {}
+    const bonds = (await res.json()) as DadosMercadoBond[]
+    const prices: Record<string, number> = {}
+    for (const ticker of tickers) {
+      // ticker: "TESOURO IPCA+ 2029" — API name: "Tesouro IPCA+ 2029"
+      const match = bonds.find((b) => b.name.toUpperCase() === ticker.toUpperCase())
+      if (match?.pu) prices[ticker] = match.pu
+    }
+    return prices
+  } catch {
+    return {}
+  }
+}
+
 export async function fetchLivePrices(
   assets: { ticker: string; type: AssetType }[],
 ): Promise<Record<string, number>> {
@@ -107,13 +133,15 @@ export async function fetchLivePrices(
   const typeOf = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.type]))
   const stockTickers = tickers.filter((t) => STOCK_TYPES.has(typeOf[t]))
   const cryptoTickers = tickers.filter((t) => typeOf[t] === 'crypto')
+  const tesouroTickers = tickers.filter((t) => t.startsWith('TESOURO'))
 
-  const [stockPrices, cryptoPrices] = await Promise.all([
+  const [stockPrices, cryptoPrices, tesouroPrices] = await Promise.all([
     stockTickers.length > 0 ? fetchStockPrices(stockTickers) : {},
     cryptoTickers.length > 0 ? fetchCryptoPrices(cryptoTickers) : {},
+    tesouroTickers.length > 0 ? fetchTesouroPrices(tesouroTickers) : {},
   ])
 
-  const prices = { ...stockPrices, ...cryptoPrices }
+  const prices = { ...stockPrices, ...cryptoPrices, ...tesouroPrices }
   saveCache(tickers, prices)
   return prices
 }

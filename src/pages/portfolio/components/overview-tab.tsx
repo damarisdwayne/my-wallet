@@ -20,12 +20,17 @@ import { BrokerImportDialog } from './broker-import-dialog'
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
-type SortCol = 'ticker' | 'tipo' | 'qty' | 'pm' | 'price' | 'total' | 'ret' | 'pct'
+type SortCol = 'ticker' | 'tipo' | 'qty' | 'pm' | 'price' | 'cost' | 'total' | 'ret' | 'pct'
+
+// Fixed income assets that are NOT Tesouro Direto (CDB, LCI, LCA…)
+const isFlatFixedIncome = (a: Asset) =>
+  a.type === 'fixed_income' && !a.ticker.toUpperCase().startsWith('TESOURO')
 
 const assetNumericValue = (a: Asset, col: SortCol, baseValue: number): number => {
   if (col === 'qty') return a.quantity
   if (col === 'pm') return a.avgPrice
   if (col === 'price') return a.currentPrice
+  if (col === 'cost') return a.avgPrice * a.quantity
   if (col === 'total') return a.currentPrice * a.quantity
   if (col === 'ret') {
     const cost = a.avgPrice * a.quantity
@@ -278,6 +283,7 @@ export const OverviewTab = ({
         </td>
         <td className="py-3 text-right text-muted-foreground">—</td>
         <td className="py-3 text-right text-muted-foreground">—</td>
+        <td className="py-3 text-right font-medium text-foreground">{formatCurrency(row.cost)}</td>
         <td className="py-3 text-right text-muted-foreground">—</td>
         <td className="py-3 text-right font-medium text-foreground">{formatCurrency(row.total)}</td>
         <td className="py-3 text-right">
@@ -406,8 +412,9 @@ export const OverviewTab = ({
                   { col: 'tipo', label: 'Tipo', align: 'left' },
                   { col: 'qty', label: 'Qtd', align: 'right' },
                   { col: 'pm', label: 'PM', align: 'right' },
-                  { col: 'price', label: 'Atual', align: 'right' },
-                  { col: 'total', label: 'Total', align: 'right' },
+                  { col: 'cost', label: 'Total investido', align: 'right' },
+                  { col: 'price', label: 'Preço atual', align: 'right' },
+                  { col: 'total', label: 'Total atual', align: 'right' },
                   { col: null, label: 'Recomendado', align: 'right' },
                   { col: 'ret', label: 'Resultado', align: 'right' },
                   { col: 'pct', label: filterCatId === ALL ? '% Cart.' : '% Cat.', align: 'right' },
@@ -439,15 +446,16 @@ export const OverviewTab = ({
             {tableRows.map((row) => {
               if (row.kind === 'group') return renderGroupRow(row)
               const a = row.asset
-              const total = a.currentPrice * a.quantity
+              const totalAtual = a.currentPrice * a.quantity
               const cost = a.avgPrice * a.quantity
-              const ret = cost > 0 ? ((total - cost) / cost) * 100 : 0
+              const ret = cost > 0 ? ((totalAtual - cost) / cost) * 100 : 0
               const baseValue = filterCatId === ALL ? totalValue : filteredTotal
-              const pct = baseValue > 0 ? (total / baseValue) * 100 : 0
+              const pct = baseValue > 0 ? (totalAtual / baseValue) * 100 : 0
               const targetPct = assetTargets.get(a.id) ?? 0
               const recommended = (targetPct / 100) * totalValue
-              const diff = total - recommended
+              const diff = totalAtual - recommended
               const cat = categories.find((c) => c.id === a.categoryId)
+              const flatFI = isFlatFixedIncome(a)
               return (
                 <tr
                   key={a.id}
@@ -470,23 +478,32 @@ export const OverviewTab = ({
                     )}
                   </td>
                   <td className="py-3 text-right text-foreground">
-                    {a.quantity % 1 === 0 ? a.quantity : Number.parseFloat(a.quantity.toFixed(2))}
+                    {flatFI ? '—' : (a.quantity % 1 === 0 ? a.quantity : Number.parseFloat(a.quantity.toFixed(2)))}
                   </td>
                   <td className="py-3 text-right text-muted-foreground">
-                    {formatCurrency(a.avgPrice)}
-                  </td>
-                  <td className="py-3 text-right text-foreground">
-                    {formatCurrency(a.currentPrice)}
+                    {flatFI ? '—' : formatCurrency(a.avgPrice)}
                   </td>
                   <td className="py-3 text-right font-medium text-foreground">
-                    {formatCurrency(total)}
+                    {formatCurrency(cost)}
+                  </td>
+                  <td className="py-3 text-right text-foreground">
+                    {flatFI ? '—' : formatCurrency(a.currentPrice)}
+                  </td>
+                  <td className="py-3 text-right font-medium text-foreground">
+                    {formatCurrency(totalAtual)}
                   </td>
                   <td className="py-3 text-right">
-                    <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
-                    <p className={`text-xs ${diff >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {diff >= 0 ? '+' : ''}
-                      {formatCurrency(diff)}
-                    </p>
+                    {a.type === 'fixed_income' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <>
+                        <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
+                        <p className={`text-xs ${diff >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {diff >= 0 ? '+' : ''}
+                          {formatCurrency(diff)}
+                        </p>
+                      </>
+                    )}
                   </td>
                   <td
                     className={`py-3 text-right font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}

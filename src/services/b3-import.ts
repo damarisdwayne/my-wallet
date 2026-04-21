@@ -292,14 +292,15 @@ interface ParseState {
 // causes double-counting. Add corporate events manually via the trade form.
 // Tesouro Direto uses "Compra"/"Venda" directly in Movimentação (not Transferência),
 // so it's safe to process here — stocks never use those tipos in this format.
+const isTesouroBuy = (tipo: string) => tipo.includes('compra')
+const isTesourSell = (tipo: string) =>
+  tipo.includes('venda') || tipo.includes('vencimento') || tipo.includes('resgate')
+
 const applyMovimentacao = (tipo: string, ev: RowEvent, total: number, state: ParseState) => {
   if (isDividendRow(tipo)) {
     applyDividend(tipo, ev.ticker, total, ev.date, state.dividends)
-  } else if (
-    ev.ticker.startsWith('TESOURO') &&
-    (tipo.includes('compra') || tipo.includes('venda'))
-  ) {
-    applyPosition(tipo, ev, state.positions, state.trades)
+  } else if (ev.ticker.startsWith('TESOURO') && (isTesouroBuy(tipo) || isTesourSell(tipo))) {
+    applyPosition(isTesourSell(tipo) ? 'venda' : tipo, ev, state.positions, state.trades)
   }
 }
 

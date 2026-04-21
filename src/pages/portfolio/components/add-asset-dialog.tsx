@@ -493,7 +493,7 @@ const FixedIncomeForm = ({
               onChange={(e) => set('quantity', e.target.value)}
             />
           </Field>
-          <Field label="PU de compra (R$)">
+          <Field label="Preço unitário (R$)">
             <input
               className={inputClass}
               type="number"

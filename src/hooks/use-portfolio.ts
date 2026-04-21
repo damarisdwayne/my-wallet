@@ -146,6 +146,7 @@ export const usePortfolio = () => {
     rawTrades: B3RawTrade[],
     dividends: B3Dividend[],
     filename: string,
+    source?: 'b3' | 'inter',
   ) => {
     if (!user) return
     const items: ImportItem[] = []
@@ -186,10 +187,14 @@ export const usePortfolio = () => {
             wasCreated: false,
           })
         } else if (b3.quantity > 0) {
-          const autoCatId = categories.find((c) => c.type === b3.type)?.id ?? ''
-          const firstBuyDate = rawTrades
-            .filter((t) => t.ticker === b3.ticker && t.type === 'buy' && t.date)
-            .sort((a, b) => a.date.localeCompare(b.date))[0]?.date
+          // Inter imports: ETFs are US-listed → use the Exterior (stock_us) category
+          const catType = source === 'inter' && b3.type === 'etf' ? 'stock_us' : b3.type
+          const autoCatId = categories.find((c) => c.type === catType)?.id ?? ''
+          const firstBuyDate =
+            b3.operationDate ??
+            rawTrades
+              .filter((t) => t.ticker === b3.ticker && t.type === 'buy' && t.date)
+              .sort((a, b) => a.date.localeCompare(b.date))[0]?.date
           const newAsset: Asset = {
             id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             ticker: b3.ticker,

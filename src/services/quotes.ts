@@ -49,6 +49,32 @@ export function clearQuoteCache() {
   } catch {}
 }
 
+const USD_RATE_KEY = 'mw_usd_rate_v1'
+const USD_TTL_MS = 15 * 60 * 1000
+
+export const fetchUsdBrlRate = async (): Promise<number> => {
+  try {
+    const cached = localStorage.getItem(USD_RATE_KEY)
+    if (cached) {
+      const { rate, updatedAt } = JSON.parse(cached) as { rate: number; updatedAt: number }
+      if (Date.now() - updatedAt < USD_TTL_MS) return rate
+    }
+  } catch {}
+  try {
+    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
+    if (!res.ok) return 1
+    const data = (await res.json()) as { USDBRL: { bid: string } }
+    const rate = Number.parseFloat(data.USDBRL.bid)
+    if (rate > 0) {
+      try {
+        localStorage.setItem(USD_RATE_KEY, JSON.stringify({ rate, updatedAt: Date.now() }))
+      } catch {}
+      return rate
+    }
+  } catch {}
+  return 1
+}
+
 type BrapiResp =
   | { results: { symbol: string; regularMarketPrice: number }[] }
   | { error: boolean; message: string }

@@ -62,14 +62,16 @@ const BROKERS: Broker[] = [
     instructions: (
       <p className="text-sm text-muted-foreground">
         No app da Inter, acesse{' '}
-        <span className="font-medium text-foreground">Investimentos → Extrato</span> e exporte a{' '}
-        <span className="font-medium text-foreground">nota de corretagem em PDF</span>. Quantidades
-        e PM serão calculados automaticamente.
+        <span className="font-medium text-foreground">
+          Investimentos → Notas de corretagem Ações EUA
+        </span>{' '}
+        e exporte a <span className="font-medium text-foreground">nota de corretagem em PDF</span>.
+        Quantidades e PM serão calculados automaticamente.
       </p>
     ),
     fileAccept: '.pdf',
     fileHint: 'PDF — Transaction Confirmation da Inter Co Securities',
-    parse: async (buf) => ({ assets: await parseInterPdf(buf), trades: [], dividends: [] }),
+    parse: async (buf) => parseInterPdf(buf),
   },
 ]
 
@@ -82,6 +84,7 @@ interface Props {
     trades: B3RawTrade[],
     dividends: B3ParseResult['dividends'],
     filename: string,
+    source: 'b3' | 'inter',
   ) => Promise<void>
 }
 
@@ -159,7 +162,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     if (!rows) return
     setImporting(true)
     try {
-      await onImport(rows, pendingTrades, pendingDividends, filename)
+      await onImport(rows, pendingTrades, pendingDividends, filename, (broker?.id ?? 'b3') as 'b3' | 'inter')
       onOpenChange(false)
       resetAll()
     } finally {
@@ -170,8 +173,6 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const newCount = rows?.filter((r) => r.action === 'new').length ?? 0
   const updateCount = rows?.filter((r) => r.action === 'update').length ?? 0
   const sellCount = rows?.filter((r) => r.action === 'sell').length ?? 0
-
-  const isUsd = broker?.id === 'inter'
 
   return (
     <Dialog
@@ -284,7 +285,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                     <th className="px-3 py-2 font-medium">Ativo</th>
                     <th className="px-3 py-2 font-medium">Tipo</th>
                     <th className="px-3 py-2 font-medium text-right">Qtd</th>
-                    <th className="px-3 py-2 font-medium text-right">PM {isUsd ? '(USD)' : ''}</th>
+                    <th className="px-3 py-2 font-medium text-right">PM</th>
                     <th className="px-3 py-2 font-medium text-center">Ação</th>
                   </tr>
                 </thead>
@@ -325,7 +326,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {isUsd ? 'Preços em USD. ' : ''}PM calculado pela média ponderada das compras.
+              PM calculado pela média ponderada das compras.
             </p>
           </>
         )}

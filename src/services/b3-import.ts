@@ -9,6 +9,7 @@ export interface B3Asset {
   avgPrice: number // buy avg for this period (0 if no buys)
   currentPrice: number
   boughtQty: number // total units bought in this period
+  operationDate?: string // ISO date of first purchase (YYYY-MM-DD)
 }
 
 export interface B3Dividend {

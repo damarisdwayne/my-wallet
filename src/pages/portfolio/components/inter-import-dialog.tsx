@@ -102,8 +102,11 @@ export const InterImportDialog = ({ open, onOpenChange, existingAssets, onImport
           <DialogTitle>Importar nota da Inter Co Securities</DialogTitle>
           <DialogDescription>
             No app da Inter, acesse{' '}
-            <span className="font-medium text-foreground">Investimentos → Extrato</span> e exporte a
-            nota de corretagem em PDF. Quantidades e PM serão calculados automaticamente.
+            <span className="font-medium text-foreground">
+              Investimentos → Notas de corretagem Ações EUA
+            </span>{' '}
+            e exporte a nota de corretagem em PDF. Quantidades e PM serão calculados
+            automaticamente.
           </DialogDescription>
         </DialogHeader>
 

@@ -78,6 +78,7 @@ interface Props {
     trades: import('@/services/b3-import').B3RawTrade[],
     dividends: import('@/services/b3-import').B3ParseResult['dividends'],
     filename: string,
+    source?: 'b3' | 'inter',
   ) => Promise<void>
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean

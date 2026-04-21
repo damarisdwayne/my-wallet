@@ -138,22 +138,38 @@ export const DividendsPage = () => {
             {Object.entries(byMonth).map(([key, b]) => {
               const barHeight = Math.max(2, (b.total / maxMonth) * 100)
               const isCurrent = key === currentMonthKey
-              const tooltip =
+              const tooltipLines =
                 b.total > 0
-                  ? [
+                  ? ([
                       b.fii > 0 && `FII: ${formatCurrency(b.fii)}`,
                       b.stock > 0 && `Ações: ${formatCurrency(b.stock)}`,
                       b.fixed > 0 && `Renda Fixa: ${formatCurrency(b.fixed)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(' | ')
-                  : undefined
+                      `Total: ${formatCurrency(b.total)}`,
+                    ].filter(Boolean) as string[])
+                  : null
               return (
-                <div key={key} className="flex-1 flex flex-col items-center gap-1">
+                <div key={key} className="group relative flex-1 flex flex-col items-center gap-1">
+                  {tooltipLines && (
+                    <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-10 hidden group-hover:flex flex-col gap-0.5 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1.5 shadow-md text-xs text-popover-foreground">
+                      {tooltipLines.map((line) => (
+                        <span key={line}>{line}</span>
+                      ))}
+                    </div>
+                  )}
+                  {b.total > 0 && (
+                    <span
+                      className="text-[9px] text-muted-foreground font-medium origin-bottom"
+                      style={{
+                        transform: 'rotate(-50deg) translate(20px,-4px)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {formatCurrency(b.total)}
+                    </span>
+                  )}
                   <div
-                    className={`w-full rounded-t transition-colors ${isCurrent ? 'bg-success hover:bg-success/80' : 'bg-success/60 hover:bg-success'}`}
+                    className={`w-full rounded-t transition-colors cursor-default bg-success/60 hover:bg-success`}
                     style={{ height: `${barHeight}px` }}
-                    title={tooltip}
                   />
                   <span className="text-[10px] text-muted-foreground">{monthLabel(key)}</span>
                 </div>

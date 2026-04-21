@@ -137,7 +137,6 @@ export const DividendsPage = () => {
           <div className="flex items-end gap-1">
             {Object.entries(byMonth).map(([key, b]) => {
               const barHeight = Math.max(2, (b.total / maxMonth) * 100)
-              const isCurrent = key === currentMonthKey
               const tooltipLines =
                 b.total > 0
                   ? ([

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, RefreshCw, Upload } from 'lucide-react'
+import { ChevronDown, ChevronUp, Pencil, Plus, RefreshCw, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -19,6 +19,44 @@ import { BrokerImportDialog } from './broker-import-dialog'
 
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
+
+type SortCol = 'ticker' | 'tipo' | 'qty' | 'pm' | 'price' | 'total' | 'ret' | 'pct'
+
+const assetNumericValue = (a: Asset, col: SortCol, baseValue: number): number => {
+  if (col === 'qty') return a.quantity
+  if (col === 'pm') return a.avgPrice
+  if (col === 'price') return a.currentPrice
+  if (col === 'total') return a.currentPrice * a.quantity
+  if (col === 'ret') {
+    const cost = a.avgPrice * a.quantity
+    return cost > 0 ? ((a.currentPrice * a.quantity - cost) / cost) * 100 : 0
+  }
+  if (col === 'pct') return baseValue > 0 ? ((a.currentPrice * a.quantity) / baseValue) * 100 : 0
+  return 0
+}
+
+const compareAssets = (
+  a: Asset,
+  b: Asset,
+  col: SortCol,
+  dir: 'asc' | 'desc',
+  baseValue: number,
+  categories: PortfolioCategory[],
+): number => {
+  if (col === 'ticker') {
+    const cmp = a.ticker.localeCompare(b.ticker)
+    return dir === 'asc' ? cmp : -cmp
+  }
+  if (col === 'tipo') {
+    const la = categories.find((c) => c.id === a.categoryId)?.name ?? a.type
+    const lb = categories.find((c) => c.id === b.categoryId)?.name ?? b.type
+    const cmp = la.localeCompare(lb)
+    return dir === 'asc' ? cmp : -cmp
+  }
+  const av = assetNumericValue(a, col, baseValue)
+  const bv = assetNumericValue(b, col, baseValue)
+  return dir === 'asc' ? av - bv : bv - av
+}
 
 interface Props {
   assets: Asset[]
@@ -69,6 +107,16 @@ export const OverviewTab = ({
   const [editAvgPrice, setEditAvgPrice] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
   const [saving, setSaving] = useState(false)
+  const [sortCol, setSortCol] = useState<SortCol>('total')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  const toggleSort = (col: typeof sortCol) => {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortCol(col)
+      setSortDir(col === 'ticker' || col === 'tipo' ? 'asc' : 'desc')
+    }
+  }
 
   const openEdit = (a: Asset) => {
     setEditingAsset(a)
@@ -174,18 +222,22 @@ export const OverviewTab = ({
   type TableRow = AssetRow | GroupRow
 
   const tableRows = useMemo((): TableRow[] => {
+    const baseValue = filterCatId === ALL ? totalValue : filteredTotal
+
+    const sortAssets = (items: Asset[]): Asset[] =>
+      [...items].sort((a, b) => compareAssets(a, b, sortCol, sortDir, baseValue, categories))
+
     if (showingFixedIncomeDetail) {
-      return filteredAssets.map((a) => ({ kind: 'asset', asset: a }))
+      return sortAssets(filteredAssets).map((a) => ({ kind: 'asset', asset: a }))
     }
     const fixedItems = filteredAssets.filter((a) => a.type === 'fixed_income')
     const otherItems = filteredAssets.filter((a) => a.type !== 'fixed_income')
-    const rows: TableRow[] = otherItems.map((a) => ({ kind: 'asset', asset: a }))
+    const rows: TableRow[] = sortAssets(otherItems).map((a) => ({ kind: 'asset', asset: a }))
     if (fixedItems.length > 0) {
       const total = fixedItems.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
       const cost = fixedItems.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
       const fiCat = categories.find((c) => c.type === 'fixed_income')
       const recommended = fiCat ? (fiCat.targetPercent / 100) * totalValue : 0
-      const baseValue = filterCatId === ALL ? totalValue : filteredTotal
       rows.push({
         kind: 'group',
         label: 'Renda Fixa',
@@ -198,7 +250,16 @@ export const OverviewTab = ({
       })
     }
     return rows
-  }, [filteredAssets, showingFixedIncomeDetail, categories, totalValue, filteredTotal, filterCatId])
+  }, [
+    filteredAssets,
+    showingFixedIncomeDetail,
+    categories,
+    totalValue,
+    filteredTotal,
+    filterCatId,
+    sortCol,
+    sortDir,
+  ])
 
   const renderGroupRow = (row: Extract<(typeof tableRows)[number], { kind: 'group' }>) => {
     const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
@@ -339,17 +400,38 @@ export const OverviewTab = ({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-muted-foreground border-b border-border">
-              <th className="pb-2 font-medium">Ativo</th>
-              <th className="pb-2 font-medium">Tipo</th>
-              <th className="pb-2 font-medium text-right">Qtd</th>
-              <th className="pb-2 font-medium text-right">PM</th>
-              <th className="pb-2 font-medium text-right">Atual</th>
-              <th className="pb-2 font-medium text-right">Total</th>
-              <th className="pb-2 font-medium text-right">Recomendado</th>
-              <th className="pb-2 font-medium text-right">Resultado</th>
-              <th className="pb-2 font-medium text-right">
-                {filterCatId === ALL ? '% Cart.' : '% Cat.'}
-              </th>
+              {(
+                [
+                  { col: 'ticker', label: 'Ativo', align: 'left' },
+                  { col: 'tipo', label: 'Tipo', align: 'left' },
+                  { col: 'qty', label: 'Qtd', align: 'right' },
+                  { col: 'pm', label: 'PM', align: 'right' },
+                  { col: 'price', label: 'Atual', align: 'right' },
+                  { col: 'total', label: 'Total', align: 'right' },
+                  { col: null, label: 'Recomendado', align: 'right' },
+                  { col: 'ret', label: 'Resultado', align: 'right' },
+                  { col: 'pct', label: filterCatId === ALL ? '% Cart.' : '% Cat.', align: 'right' },
+                ] as const
+              ).map(({ col, label, align }) => (
+                <th
+                  key={label}
+                  className={`pb-2 font-medium ${align === 'right' ? 'text-right' : ''} ${col ? 'cursor-pointer select-none hover:text-foreground transition-colors' : ''}`}
+                  onClick={col ? () => toggleSort(col) : undefined}
+                >
+                  <span
+                    className={`inline-flex items-center gap-0.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}
+                  >
+                    {label}
+                    {col && sortCol === col ? (
+                      sortDir === 'asc' ? (
+                        <ChevronUp size={12} />
+                      ) : (
+                        <ChevronDown size={12} />
+                      )
+                    ) : null}
+                  </span>
+                </th>
+              ))}
               <th className="pb-2" />
             </tr>
           </thead>

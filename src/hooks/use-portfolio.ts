@@ -34,7 +34,8 @@ import type {
   PortfolioCategory,
   Trade,
 } from '@/types'
-import type { B3Asset, B3RawTrade } from '@/services/b3-import'
+import type { B3Asset, B3Dividend, B3RawTrade } from '@/services/b3-import'
+import { addDividends } from '@/services/dividends'
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -139,7 +140,12 @@ export const usePortfolio = () => {
     return saveAnswersService(user.uid, assetId, assetAnswers)
   }
 
-  const importFromB3 = async (b3Assets: B3Asset[], rawTrades: B3RawTrade[], filename: string) => {
+  const importFromB3 = async (
+    b3Assets: B3Asset[],
+    rawTrades: B3RawTrade[],
+    dividends: B3Dividend[],
+    filename: string,
+  ) => {
     if (!user) return
     const items: ImportItem[] = []
 
@@ -219,6 +225,7 @@ export const usePortfolio = () => {
           user.uid,
           rawTrades.map((t) => ({ ...t, source: 'b3_import' as const, importId })),
         ),
+      dividends.length > 0 && addDividends(user.uid, dividends),
     ])
   }
 

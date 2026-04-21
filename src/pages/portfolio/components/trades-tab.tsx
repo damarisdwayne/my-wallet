@@ -10,6 +10,8 @@ interface Props {
 const tradeLabel = (t: Trade) => {
   if (t.label === 'bonificacao') return 'Bonificação'
   if (t.label === 'amortizacao') return 'Amortização'
+  if (t.label === 'desdobramento') return 'Desdobramento'
+  if (t.label === 'grupamento') return 'Grupamento'
   return t.type === 'buy' ? 'Compra' : 'Venda'
 }
 

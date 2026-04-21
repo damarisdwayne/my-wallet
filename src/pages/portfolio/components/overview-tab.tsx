@@ -33,6 +33,7 @@ interface Props {
   importFromB3: (
     assets: B3Asset[],
     trades: import('@/services/b3-import').B3RawTrade[],
+    dividends: import('@/services/b3-import').B3ParseResult['dividends'],
     filename: string,
   ) => Promise<void>
   refreshPrices: () => Promise<void>
@@ -64,6 +65,8 @@ export const OverviewTab = ({
   const [editCategoryId, setEditCategoryId] = useState('')
   const [editTicker, setEditTicker] = useState('')
   const [editName, setEditName] = useState('')
+  const [editQty, setEditQty] = useState('')
+  const [editAvgPrice, setEditAvgPrice] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -72,6 +75,8 @@ export const OverviewTab = ({
     setEditCategoryId(a.categoryId)
     setEditTicker(a.ticker)
     setEditName(a.name)
+    setEditQty(String(a.quantity))
+    setEditAvgPrice(String(a.avgPrice))
     setSplitRatio('')
   }
 
@@ -81,12 +86,21 @@ export const OverviewTab = ({
     try {
       const newTicker = editTicker.trim().toUpperCase()
       const ratio = splitRatio ? Number(splitRatio) : null
+      const directQty = Number(editQty)
+      const directAvg = Number(editAvgPrice)
+
       const srcQty =
         ratio && ratio > 0 && ratio !== 1
           ? Math.round(editingAsset.quantity * ratio)
-          : editingAsset.quantity
+          : directQty > 0
+            ? directQty
+            : editingAsset.quantity
       const srcAvg =
-        ratio && ratio > 0 && ratio !== 1 ? editingAsset.avgPrice / ratio : editingAsset.avgPrice
+        ratio && ratio > 0 && ratio !== 1
+          ? editingAsset.avgPrice / ratio
+          : directAvg > 0
+            ? directAvg
+            : editingAsset.avgPrice
 
       const duplicate = assets.find(
         (a) => a.id !== editingAsset.id && a.ticker.toUpperCase() === newTicker,
@@ -102,10 +116,8 @@ export const OverviewTab = ({
           categoryId: editCategoryId,
           ticker: newTicker,
           name: editName.trim(),
-        }
-        if (ratio && ratio > 0 && ratio !== 1) {
-          updates.quantity = srcQty
-          updates.avgPrice = srcAvg
+          quantity: srcQty,
+          avgPrice: srcAvg,
         }
         await editAsset(editingAsset.id, updates)
       }
@@ -187,6 +199,43 @@ export const OverviewTab = ({
     }
     return rows
   }, [filteredAssets, showingFixedIncomeDetail, categories, totalValue, filteredTotal, filterCatId])
+
+  const renderGroupRow = (row: Extract<(typeof tableRows)[number], { kind: 'group' }>) => {
+    const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
+    return (
+      <tr
+        key="fi-group"
+        className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors cursor-pointer"
+        onClick={() => fixedIncomeCatId && setFilterCatId(fixedIncomeCatId)}
+      >
+        <td className="py-3">
+          <p className="font-semibold text-foreground">{row.label}</p>
+          <p className="text-xs text-muted-foreground">{row.subtitle}</p>
+        </td>
+        <td className="py-3">
+          <Badge variant="secondary">Renda Fixa</Badge>
+        </td>
+        <td className="py-3 text-right text-muted-foreground">—</td>
+        <td className="py-3 text-right text-muted-foreground">—</td>
+        <td className="py-3 text-right text-muted-foreground">—</td>
+        <td className="py-3 text-right font-medium text-foreground">{formatCurrency(row.total)}</td>
+        <td className="py-3 text-right">
+          <p className="font-medium text-foreground">{formatCurrency(row.recommended)}</p>
+          <p className={`text-xs ${row.diff >= 0 ? 'text-success' : 'text-destructive'}`}>
+            {row.diff >= 0 ? '+' : ''}
+            {formatCurrency(row.diff)}
+          </p>
+        </td>
+        <td
+          className={`py-3 text-right font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}
+        >
+          {formatPercent(ret)}
+        </td>
+        <td className="py-3 text-right text-muted-foreground">{row.pct.toFixed(1)}%</td>
+        <td />
+      </tr>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -306,48 +355,7 @@ export const OverviewTab = ({
           </thead>
           <tbody>
             {tableRows.map((row) => {
-              if (row.kind === 'group') {
-                const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
-                return (
-                  <tr
-                    key="fi-group"
-                    className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors cursor-pointer"
-                    onClick={() => fixedIncomeCatId && setFilterCatId(fixedIncomeCatId)}
-                  >
-                    <td className="py-3">
-                      <p className="font-semibold text-foreground">{row.label}</p>
-                      <p className="text-xs text-muted-foreground">{row.subtitle}</p>
-                    </td>
-                    <td className="py-3">
-                      <Badge variant="secondary">Renda Fixa</Badge>
-                    </td>
-                    <td className="py-3 text-right text-muted-foreground">—</td>
-                    <td className="py-3 text-right text-muted-foreground">—</td>
-                    <td className="py-3 text-right text-muted-foreground">—</td>
-                    <td className="py-3 text-right font-medium text-foreground">
-                      {formatCurrency(row.total)}
-                    </td>
-                    <td className="py-3 text-right">
-                      <p className="font-medium text-foreground">
-                        {formatCurrency(row.recommended)}
-                      </p>
-                      <p
-                        className={`text-xs ${row.diff >= 0 ? 'text-success' : 'text-destructive'}`}
-                      >
-                        {row.diff >= 0 ? '+' : ''}
-                        {formatCurrency(row.diff)}
-                      </p>
-                    </td>
-                    <td
-                      className={`py-3 text-right font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}
-                    >
-                      {formatPercent(ret)}
-                    </td>
-                    <td className="py-3 text-right text-muted-foreground">{row.pct.toFixed(1)}%</td>
-                    <td />
-                  </tr>
-                )
-              }
+              if (row.kind === 'group') return renderGroupRow(row)
               const a = row.asset
               const total = a.currentPrice * a.quantity
               const cost = a.avgPrice * a.quantity
@@ -357,6 +365,7 @@ export const OverviewTab = ({
               const targetPct = assetTargets.get(a.id) ?? 0
               const recommended = (targetPct / 100) * totalValue
               const diff = total - recommended
+              const cat = categories.find((c) => c.id === a.categoryId)
               return (
                 <tr
                   key={a.id}
@@ -367,21 +376,20 @@ export const OverviewTab = ({
                     <p className="text-xs text-muted-foreground">{a.name}</p>
                   </td>
                   <td className="py-3">
-                    {(() => {
-                      const cat = categories.find((c) => c.id === a.categoryId)
-                      return cat ? (
-                        <Badge
-                          variant="secondary"
-                          style={{ borderColor: cat.color, color: cat.color }}
-                        >
-                          {cat.name}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">{typeLabel[a.type]}</Badge>
-                      )
-                    })()}
+                    {cat ? (
+                      <Badge
+                        variant="secondary"
+                        style={{ borderColor: cat.color, color: cat.color }}
+                      >
+                        {cat.name}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">{typeLabel[a.type]}</Badge>
+                    )}
                   </td>
-                  <td className="py-3 text-right text-foreground">{a.quantity}</td>
+                  <td className="py-3 text-right text-foreground">
+                    {a.quantity % 1 === 0 ? a.quantity : Number.parseFloat(a.quantity.toFixed(2))}
+                  </td>
                   <td className="py-3 text-right text-muted-foreground">
                     {formatCurrency(a.avgPrice)}
                   </td>
@@ -482,6 +490,36 @@ export const OverviewTab = ({
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="edit-qty" className="text-xs text-muted-foreground mb-1 block">
+                  Quantidade
+                </label>
+                <input
+                  id="edit-qty"
+                  type="number"
+                  min="0"
+                  step="any"
+                  className={inputClass}
+                  value={editQty}
+                  onChange={(e) => setEditQty(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-avg" className="text-xs text-muted-foreground mb-1 block">
+                  PM (R$)
+                </label>
+                <input
+                  id="edit-avg"
+                  type="number"
+                  min="0"
+                  step="any"
+                  className={inputClass}
+                  value={editAvgPrice}
+                  onChange={(e) => setEditAvgPrice(e.target.value)}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="edit-split" className="text-xs text-muted-foreground mb-1 block">

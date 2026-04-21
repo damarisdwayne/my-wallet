@@ -1,102 +1,195 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import { subscribeToAllDividends } from '@/services/dividends'
+import { subscribeToAssets } from '@/services/assets'
 import { useAuth } from '@/store/auth'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Dividend } from '@/types'
+import type { Asset, Dividend } from '@/types'
 
-const currentYear = new Date().getFullYear().toString()
-const currentMonth = new Date().toISOString().slice(0, 7)
-const currentMonthLabel = new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+const MONTH_SHORT = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+]
+const THIS_YEAR = new Date().getFullYear().toString()
+
+const buildLast12Months = (): string[] => {
+  const now = new Date()
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+}
+
+const monthLabel = (key: string) => `${MONTH_SHORT[Number(key.slice(5)) - 1]} ${key.slice(2, 4)}`
+
+interface MonthBreakdown {
+  total: number
+  fii: number
+  stock: number
+  fixed: number
+}
 
 export const DividendsPage = () => {
   const { user } = useAuth()
   const [dividends, setDividends] = useState<Dividend[]>([])
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [selectedYear, setSelectedYear] = useState(THIS_YEAR)
 
   useEffect(() => {
     if (!user) return
-    return subscribeToAllDividends(user.uid, setDividends)
+    const unsubs = [
+      subscribeToAllDividends(user.uid, setDividends),
+      subscribeToAssets(user.uid, setAssets),
+    ]
+    return () => unsubs.forEach((u) => u())
   }, [user])
 
-  const ytd = dividends.filter((d) => d.paymentDate.startsWith(currentYear))
-  const totalYTD = ytd.reduce((s, d) => s + d.amount, 0)
-  const totalCurrentMonth = dividends
-    .filter((d) => d.paymentDate.startsWith(currentMonth))
-    .reduce((s, d) => s + d.amount, 0)
-
-  const byMonth = ytd.reduce(
-    (acc, d) => {
-      const m = d.paymentDate.slice(0, 7)
-      acc[m] = (acc[m] ?? 0) + d.amount
-      return acc
-    },
-    {} as Record<string, number>,
+  // ticker → asset type map (only for tickers present in the portfolio)
+  const tickerType = useMemo(
+    () => new Map(assets.map((a) => [a.ticker.toUpperCase(), a.type])),
+    [assets],
   )
 
-  const monthCount = Object.keys(byMonth).length
-  const avgMonthly = monthCount > 0 ? totalYTD / monthCount : 0
-  const maxMonth = Math.max(...Object.values(byMonth), 1)
+  const last12Months = useMemo(buildLast12Months, [])
+
+  const last12Dividends = useMemo(() => {
+    const from = last12Months[0]
+    const to = last12Months[11]
+    return dividends.filter((d) => {
+      const m = d.paymentDate.slice(0, 7)
+      return m >= from && m <= to
+    })
+  }, [dividends, last12Months])
+
+  const byMonth = useMemo(() => {
+    const map = Object.fromEntries(
+      last12Months.map((m) => [m, { total: 0, fii: 0, stock: 0, fixed: 0 } as MonthBreakdown]),
+    )
+    for (const d of last12Dividends) {
+      const key = d.paymentDate.slice(0, 7)
+      if (!(key in map)) continue
+      const type = tickerType.get(d.ticker.toUpperCase())
+      map[key].total += d.amount
+      if (type === 'fii' || type === 'etf') map[key].fii += d.amount
+      else if (type === 'fixed_income') map[key].fixed += d.amount
+      else map[key].stock += d.amount
+    }
+    return map
+  }, [last12Dividends, last12Months, tickerType])
+
+  const total12 = last12Dividends.reduce((s, d) => s + d.amount, 0)
+  const avg12 = total12 / 12
+  const maxMonth = Math.max(...Object.values(byMonth).map((b) => b.total), 1)
+
+  const currentMonthKey = new Date().toISOString().slice(0, 7)
+  const totalCurrentMonth = byMonth[currentMonthKey]?.total ?? 0
+
+  const years = useMemo(() => {
+    const set = new Set(dividends.map((d) => d.paymentDate.slice(0, 4)))
+    if (!set.has(THIS_YEAR)) set.add(THIS_YEAR)
+    return [...set].sort((a, b) => b.localeCompare(a))
+  }, [dividends])
+
+  const yearDividends = useMemo(
+    () => dividends.filter((d) => d.paymentDate.startsWith(selectedYear)),
+    [dividends, selectedYear],
+  )
 
   return (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Total YTD {currentYear}</CardTitle>
-            <CardValue>{formatCurrency(totalYTD)}</CardValue>
+            <CardTitle>Últimos 12 meses</CardTitle>
+            <CardValue>{formatCurrency(total12)}</CardValue>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>
-              {currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}
-            </CardTitle>
+            <CardTitle>Média mensal</CardTitle>
+            <CardValue>{formatCurrency(avg12)}</CardValue>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mês atual</CardTitle>
             <CardValue>{formatCurrency(totalCurrentMonth)}</CardValue>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Média Mensal</CardTitle>
-            <CardValue>{formatCurrency(avgMonthly)}</CardValue>
           </CardHeader>
         </Card>
       </div>
 
-      {monthCount > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Por mês</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-3 h-32">
-              {Object.entries(byMonth).map(([m, v]) => (
-                <div key={m} className="flex-1 flex flex-col items-center gap-1">
+      <Card>
+        <CardHeader>
+          <CardTitle>Por mês — últimos 12 meses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-1">
+            {Object.entries(byMonth).map(([key, b]) => {
+              const barHeight = Math.max(2, (b.total / maxMonth) * 100)
+              const isCurrent = key === currentMonthKey
+              const tooltip =
+                b.total > 0
+                  ? [
+                      b.fii > 0 && `FII: ${formatCurrency(b.fii)}`,
+                      b.stock > 0 && `Ações: ${formatCurrency(b.stock)}`,
+                      b.fixed > 0 && `Renda Fixa: ${formatCurrency(b.fixed)}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' | ')
+                  : undefined
+              return (
+                <div key={key} className="flex-1 flex flex-col items-center gap-1">
                   <div
-                    className="w-full rounded-t bg-success/70 hover:bg-success transition-colors"
-                    style={{ height: `${(v / maxMonth) * 100}%` }}
-                    title={formatCurrency(v)}
+                    className={`w-full rounded-t transition-colors ${isCurrent ? 'bg-success hover:bg-success/80' : 'bg-success/60 hover:bg-success'}`}
+                    style={{ height: `${barHeight}px` }}
+                    title={tooltip}
                   />
-                  <span className="text-[10px] text-muted-foreground">{m.slice(5)}</span>
+                  <span className="text-[10px] text-muted-foreground">{monthLabel(key)}</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de proventos</CardTitle>
+          <CardTitle>Histórico</CardTitle>
         </CardHeader>
         <CardContent>
-          {dividends.length === 0 ? (
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            {years.map((y) => (
+              <button
+                key={y}
+                onClick={() => setSelectedYear(y)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  selectedYear === y
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+          {yearDividends.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              Nenhum provento registrado ainda.
+              Nenhum provento em {selectedYear}.
             </p>
           ) : (
             <div className="space-y-2">
-              {dividends.map((d) => (
+              {yearDividends.map((d) => (
                 <div
                   key={d.id}
                   className="flex items-center justify-between py-2 border-b border-border last:border-0"

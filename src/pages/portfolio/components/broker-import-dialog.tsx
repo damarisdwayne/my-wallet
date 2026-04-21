@@ -9,7 +9,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
-import { type B3Asset, type B3RawTrade, parseB3Excel } from '@/services/b3-import'
+import {
+  type B3Asset,
+  type B3ParseResult,
+  type B3RawTrade,
+  parseB3Excel,
+} from '@/services/b3-import'
 import { parseInterPdf } from '@/services/inter-import'
 import type { Asset } from '@/types'
 import { typeLabel } from '../constants'
@@ -21,7 +26,7 @@ interface Broker {
   instructions: React.ReactNode
   fileAccept: string
   fileHint: string
-  parse: (buffer: ArrayBuffer) => Promise<{ assets: B3Asset[]; trades: B3RawTrade[] }>
+  parse: (buffer: ArrayBuffer) => Promise<B3ParseResult>
 }
 
 const BROKERS: Broker[] = [
@@ -64,7 +69,7 @@ const BROKERS: Broker[] = [
     ),
     fileAccept: '.pdf',
     fileHint: 'PDF — Transaction Confirmation da Inter Co Securities',
-    parse: async (buf) => ({ assets: await parseInterPdf(buf), trades: [] }),
+    parse: async (buf) => ({ assets: await parseInterPdf(buf), trades: [], dividends: [] }),
   },
 ]
 
@@ -72,7 +77,12 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   existingAssets: Asset[]
-  onImport: (assets: B3Asset[], trades: B3RawTrade[], filename: string) => Promise<void>
+  onImport: (
+    assets: B3Asset[],
+    trades: B3RawTrade[],
+    dividends: B3ParseResult['dividends'],
+    filename: string,
+  ) => Promise<void>
 }
 
 type ParsedRow = B3Asset & { action: 'new' | 'update' | 'sell' }
@@ -82,6 +92,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const [broker, setBroker] = useState<Broker | null>(null)
   const [rows, setRows] = useState<ParsedRow[] | null>(null)
   const [pendingTrades, setPendingTrades] = useState<B3RawTrade[]>([])
+  const [pendingDividends, setPendingDividends] = useState<B3ParseResult['dividends']>([])
   const [filename, setFilename] = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
@@ -90,6 +101,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const resetFile = () => {
     setRows(null)
     setPendingTrades([])
+    setPendingDividends([])
     setFilename('')
     setParseError(null)
     setParsing(false)
@@ -104,8 +116,9 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const processBuffer = async (buffer: ArrayBuffer, selectedBroker: Broker) => {
     setParsing(true)
     try {
-      const { assets, trades } = await selectedBroker.parse(buffer)
+      const { assets, trades, dividends } = await selectedBroker.parse(buffer)
       setPendingTrades(trades)
+      setPendingDividends(dividends)
       const withAction: ParsedRow[] = assets
         .filter((a) => {
           const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
@@ -146,7 +159,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     if (!rows) return
     setImporting(true)
     try {
-      await onImport(rows, pendingTrades, filename)
+      await onImport(rows, pendingTrades, pendingDividends, filename)
       onOpenChange(false)
       resetAll()
     } finally {
@@ -286,7 +299,9 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                         <Badge variant="secondary">{typeLabel[row.type]}</Badge>
                       </td>
                       <td className="px-3 py-2 text-right text-foreground">
-                        {row.quantity % 1 === 0 ? row.quantity : row.quantity.toFixed(6)}
+                        {row.quantity % 1 === 0
+                          ? row.quantity
+                          : Number.parseFloat(row.quantity.toFixed(2))}
                       </td>
                       <td className="px-3 py-2 text-right text-muted-foreground">
                         {row.avgPrice > 0 ? formatCurrency(row.avgPrice) : '—'}

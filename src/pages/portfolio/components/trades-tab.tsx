@@ -44,9 +44,7 @@ export const TradesTab = ({ trades, assets, categories, onDeleteTrade }: Props) 
     () =>
       filterCatId === ALL
         ? trades
-        : trades.filter(
-            (t) => tickerToCatId[t.ticker.toUpperCase()] === filterCatId,
-          ),
+        : trades.filter((t) => tickerToCatId[t.ticker.toUpperCase()] === filterCatId),
     [trades, filterCatId, tickerToCatId],
   )
 
@@ -198,7 +196,10 @@ export const TradesTab = ({ trades, assets, categories, onDeleteTrade }: Props) 
                                 <div className="flex items-center justify-end gap-1">
                                   <span className="text-xs text-destructive">Confirmar?</span>
                                   <button
-                                    onClick={() => { onDeleteTrade(t.id); setConfirmDeleteId(null) }}
+                                    onClick={() => {
+                                      onDeleteTrade(t.id)
+                                      setConfirmDeleteId(null)
+                                    }}
                                     className="px-1.5 py-0.5 rounded text-xs bg-destructive text-destructive-foreground"
                                   >
                                     Sim

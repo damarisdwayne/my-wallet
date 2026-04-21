@@ -397,7 +397,8 @@ export const usePortfolio = () => {
     trades,
     addAsset,
     addManualTrade,
-    deleteTrade: (tradeId: string) => user ? deleteTradeService(user.uid, tradeId) : Promise.resolve(),
+    deleteTrade: (tradeId: string) =>
+      user ? deleteTradeService(user.uid, tradeId) : Promise.resolve(),
     importFromB3,
     revertImport,
     editAsset,

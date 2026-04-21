@@ -1,5 +1,5 @@
 interface BcbEntry {
-  data: string  // DD/MM/YYYY
+  data: string // DD/MM/YYYY
   valor: string
 }
 
@@ -8,7 +8,11 @@ const formatDateBcb = (iso: string) => {
   return `${d}/${m}/${y}`
 }
 
-const fetchSerie = async (serie: number, startDate: string, endDate: string): Promise<BcbEntry[]> => {
+const fetchSerie = async (
+  serie: number,
+  startDate: string,
+  endDate: string,
+): Promise<BcbEntry[]> => {
   const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${serie}/dados?dataInicial=${formatDateBcb(startDate)}&dataFinal=${formatDateBcb(endDate)}&formato=json`
   try {
     const res = await fetch(url)
@@ -50,20 +54,14 @@ export const calcSelicAccumulated = async (
 }
 
 // IPCA mensal (série 433) — retorna fator acumulado
-export const calcIpcaAccumulated = async (
-  startDate: string,
-  endDate: string,
-): Promise<number> => {
+export const calcIpcaAccumulated = async (startDate: string, endDate: string): Promise<number> => {
   const data = await fetchSerie(433, startDate, endDate)
   if (data.length === 0) return 1
   return data.reduce((acc, { valor }) => acc * (1 + Number.parseFloat(valor) / 100), 1)
 }
 
 // IGP-M mensal (série 189) — retorna fator acumulado
-export const calcIgpmAccumulated = async (
-  startDate: string,
-  endDate: string,
-): Promise<number> => {
+export const calcIgpmAccumulated = async (startDate: string, endDate: string): Promise<number> => {
   const data = await fetchSerie(189, startDate, endDate)
   if (data.length === 0) return 1
   return data.reduce((acc, { valor }) => acc * (1 + Number.parseFloat(valor) / 100), 1)
@@ -85,7 +83,8 @@ export const calcTesouroValue = async (
   prefixedRate: number | undefined,
 ): Promise<number> => {
   const today = new Date().toISOString().slice(0, 10)
-  const days = (Date.now() - new Date(operationDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)
+  const days =
+    (Date.now() - new Date(operationDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)
   if (days <= 0) return invested
 
   const avgPrice = invested / quantity
@@ -117,7 +116,8 @@ export const calcFixedIncomeValue = async (
   operationDate: string,
 ): Promise<number> => {
   const today = new Date().toISOString().slice(0, 10)
-  const days = (Date.now() - new Date(operationDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)
+  const days =
+    (Date.now() - new Date(operationDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)
 
   if (days <= 0) return invested
 

@@ -79,7 +79,9 @@ export const DiagramTab = ({
 
   const getDraft = (catId: string, catAssets: Asset[]) => {
     if (manualDrafts[catId]) return manualDrafts[catId]
-    return Object.fromEntries(catAssets.map((a) => [a.id, String(a.targetPercent > 0 ? a.targetPercent : '')]))
+    return Object.fromEntries(
+      catAssets.map((a) => [a.id, String(a.targetPercent > 0 ? a.targetPercent : '')]),
+    )
   }
 
   const enterManual = (catId: string, catAssets: Asset[]) => {
@@ -288,11 +290,7 @@ export const DiagramTab = ({
                       const { yes, total } = calcScore(answers[a.id] ?? {}, diagram.questions)
                       const pct = total > 0 ? (yes / total) * 100 : 0
                       const scoreColor =
-                        pct >= 75
-                          ? 'text-success'
-                          : pct >= 50
-                            ? 'text-warning'
-                            : 'text-destructive'
+                        pct >= 75 ? 'text-success' : pct >= 50 ? 'text-warning' : 'text-destructive'
                       return (
                         <button
                           key={a.id}

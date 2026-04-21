@@ -11,7 +11,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
-import type { Asset, AssetAnswers, AssetType, Diagram, DiagramQuestion, PortfolioCategory } from '@/types'
+import type {
+  Asset,
+  AssetAnswers,
+  AssetType,
+  Diagram,
+  DiagramQuestion,
+  PortfolioCategory,
+} from '@/types'
 import { ASSET_TYPES, typeLabel } from '../constants'
 import { computeAssetTargets } from '../compute-targets'
 
@@ -178,7 +185,12 @@ export const AllocationTab = ({
 
   const openEdit = (cat: PortfolioCategory) => {
     setEditingCat(cat)
-    setEditForm({ name: cat.name, type: cat.type, targetPercent: String(cat.targetPercent), color: cat.color })
+    setEditForm({
+      name: cat.name,
+      type: cat.type,
+      targetPercent: String(cat.targetPercent),
+      color: cat.color,
+    })
     setEditOpen(true)
   }
 
@@ -207,7 +219,9 @@ export const AllocationTab = ({
 
   const getDraft = (catId: string, catAssets: Asset[]) => {
     if (manualDrafts[catId]) return manualDrafts[catId]
-    return Object.fromEntries(catAssets.map((a) => [a.id, a.targetPercent > 0 ? String(a.targetPercent) : '']))
+    return Object.fromEntries(
+      catAssets.map((a) => [a.id, a.targetPercent > 0 ? String(a.targetPercent) : '']),
+    )
   }
 
   const enterManual = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
@@ -223,7 +237,11 @@ export const AllocationTab = ({
   const exitManual = async (catId: string, catAssets: Asset[]) => {
     setSavingManual(catId)
     await Promise.all(catAssets.map((a) => editAsset(a.id, { targetPercent: 0 })))
-    setManualDrafts((prev) => { const n = { ...prev }; delete n[catId]; return n })
+    setManualDrafts((prev) => {
+      const n = { ...prev }
+      delete n[catId]
+      return n
+    })
     setSavingManual(null)
   }
 
@@ -234,7 +252,9 @@ export const AllocationTab = ({
   const saveManual = async (catId: string, catAssets: Asset[]) => {
     const draft = manualDrafts[catId] ?? {}
     setSavingManual(catId)
-    await Promise.all(catAssets.map((a) => editAsset(a.id, { targetPercent: Number(draft[a.id]) || 0 })))
+    await Promise.all(
+      catAssets.map((a) => editAsset(a.id, { targetPercent: Number(draft[a.id]) || 0 })),
+    )
     setSavingManual(null)
   }
 
@@ -248,13 +268,19 @@ export const AllocationTab = ({
 
   const setAnswer = async (questionId: string, value: 0 | 1) => {
     if (!answeringAsset) return
-    await saveAnswers(answeringAsset.id, { ...(answers[answeringAsset.id] ?? {}), [questionId]: value })
+    await saveAnswers(answeringAsset.id, {
+      ...(answers[answeringAsset.id] ?? {}),
+      [questionId]: value,
+    })
   }
 
   const addQuestion = async (diagram: Diagram) => {
     const text = newQuestionText.trim()
     if (!text) return
-    await saveDiagram({ ...diagram, questions: [...diagram.questions, { id: `q-${Date.now()}`, text }] })
+    await saveDiagram({
+      ...diagram,
+      questions: [...diagram.questions, { id: `q-${Date.now()}`, text }],
+    })
     setNewQuestionText('')
   }
 
@@ -265,7 +291,10 @@ export const AllocationTab = ({
   const saveEditQuestion = async (diagram: Diagram) => {
     const text = editingQuestionText.trim()
     if (!text || !editingQuestion) return
-    await saveDiagram({ ...diagram, questions: diagram.questions.map((q) => (q.id === editingQuestion.id ? { ...q, text } : q)) })
+    await saveDiagram({
+      ...diagram,
+      questions: diagram.questions.map((q) => (q.id === editingQuestion.id ? { ...q, text } : q)),
+    })
     setEditingQuestion(null)
     setEditingQuestionText('')
   }
@@ -289,7 +318,12 @@ export const AllocationTab = ({
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           Total alocado:{' '}
-          <span className={cn('font-semibold', Math.abs(totalAllocated - 100) < 0.1 ? 'text-success' : 'text-warning')}>
+          <span
+            className={cn(
+              'font-semibold',
+              Math.abs(totalAllocated - 100) < 0.1 ? 'text-success' : 'text-warning',
+            )}
+          >
             {totalAllocated.toFixed(1)}%
           </span>{' '}
           de 100%
@@ -304,7 +338,9 @@ export const AllocationTab = ({
       </div>
 
       {categories.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma categoria criada ainda.</p>
+        <p className="text-sm text-muted-foreground text-center py-6">
+          Nenhuma categoria criada ainda.
+        </p>
       )}
 
       {categories.map((cat) => {
@@ -325,32 +361,56 @@ export const AllocationTab = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: cat.color }} />
-                  <CardTitle className="text-foreground text-sm font-semibold">{cat.name}</CardTitle>
+                  <CardTitle className="text-foreground text-sm font-semibold">
+                    {cat.name}
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-muted-foreground">Meta: {cat.targetPercent}%</span>
-                  <span className="font-medium text-foreground">Atual: {actualPct.toFixed(1)}%</span>
+                  <span className="font-medium text-foreground">
+                    Atual: {actualPct.toFixed(1)}%
+                  </span>
                   <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
-                    {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
+                    {diff >= 0 ? '+' : ''}
+                    {diff.toFixed(1)}%
                   </Badge>
-                  <button onClick={() => openEdit(cat)} className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+                  <button
+                    onClick={() => openEdit(cat)}
+                    className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
                     <Pencil size={13} />
                   </button>
                   {confirmDeleteId === cat.id ? (
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-destructive">Confirmar?</span>
-                      <button onClick={() => handleDelete(cat.id)} className="px-1.5 py-0.5 rounded text-xs bg-destructive text-destructive-foreground">Sim</button>
-                      <button onClick={() => setConfirmDeleteId(null)} className="px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground">Não</button>
+                      <button
+                        onClick={() => handleDelete(cat.id)}
+                        className="px-1.5 py-0.5 rounded text-xs bg-destructive text-destructive-foreground"
+                      >
+                        Sim
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground"
+                      >
+                        Não
+                      </button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmDeleteId(cat.id)} className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-destructive">
+                    <button
+                      onClick={() => setConfirmDeleteId(cat.id)}
+                      className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-destructive"
+                    >
                       <Trash2 size={13} />
                     </button>
                   )}
                 </div>
               </div>
               <div className="w-full bg-muted rounded-full h-2 mt-2">
-                <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }} />
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
+                />
               </div>
             </CardHeader>
 
@@ -361,7 +421,9 @@ export const AllocationTab = ({
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3"
                 >
                   {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                  {expanded ? 'Fechar ativos' : `Ver ${catAssets.length} ativo${catAssets.length !== 1 ? 's' : ''}`}
+                  {expanded
+                    ? 'Fechar ativos'
+                    : `Ver ${catAssets.length} ativo${catAssets.length !== 1 ? 's' : ''}`}
                 </button>
 
                 {expanded && (
@@ -371,14 +433,28 @@ export const AllocationTab = ({
                       <span className="text-xs text-muted-foreground">Alvo por ativo</span>
                       <div className="flex items-center gap-1 rounded-full bg-muted p-0.5 text-xs">
                         <button
-                          onClick={() => { if (inManualMode) exitManual(cat.id, catAssets) }}
-                          className={cn('px-2.5 py-1 rounded-full transition-colors', !inManualMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+                          onClick={() => {
+                            if (inManualMode) exitManual(cat.id, catAssets)
+                          }}
+                          className={cn(
+                            'px-2.5 py-1 rounded-full transition-colors',
+                            !inManualMode
+                              ? 'bg-background text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground',
+                          )}
                         >
                           Diagrama
                         </button>
                         <button
-                          onClick={() => { if (!inManualMode) enterManual(cat.id, catAssets, cat) }}
-                          className={cn('px-2.5 py-1 rounded-full transition-colors', inManualMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+                          onClick={() => {
+                            if (!inManualMode) enterManual(cat.id, catAssets, cat)
+                          }}
+                          className={cn(
+                            'px-2.5 py-1 rounded-full transition-colors',
+                            inManualMode
+                              ? 'bg-background text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground',
+                          )}
                         >
                           % Manual
                         </button>
@@ -386,67 +462,81 @@ export const AllocationTab = ({
                     </div>
 
                     {/* Manual mode */}
-                    {inManualMode && (() => {
-                      const draft = getDraft(cat.id, catAssets)
-                      const draftSum = catAssets.reduce((s, a) => s + (Number(draft[a.id]) || 0), 0)
-                      const sumOk = Math.abs(draftSum - cat.targetPercent) < 0.15
-                      return (
-                        <div className="space-y-3">
-                          {catAssets.map((a) => {
-                            const val = Number(draft[a.id]) || 0
-                            return (
-                              <div key={a.id} className="space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-semibold text-foreground">{a.ticker}</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      step="0.1"
-                                      className="w-16 rounded-md border border-input bg-background px-2 py-0.5 text-xs text-right text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                      value={draft[a.id] ?? ''}
-                                      onChange={(e) => updateDraft(cat.id, a.id, e.target.value)}
-                                    />
-                                    <span className="text-xs text-muted-foreground">%</span>
+                    {inManualMode &&
+                      (() => {
+                        const draft = getDraft(cat.id, catAssets)
+                        const draftSum = catAssets.reduce(
+                          (s, a) => s + (Number(draft[a.id]) || 0),
+                          0,
+                        )
+                        const sumOk = Math.abs(draftSum - cat.targetPercent) < 0.15
+                        return (
+                          <div className="space-y-3">
+                            {catAssets.map((a) => {
+                              const val = Number(draft[a.id]) || 0
+                              return (
+                                <div key={a.id} className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold text-foreground">
+                                      {a.ticker}
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        className="w-16 rounded-md border border-input bg-background px-2 py-0.5 text-xs text-right text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                        value={draft[a.id] ?? ''}
+                                        onChange={(e) => updateDraft(cat.id, a.id, e.target.value)}
+                                      />
+                                      <span className="text-xs text-muted-foreground">%</span>
+                                    </div>
                                   </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max={cat.targetPercent}
+                                    step="0.1"
+                                    value={val}
+                                    className="w-full accent-primary h-1.5 cursor-pointer"
+                                    onChange={(e) => updateDraft(cat.id, a.id, e.target.value)}
+                                  />
                                 </div>
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max={cat.targetPercent}
-                                  step="0.1"
-                                  value={val}
-                                  className="w-full accent-primary h-1.5 cursor-pointer"
-                                  onChange={(e) => updateDraft(cat.id, a.id, e.target.value)}
-                                />
-                              </div>
-                            )
-                          })}
-                          <div className="flex items-center justify-between pt-1">
-                            <span className={cn('text-xs', sumOk ? 'text-success' : 'text-warning')}>
-                              Soma: {draftSum.toFixed(1)}% {sumOk ? '✓' : `(meta: ${cat.targetPercent}%)`}
-                            </span>
-                            <button
-                              onClick={() => saveManual(cat.id, catAssets)}
-                              disabled={isSaving}
-                              className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
-                            >
-                              {isSaving ? 'Salvando…' : 'Salvar'}
-                            </button>
+                              )
+                            })}
+                            <div className="flex items-center justify-between pt-1">
+                              <span
+                                className={cn('text-xs', sumOk ? 'text-success' : 'text-warning')}
+                              >
+                                Soma: {draftSum.toFixed(1)}%{' '}
+                                {sumOk ? '✓' : `(meta: ${cat.targetPercent}%)`}
+                              </span>
+                              <button
+                                onClick={() => saveManual(cat.id, catAssets)}
+                                disabled={isSaving}
+                                className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+                              >
+                                {isSaving ? 'Salvando…' : 'Salvar'}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })()}
+                        )
+                      })()}
 
                     {/* Diagram mode */}
                     {!inManualMode && (
                       <div className="space-y-2">
                         {!diagram ? (
                           <div className="flex items-center justify-between py-2">
-                            <span className="text-xs text-muted-foreground">Nenhum diagrama configurado</span>
+                            <span className="text-xs text-muted-foreground">
+                              Nenhum diagrama configurado
+                            </span>
                             <button
-                              onClick={() => { setCreateDiagCatId(cat.id); setNewDiagName(cat.name) }}
+                              onClick={() => {
+                                setCreateDiagCatId(cat.id)
+                                setNewDiagName(cat.name)
+                              }}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <Plus size={12} />
@@ -456,7 +546,9 @@ export const AllocationTab = ({
                         ) : (
                           <>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">{diagram.name} · {diagram.questions.length} perguntas</span>
+                              <span className="text-xs text-muted-foreground">
+                                {diagram.name} · {diagram.questions.length} perguntas
+                              </span>
                               <button
                                 onClick={() => setEditQCatId(cat.id)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -466,9 +558,17 @@ export const AllocationTab = ({
                               </button>
                             </div>
                             {catAssets.map((a) => {
-                              const { yes, total } = calcScore(answers[a.id] ?? {}, diagram.questions)
+                              const { yes, total } = calcScore(
+                                answers[a.id] ?? {},
+                                diagram.questions,
+                              )
                               const pct = total > 0 ? (yes / total) * 100 : 0
-                              const scoreColor = pct >= 75 ? 'text-success' : pct >= 50 ? 'text-warning' : 'text-destructive'
+                              const scoreColor =
+                                pct >= 75
+                                  ? 'text-success'
+                                  : pct >= 50
+                                    ? 'text-warning'
+                                    : 'text-destructive'
                               return (
                                 <button
                                   key={a.id}
@@ -476,18 +576,31 @@ export const AllocationTab = ({
                                   className="w-full flex items-center gap-3 group text-left hover:bg-accent/40 rounded-md px-1 py-1.5 transition-colors"
                                 >
                                   <div className="w-20 shrink-0">
-                                    <p className="text-sm font-semibold text-foreground">{a.ticker}</p>
+                                    <p className="text-sm font-semibold text-foreground">
+                                      {a.ticker}
+                                    </p>
                                   </div>
                                   <div className="flex-1 bg-muted rounded-full h-1.5">
-                                    <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                                    <div
+                                      className="h-1.5 rounded-full bg-primary transition-all"
+                                      style={{ width: `${pct}%` }}
+                                    />
                                   </div>
-                                  <span className={cn('shrink-0 text-xs font-bold w-10 text-right tabular-nums', scoreColor)}>
+                                  <span
+                                    className={cn(
+                                      'shrink-0 text-xs font-bold w-10 text-right tabular-nums',
+                                      scoreColor,
+                                    )}
+                                  >
                                     {yes}/{total}
                                   </span>
                                   <span className="w-12 text-xs text-right text-muted-foreground shrink-0">
                                     {(assetTargets.get(a.id) ?? 0).toFixed(1)}%
                                   </span>
-                                  <ChevronRight size={12} className="text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <ChevronRight
+                                    size={12}
+                                    className="text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  />
                                 </button>
                               )
                             })}
@@ -504,7 +617,9 @@ export const AllocationTab = ({
                     {catAssets.map((a) => (
                       <div key={a.id} className="text-xs p-2 rounded bg-muted">
                         <p className="font-semibold text-foreground">{a.ticker}</p>
-                        <p className="text-muted-foreground">{formatCurrency(a.currentPrice * a.quantity)}</p>
+                        <p className="text-muted-foreground">
+                          {formatCurrency(a.currentPrice * a.quantity)}
+                        </p>
                         <p className="text-muted-foreground">
                           Alvo: {(assetTargets.get(a.id) ?? 0).toFixed(1)}%
                         </p>
@@ -519,7 +634,13 @@ export const AllocationTab = ({
       })}
 
       {/* Add category */}
-      <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(v) => {
+          setAddOpen(v)
+          if (!v) setAddForm(emptyForm())
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Nova categoria</DialogTitle>
@@ -527,14 +648,31 @@ export const AllocationTab = ({
           </DialogHeader>
           <CatFormFields form={addForm} set={setAdd} prefix="add" />
           <DialogFooter className="mt-4">
-            <button onClick={() => setAddOpen(false)} className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-            <button onClick={handleAdd} disabled={!addForm.name.trim()} className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40">Criar categoria</button>
+            <button
+              onClick={() => setAddOpen(false)}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleAdd}
+              disabled={!addForm.name.trim()}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+            >
+              Criar categoria
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit category */}
-      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingCat(null) }}>
+      <Dialog
+        open={editOpen}
+        onOpenChange={(v) => {
+          setEditOpen(v)
+          if (!v) setEditingCat(null)
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Editar categoria</DialogTitle>
@@ -542,18 +680,38 @@ export const AllocationTab = ({
           </DialogHeader>
           <CatFormFields form={editForm} set={setEdit} prefix="edit" />
           <DialogFooter className="mt-4">
-            <button onClick={() => setEditOpen(false)} className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-            <button onClick={handleEditSave} className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
+            <button
+              onClick={() => setEditOpen(false)}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleEditSave}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Salvar
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Create diagram */}
-      <Dialog open={!!createDiagCatId} onOpenChange={(v) => { if (!v) { setCreateDiagCatId(null); setNewDiagName('') } }}>
+      <Dialog
+        open={!!createDiagCatId}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreateDiagCatId(null)
+            setNewDiagName('')
+          }
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Criar diagrama</DialogTitle>
-            <DialogDescription>Dê um nome ao diagrama para a categoria selecionada.</DialogDescription>
+            <DialogDescription>
+              Dê um nome ao diagrama para a categoria selecionada.
+            </DialogDescription>
           </DialogHeader>
           <div className="mt-2">
             <input
@@ -561,13 +719,29 @@ export const AllocationTab = ({
               placeholder="Nome do diagrama"
               value={newDiagName}
               onChange={(e) => setNewDiagName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && createDiagCatId && createDiagram(createDiagCatId)}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && createDiagCatId && createDiagram(createDiagCatId)
+              }
               autoFocus
             />
           </div>
           <DialogFooter className="mt-4">
-            <button onClick={() => { setCreateDiagCatId(null); setNewDiagName('') }} className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-            <button onClick={() => createDiagCatId && createDiagram(createDiagCatId)} disabled={!newDiagName.trim()} className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40">Criar</button>
+            <button
+              onClick={() => {
+                setCreateDiagCatId(null)
+                setNewDiagName('')
+              }}
+              className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => createDiagCatId && createDiagram(createDiagCatId)}
+              disabled={!newDiagName.trim()}
+              className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+            >
+              Criar
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -577,7 +751,9 @@ export const AllocationTab = ({
         <Dialog open onOpenChange={(v) => !v && setAnsweringAsset(null)}>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{answeringAsset.ticker} — {answeringDiagram.name}</DialogTitle>
+              <DialogTitle>
+                {answeringAsset.ticker} — {answeringDiagram.name}
+              </DialogTitle>
               <DialogDescription>
                 Pontuação:{' '}
                 <strong>
@@ -590,12 +766,37 @@ export const AllocationTab = ({
               {answeringDiagram.questions.map((q, i) => {
                 const val = (answers[answeringAsset.id] ?? {})[q.id] ?? -1
                 return (
-                  <div key={q.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-                    <span className="text-xs text-muted-foreground w-5 shrink-0 mt-0.5">{i + 1}.</span>
+                  <div
+                    key={q.id}
+                    className="flex items-start gap-3 py-2 border-b border-border last:border-0"
+                  >
+                    <span className="text-xs text-muted-foreground w-5 shrink-0 mt-0.5">
+                      {i + 1}.
+                    </span>
                     <p className="flex-1 text-sm text-foreground">{q.text}</p>
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => setAnswer(q.id, 1)} className={cn('px-2.5 py-1 rounded text-xs font-semibold transition-colors', val === 1 ? 'bg-success text-white' : 'bg-muted text-muted-foreground hover:bg-success/20 hover:text-success')}>Sim</button>
-                      <button onClick={() => setAnswer(q.id, 0)} className={cn('px-2.5 py-1 rounded text-xs font-semibold transition-colors', val === 0 ? 'bg-destructive/80 text-white' : 'bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive')}>Não</button>
+                      <button
+                        onClick={() => setAnswer(q.id, 1)}
+                        className={cn(
+                          'px-2.5 py-1 rounded text-xs font-semibold transition-colors',
+                          val === 1
+                            ? 'bg-success text-white'
+                            : 'bg-muted text-muted-foreground hover:bg-success/20 hover:text-success',
+                        )}
+                      >
+                        Sim
+                      </button>
+                      <button
+                        onClick={() => setAnswer(q.id, 0)}
+                        className={cn(
+                          'px-2.5 py-1 rounded text-xs font-semibold transition-colors',
+                          val === 0
+                            ? 'bg-destructive/80 text-white'
+                            : 'bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive',
+                        )}
+                      >
+                        Não
+                      </button>
                     </div>
                   </div>
                 )
@@ -607,27 +808,69 @@ export const AllocationTab = ({
 
       {/* Edit diagram questions */}
       {editQDiagram && (
-        <Dialog open={!!editQCatId} onOpenChange={(v) => { if (!v) { setEditQCatId(null); setEditingQuestion(null) } }}>
+        <Dialog
+          open={!!editQCatId}
+          onOpenChange={(v) => {
+            if (!v) {
+              setEditQCatId(null)
+              setEditingQuestion(null)
+            }
+          }}
+        >
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Perguntas — {editQDiagram.name}</DialogTitle>
-              <DialogDescription>Adicione, edite ou remova perguntas do diagrama.</DialogDescription>
+              <DialogDescription>
+                Adicione, edite ou remova perguntas do diagrama.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-2 mt-2">
               {editQDiagram.questions.map((q, i) => (
-                <div key={q.id} className="flex items-start gap-2 py-2 border-b border-border last:border-0">
+                <div
+                  key={q.id}
+                  className="flex items-start gap-2 py-2 border-b border-border last:border-0"
+                >
                   <span className="text-xs text-muted-foreground w-5 shrink-0 mt-2">{i + 1}.</span>
                   {editingQuestion?.id === q.id ? (
                     <div className="flex-1 flex gap-2">
-                      <input className={cn(inputClass, 'flex-1')} value={editingQuestionText} onChange={(e) => setEditingQuestionText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveEditQuestion(editQDiagram)} autoFocus />
-                      <button onClick={() => saveEditQuestion(editQDiagram)} className="px-2 py-1 rounded bg-primary text-primary-foreground text-xs">OK</button>
-                      <button onClick={() => setEditingQuestion(null)} className="px-2 py-1 rounded bg-muted text-muted-foreground text-xs">✕</button>
+                      <input
+                        className={cn(inputClass, 'flex-1')}
+                        value={editingQuestionText}
+                        onChange={(e) => setEditingQuestionText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEditQuestion(editQDiagram)}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => saveEditQuestion(editQDiagram)}
+                        className="px-2 py-1 rounded bg-primary text-primary-foreground text-xs"
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => setEditingQuestion(null)}
+                        className="px-2 py-1 rounded bg-muted text-muted-foreground text-xs"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ) : (
                     <>
                       <p className="flex-1 text-sm text-foreground py-1.5">{q.text}</p>
-                      <button onClick={() => { setEditingQuestion(q); setEditingQuestionText(q.text) }} className="p-1.5 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"><Pencil size={13} /></button>
-                      <button onClick={() => removeQuestion(editQDiagram, q.id)} className="p-1.5 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                      <button
+                        onClick={() => {
+                          setEditingQuestion(q)
+                          setEditingQuestionText(q.text)
+                        }}
+                        className="p-1.5 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => removeQuestion(editQDiagram, q.id)}
+                        className="p-1.5 rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </>
                   )}
                 </div>
@@ -635,8 +878,17 @@ export const AllocationTab = ({
             </div>
             <DialogFooter className="flex-col gap-2 mt-2">
               <div className="flex gap-2 w-full">
-                <input className={cn(inputClass, 'flex-1')} placeholder="Nova pergunta..." value={newQuestionText} onChange={(e) => setNewQuestionText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addQuestion(editQDiagram)} />
-                <button onClick={() => addQuestion(editQDiagram)} className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors shrink-0">
+                <input
+                  className={cn(inputClass, 'flex-1')}
+                  placeholder="Nova pergunta..."
+                  value={newQuestionText}
+                  onChange={(e) => setNewQuestionText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addQuestion(editQDiagram)}
+                />
+                <button
+                  onClick={() => addQuestion(editQDiagram)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors shrink-0"
+                >
                   <Plus size={14} />
                   Adicionar
                 </button>

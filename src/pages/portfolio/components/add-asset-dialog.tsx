@@ -451,9 +451,15 @@ const FixedIncomeForm = ({
       )}
       <div className="grid grid-cols-2 gap-2">
         <Field label="Tipo">
-          <select className={inputClass} value={form.fixedIncomeType} onChange={(e) => handleTypeChange(e.target.value)}>
+          <select
+            className={inputClass}
+            value={form.fixedIncomeType}
+            onChange={(e) => handleTypeChange(e.target.value)}
+          >
             {FIXED_INCOME_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </Field>
@@ -538,13 +544,23 @@ const FixedIncomeForm = ({
               onChange={(e) => set('rateType', e.target.value)}
             >
               {RATE_TYPES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
               ))}
             </select>
           </Field>
         )}
         {showRateField && (
-          <Field label={isTesouro ? (form.rateType === 'prefixado' ? 'Taxa prefixada (% a.a.)' : 'Spread (% a.a.)') : rateLabel[form.rateType]}>
+          <Field
+            label={
+              isTesouro
+                ? form.rateType === 'prefixado'
+                  ? 'Taxa prefixada (% a.a.)'
+                  : 'Spread (% a.a.)'
+                : rateLabel[form.rateType]
+            }
+          >
             <input
               className={inputClass}
               type="number"
@@ -589,7 +605,9 @@ const FixedIncomeForm = ({
         >
           <option value="">Sem categoria</option>
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
           ))}
         </select>
       </Field>

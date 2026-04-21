@@ -479,7 +479,11 @@ export const OverviewTab = ({
                     )}
                   </td>
                   <td className="py-3 text-right text-foreground">
-                    {flatFI ? '—' : (a.quantity % 1 === 0 ? a.quantity : Number.parseFloat(a.quantity.toFixed(2)))}
+                    {flatFI
+                      ? '—'
+                      : a.quantity % 1 === 0
+                        ? a.quantity
+                        : Number.parseFloat(a.quantity.toFixed(2))}
                   </td>
                   <td className="py-3 text-right text-muted-foreground">
                     {flatFI ? '—' : formatCurrency(a.avgPrice)}

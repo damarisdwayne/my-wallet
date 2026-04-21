@@ -162,7 +162,13 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     if (!rows) return
     setImporting(true)
     try {
-      await onImport(rows, pendingTrades, pendingDividends, filename, (broker?.id ?? 'b3') as 'b3' | 'inter')
+      await onImport(
+        rows,
+        pendingTrades,
+        pendingDividends,
+        filename,
+        (broker?.id ?? 'b3') as 'b3' | 'inter',
+      )
       onOpenChange(false)
       resetAll()
     } finally {

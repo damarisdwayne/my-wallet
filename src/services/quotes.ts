@@ -79,23 +79,50 @@ type BrapiResp =
   | { results: { symbol: string; regularMarketPrice: number }[] }
   | { error: boolean; message: string }
 
-async function fetchBrapiTicker(ticker: string, token: string): Promise<BrapiResp | null> {
-  return fetch(`https://brapi.dev/api/quote/${ticker}?currency=BRL&token=${token}`)
+async function fetchBrapiTicker(
+  ticker: string,
+  token: string,
+  currency?: string,
+): Promise<BrapiResp | null> {
+  const params = currency ? `currency=${currency}&token=${token}` : `token=${token}`
+  return fetch(`https://brapi.dev/api/quote/${ticker}?${params}`)
     .then((r) => r.json() as Promise<BrapiResp>)
     .catch(() => null)
 }
 
+// Brazilian assets (stock, fii, bdr, etf ending in digits) — already quoted in BRL
 async function fetchStockPrices(tickers: string[]): Promise<Record<string, number>> {
   const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
   if (!token) throw new Error('VITE_BRAPI_TOKEN não configurado no .env')
 
-  const results = await Promise.all(tickers.map((t) => fetchBrapiTicker(t, token)))
+  const results = await Promise.all(tickers.map((t) => fetchBrapiTicker(t, token, 'BRL')))
   const prices: Record<string, number> = {}
 
   for (const data of results) {
     if (!data || 'error' in data) continue // skip failed tickers, don't abort all
     const item = data.results?.[0]
     if (item?.regularMarketPrice) prices[item.symbol.toUpperCase()] = item.regularMarketPrice
+  }
+
+  return prices
+}
+
+// US assets (stock_us and letter-only etf) — fetch USD price then convert to BRL
+async function fetchUsStockPrices(tickers: string[]): Promise<Record<string, number>> {
+  const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
+  if (!token) return {}
+
+  const [results, usdRate] = await Promise.all([
+    Promise.all(tickers.map((t) => fetchBrapiTicker(t, token))),
+    fetchUsdBrlRate(),
+  ])
+
+  const prices: Record<string, number> = {}
+  for (const data of results) {
+    if (!data || 'error' in data) continue
+    const item = data.results?.[0]
+    if (item?.regularMarketPrice)
+      prices[item.symbol.toUpperCase()] = Math.round(item.regularMarketPrice * usdRate * 100) / 100
   }
 
   return prices
@@ -121,7 +148,10 @@ async function fetchCryptoPrices(tickers: string[]): Promise<Record<string, numb
   }
 }
 
-const STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr', 'etf'])
+const BR_STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr'])
+// ETFs with digits in the ticker are Brazilian (BOVA11, IVVB11…); letter-only are US (VOO, SPY…)
+const isUsTicker = (ticker: string, type: AssetType) =>
+  type === 'stock_us' || (type === 'etf' && !/\d/.test(ticker))
 
 interface DadosMercadoBond {
   name: string
@@ -157,17 +187,21 @@ export async function fetchLivePrices(
   if (cached) return cached
 
   const typeOf = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.type]))
-  const stockTickers = tickers.filter((t) => STOCK_TYPES.has(typeOf[t]))
+  const brTickers = tickers.filter(
+    (t) => BR_STOCK_TYPES.has(typeOf[t]) || (typeOf[t] === 'etf' && !isUsTicker(t, typeOf[t])),
+  )
+  const usTickers = tickers.filter((t) => isUsTicker(t, typeOf[t]))
   const cryptoTickers = tickers.filter((t) => typeOf[t] === 'crypto')
   const tesouroTickers = tickers.filter((t) => t.startsWith('TESOURO'))
 
-  const [stockPrices, cryptoPrices, tesouroPrices] = await Promise.all([
-    stockTickers.length > 0 ? fetchStockPrices(stockTickers) : {},
+  const [stockPrices, usPrices, cryptoPrices, tesouroPrices] = await Promise.all([
+    brTickers.length > 0 ? fetchStockPrices(brTickers) : {},
+    usTickers.length > 0 ? fetchUsStockPrices(usTickers) : {},
     cryptoTickers.length > 0 ? fetchCryptoPrices(cryptoTickers) : {},
     tesouroTickers.length > 0 ? fetchTesouroPrices(tesouroTickers) : {},
   ])
 
-  const prices = { ...stockPrices, ...cryptoPrices, ...tesouroPrices }
+  const prices = { ...stockPrices, ...usPrices, ...cryptoPrices, ...tesouroPrices }
   saveCache(tickers, prices)
   return prices
 }

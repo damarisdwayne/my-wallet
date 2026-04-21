@@ -7,14 +7,7 @@ import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
 import { TradesTab } from './components/trades-tab'
 
-const tabs = [
-  'Visão Geral',
-  'Alocação',
-  'Aporte',
-  'Movimentações',
-  'Importações',
-  'Análise',
-]
+const tabs = ['Visão Geral', 'Alocação', 'Aporte', 'Movimentações', 'Importações', 'Análise']
 
 export const PortfolioPage = () => {
   const {

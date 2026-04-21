@@ -68,16 +68,19 @@ interface TradeRow {
   date?: string
 }
 
-const parseApexDate = (d: string): string => {
+// Handles MM/DD/YY (old Apex) and M/D/YYYY (new Transaction Confirmation)
+const parseUsDate = (d: string): string => {
   const [mo, day, y] = d.split('/')
-  return `20${y}-${mo.padStart(2, '0')}-${day.padStart(2, '0')}`
+  const year = y.length === 4 ? y : `20${y}`
+  return `${year}-${mo.padStart(2, '0')}-${day.padStart(2, '0')}`
 }
 
-// Apex Clearing PDFs extract columns individually. \s+ in the regex crosses newlines,
-// so "HEADER\s+([^\n]+)" finds the data line right after each column header.
+// PDF column-by-column extraction helper: \s+ crosses newlines so HEADER\s+([^\n]+) finds
+// the data line immediately after each column header.
 const colRe = (header: string) => new RegExp(`\\b${header.replace('/', '\\/')}\\s+([^\\n]+)`)
 const colValue = (text: string, header: string) => (colRe(header).exec(text)?.[1] ?? '').trim()
 
+// Old Apex Clearing Transaction Confirmation — headers: SYM / QTY / PRICE / B/S / Trade Date
 function parseApexColumnar(text: string): TradeRow[] {
   const tickers = colValue(text, 'SYM')
     .split(/\s+/)
@@ -102,7 +105,7 @@ function parseApexColumnar(text: string): TradeRow[] {
   )
 
   const dateRaw = colValue(text, 'Trade Date')
-  const dates = [...dateRaw.matchAll(/(\d{2}\/\d{2}\/\d{2})/g)].map((m) => parseApexDate(m[1]))
+  const dates = [...dateRaw.matchAll(/(\d{1,2}\/\d{1,2}\/\d{2,4})/g)].map((m) => parseUsDate(m[1]))
 
   return tickers.map((ticker, i) => ({
     ticker,
@@ -113,10 +116,43 @@ function parseApexColumnar(text: string): TradeRow[] {
   }))
 }
 
+// New Inter Transaction Confirmation (Symbol/Action/Quantity/Price/Trade Date headers).
+// pdfjs may emit this format as row-by-row (all columns on one line) OR split a single
+// table row across two consecutive lines due to sub-pixel Y-coordinate rounding.
+// Strategy: find each line that starts with a ticker, combine with the next line to tolerate
+// splits, then skip the continuation line when it was consumed to avoid double-counting.
+function parseNewConfirmFormat(text: string): TradeRow[] {
+  if (!text.includes('Execution Time')) return []
+  const lines = text.split('\n')
+  const rows: TradeRow[] = []
+  const tradeRe = /\bM\s+(Buy|Sell)\s+\S+\s+[AP]M\s+([\d.]+)\s+([\d.]+)\s+([\d/]+)/
+  for (let i = 0; i < lines.length; i++) {
+    const tickerMatch = /^\s*([A-Z]{1,6})\s/.exec(lines[i])
+    if (!tickerMatch) continue
+    const combined = lines[i] + ' ' + (lines[i + 1] ?? '')
+    const tm = tradeRe.exec(combined)
+    if (!tm) continue
+    const qty = Number.parseFloat(tm[2])
+    const price = Number.parseFloat(tm[3])
+    if (qty > 0 && price > 0) {
+      rows.push({
+        ticker: tickerMatch[1],
+        action: tm[1].toLowerCase() as 'buy' | 'sell',
+        quantity: qty,
+        price,
+        date: parseUsDate(tm[4]),
+      })
+      // If match started in lines[i+1] (split row), skip that line to avoid re-matching it
+      if (tm.index > lines[i].length) i++
+    }
+  }
+  return rows
+}
+
 function parseTradeRows(text: string): TradeRow[] {
-  // Trade Activity format: "BIL SPDR ... M Buy 2:45:47 PM 0.42 91.50 4/13/2026 ..."
+  // Trade Activity format (row-by-row): "BIL SPDR ... M Buy 2:45:47 PM 0.42 91.50 4/13/2026"
   const activityRe =
-    /^([A-Z]{1,6})\s+.+?\s+M\s+(Buy|Sell)\s+\d+:\d+:\d+\s+[AP]M\s+([\d.]+)\s+([\d.]+)\s+\d+\/\d+\/\d+/gm
+    /^\s*([A-Z]{1,6})\s+.+?\s+M\s+(Buy|Sell)\s+\S+\s+[AP]M\s+(\S+)\s+(\S+)\s+([\d/]+)/gm
   const activityRows: TradeRow[] = []
   let m: RegExpExecArray | null
   while ((m = activityRe.exec(text)) !== null) {
@@ -128,11 +164,16 @@ function parseTradeRows(text: string): TradeRow[] {
         action: m[2].toLowerCase() as 'buy' | 'sell',
         quantity: qty,
         price,
+        date: parseUsDate(m[5]),
       })
   }
   if (activityRows.length > 0) return activityRows
 
-  // Apex Clearing Transaction Confirmation — columnar extraction
+  // New Inter Transaction Confirmation (Symbol/Quantity/Price headers) — row-by-row or line-split
+  const newConfirmRows = parseNewConfirmFormat(text)
+  if (newConfirmRows.length > 0) return newConfirmRows
+
+  // Old Apex Clearing Transaction Confirmation columnar format (SYM / B/S / QTY / PRICE)
   return parseApexColumnar(text)
 }
 

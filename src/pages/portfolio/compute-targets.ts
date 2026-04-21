@@ -15,11 +15,18 @@ export const computeAssetTargets = (
     const catAssets = assets.filter((a) => a.categoryId === cat.id)
     if (catAssets.length === 0) continue
 
-    const diagram = diagrams.find((d) => catAssets.some((a) => d.appliesTo.includes(a.type)))
+    // Manual mode: any asset with targetPercent > 0 means whole category is manual
+    if (catAssets.some((a) => (a.targetPercent ?? 0) > 0)) {
+      catAssets.forEach((a) => result.set(a.id, a.targetPercent ?? 0))
+      continue
+    }
+
+    const diagram = diagrams.find((d) =>
+      d.categoryId ? d.categoryId === cat.id : catAssets.some((a) => d.appliesTo?.includes(a.type)),
+    )
 
     if (!diagram || diagram.questions.length === 0) {
-      const share = cat.targetPercent / catAssets.length
-      catAssets.forEach((a) => result.set(a.id, share))
+      catAssets.forEach((a) => result.set(a.id, 0))
       continue
     }
 
@@ -30,8 +37,7 @@ export const computeAssetTargets = (
     const totalScore = scores.reduce((s, x) => s + x.score, 0)
 
     if (totalScore === 0) {
-      const share = cat.targetPercent / catAssets.length
-      catAssets.forEach((a) => result.set(a.id, share))
+      catAssets.forEach((a) => result.set(a.id, 0))
     } else {
       scores.forEach(({ id, score }) => {
         result.set(id, (score / totalScore) * cat.targetPercent)

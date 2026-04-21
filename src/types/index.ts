@@ -129,7 +129,7 @@ export interface MonthlyResult {
   vacancy?: number // FII vacancy %
 }
 
-/* ─── Diagrama do Cerrado ──────────────────────────────────────── */
+/* ─── Critérios de Alocação ────────────────────────────────────── */
 
 export interface DiagramQuestion {
   id: string
@@ -139,7 +139,8 @@ export interface DiagramQuestion {
 export interface Diagram {
   id: string
   name: string
-  appliesTo: AssetType[]
+  categoryId: string
+  appliesTo?: AssetType[] // legacy — kept for backward compat
   questions: DiagramQuestion[]
 }
 

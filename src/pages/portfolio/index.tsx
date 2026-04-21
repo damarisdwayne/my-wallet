@@ -3,7 +3,6 @@ import { usePortfolio } from '@/hooks/use-portfolio'
 import { AllocationTab } from './components/allocation-tab'
 import { AnalysisTab } from './components/analysis-tab'
 import { AporteTab } from './components/aporte-tab'
-import { DiagramTab } from './components/diagram-tab'
 import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
 import { TradesTab } from './components/trades-tab'
@@ -11,7 +10,6 @@ import { TradesTab } from './components/trades-tab'
 const tabs = [
   'Visão Geral',
   'Alocação',
-  'Diagrama do Cerrado',
   'Aporte',
   'Movimentações',
   'Importações',
@@ -94,24 +92,17 @@ export const PortfolioPage = () => {
           answers={answers}
           saveCategory={saveCategory}
           deleteCategory={deleteCategory}
-        />
-      )}
-      {activeTab === 2 && (
-        <DiagramTab
-          assets={assets}
-          categories={categories}
-          diagrams={diagrams}
-          answers={answers}
+          editAsset={editAsset}
           saveDiagram={saveDiagram}
           saveAnswers={saveAnswers}
         />
       )}
-      {activeTab === 3 && (
+      {activeTab === 2 && (
         <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
       )}
-      {activeTab === 4 && <TradesTab trades={trades} />}
-      {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
-      {activeTab === 6 && (
+      {activeTab === 3 && <TradesTab trades={trades} />}
+      {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}
+      {activeTab === 5 && (
         <AnalysisTab
           assets={assets}
           fundamentals={fundamentals}

@@ -871,6 +871,16 @@ export const AddAssetDialog = ({
         ...partial,
       }
       await onAdd(asset)
+      if (asset.avgPrice > 0 && asset.quantity > 0) {
+        await onAddTrade({
+          ticker: asset.ticker,
+          type: 'buy',
+          quantity: asset.quantity,
+          price: asset.avgPrice,
+          total: asset.avgPrice * asset.quantity,
+          date: asset.operationDate ?? new Date().toISOString().slice(0, 10),
+        })
+      }
       reset()
       onOpenChange(false)
     } finally {

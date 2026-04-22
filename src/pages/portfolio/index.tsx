@@ -20,6 +20,7 @@ export const PortfolioPage = () => {
     addAsset,
     addManualTrade,
     deleteTrade,
+    syncMissingTrades,
     editAsset,
     deleteAsset,
     importFromB3,
@@ -100,6 +101,7 @@ export const PortfolioPage = () => {
           assets={assets}
           categories={categories}
           onDeleteTrade={deleteTrade}
+          onSyncMissingTrades={syncMissingTrades}
         />
       )}
       {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}

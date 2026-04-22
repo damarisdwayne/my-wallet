@@ -352,6 +352,26 @@ export const usePortfolio = () => {
     return saveFiiManualData(user.uid, data)
   }
 
+  const syncMissingTrades = async () => {
+    if (!user) return
+    const today = new Date().toISOString().slice(0, 10)
+    const tickersWithTrades = new Set(trades.map((t) => t.ticker.toUpperCase()))
+    const missing = assets.filter((a) => !tickersWithTrades.has(a.ticker.toUpperCase()))
+    if (missing.length === 0) return
+    await addTrades(
+      user.uid,
+      missing.map((a) => ({
+        ticker: a.ticker,
+        type: 'buy' as const,
+        quantity: a.quantity,
+        price: a.avgPrice,
+        total: a.avgPrice * a.quantity,
+        date: a.operationDate ?? today,
+        source: 'manual' as const,
+      })),
+    )
+  }
+
   const refreshPrices = async () => {
     if (!user || assets.length === 0) return
     setRefreshingPrices(true)
@@ -428,5 +448,6 @@ export const usePortfolio = () => {
     refreshFundamentals,
     saveManualSnapshot,
     saveFiiManual,
+    syncMissingTrades,
   }
 }

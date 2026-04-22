@@ -9,6 +9,7 @@ interface Props {
   assets: Asset[]
   categories: PortfolioCategory[]
   onDeleteTrade: (tradeId: string) => Promise<void>
+  onSyncMissingTrades: () => Promise<void>
 }
 
 const tradeLabel = (t: Trade) => {
@@ -25,10 +26,26 @@ const tradeColor = (t: Trade) =>
 const sourceLabel = (t: Trade) =>
   t.source === 'b3_import' ? 'B3' : t.source === 'inter_import' ? 'Inter' : 'Manual'
 
-export const TradesTab = ({ trades, assets, categories, onDeleteTrade }: Props) => {
+export const TradesTab = ({
+  trades,
+  assets,
+  categories,
+  onDeleteTrade,
+  onSyncMissingTrades,
+}: Props) => {
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
+  const [syncing, setSyncing] = useState(false)
+
+  const handleSync = async () => {
+    setSyncing(true)
+    try {
+      await onSyncMissingTrades()
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const tickerToCatId = useMemo(
     () => Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.categoryId])),
@@ -68,44 +85,63 @@ export const TradesTab = ({ trades, assets, categories, onDeleteTrade }: Props) 
   const toggle = (ticker: string) =>
     setExpandedTickers((prev) => {
       const next = new Set(prev)
-      next.has(ticker) ? next.delete(ticker) : next.add(ticker)
+      if (next.has(ticker)) next.delete(ticker)
+      else next.add(ticker)
       return next
     })
 
   if (trades.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-12">
-        Nenhuma movimentação registrada. Importe uma nota B3 ou registre em "Visão Geral".
-      </p>
+      <div className="text-center py-12 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Nenhuma movimentação registrada. Importe uma nota B3 ou registre em "Visão Geral".
+        </p>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+        >
+          {syncing ? 'Sincronizando...' : 'Sincronizar ativos existentes'}
+        </button>
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setFilterCatId(ALL)}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            filterCatId === ALL
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Todos
-        </button>
-        {activeCategories.map((cat) => (
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2">
           <button
-            key={cat.id}
-            onClick={() => setFilterCatId(filterCatId === cat.id ? ALL : cat.id)}
+            onClick={() => setFilterCatId(ALL)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterCatId === cat.id
+              filterCatId === ALL
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
-            {cat.name}
+            Todos
           </button>
-        ))}
+          {activeCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setFilterCatId(filterCatId === cat.id ? ALL : cat.id)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filterCatId === cat.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-3 py-1 rounded-md text-xs bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 shrink-0"
+        >
+          {syncing ? 'Sincronizando...' : 'Sincronizar ativos'}
+        </button>
       </div>
 
       <p className="text-xs text-muted-foreground">

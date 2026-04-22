@@ -92,10 +92,10 @@ interface Props {
 export const AporteTab = ({ assets, categories, totalValue }: Props) => {
   const [aporteInput, setAporteInput] = useState('')
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const toggle = (id: string) =>
-    setCollapsed((prev) => {
+    setExpanded((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
@@ -147,20 +147,18 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
       {aporte > 0 && distribution.length > 0 && (
         <div className="space-y-2">
           {distribution.map(
-            ({
-              cat,
-              catCurrentValue,
-              catAporte,
-              catPercentBefore,
-              catPercentAfter,
-              assetAllocations,
-            }) => {
-              const isOpen = !collapsed.has(cat.id)
+            ({ cat, catAporte, catPercentBefore, catPercentAfter, assetAllocations }) => {
+              const isFixedIncome = cat.type === 'fixed_income'
+              const isOpen = !isFixedIncome && expanded.has(cat.id)
               return (
                 <div key={cat.id} className="border border-border rounded-lg overflow-hidden">
                   <button
-                    onClick={() => toggle(cat.id)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+                    onClick={() => !isFixedIncome && toggle(cat.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-4 py-3 bg-muted/30 text-left transition-colors',
+                      !isFixedIncome && 'hover:bg-muted/50 cursor-pointer',
+                      isFixedIncome && 'cursor-default',
+                    )}
                   >
                     <div
                       className="w-3 h-3 rounded-full shrink-0"
@@ -177,13 +175,15 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
                       <span className="font-semibold text-foreground text-sm">
                         {formatCurrency(catAporte)}
                       </span>
-                      <ChevronDown
-                        size={14}
-                        className={cn(
-                          'text-muted-foreground transition-transform',
-                          isOpen && 'rotate-180',
-                        )}
-                      />
+                      {!isFixedIncome && (
+                        <ChevronDown
+                          size={14}
+                          className={cn(
+                            'text-muted-foreground transition-transform',
+                            isOpen && 'rotate-180',
+                          )}
+                        />
+                      )}
                     </div>
                   </button>
 
@@ -213,12 +213,6 @@ export const AporteTab = ({ assets, categories, totalValue }: Props) => {
                           </div>
                         </div>
                       ))}
-
-                      {assetAllocations.length === 0 && (
-                        <p className="px-10 py-2.5 text-xs text-muted-foreground">
-                          Nenhum ativo nesta categoria.
-                        </p>
-                      )}
                     </div>
                   )}
 

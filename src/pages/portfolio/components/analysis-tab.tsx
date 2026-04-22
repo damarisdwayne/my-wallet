@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   ChevronRight,
   Clock,
-  ExternalLink,
   Pencil,
-  RefreshCw,
+  Plus,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
@@ -18,15 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { fetchCvmDocuments } from '@/services/cvm'
 import { formatCurrency } from '@/lib/utils'
-import type {
-  Asset,
-  CvmDocument,
-  FundamentalRecord,
-  FundamentalSnapshot,
-  PricePoint,
-} from '@/types'
+import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, PricePoint } from '@/types'
 
 /* ─── Shared ────────────────────────────────────────────────────── */
 
@@ -37,6 +29,8 @@ interface Props {
   assets: Asset[]
   fundamentals: Record<string, FundamentalRecord>
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
+  fiiInfo: Record<string, FiiInfo>
+  saveFiiInfo: (data: FiiInfo) => Promise<void>
 }
 
 type TrendType = 'up-good' | 'up-bad' | 'neutral'
@@ -267,7 +261,7 @@ const IndicatorHistoryContent = ({
   snapshots: FundamentalSnapshot[]
   def: IndicatorDef
 }) => {
-  const entries = [...snapshots].reverse().filter((s) => (s[def.key] as number | null) !== null)
+  const entries = [...snapshots].reverse().filter((s) => (s[def.key] as number | null | undefined) != null)
   return (
     <>
       {entries.map((s, i) => {
@@ -318,12 +312,12 @@ const IndicatorCard = ({
 }) => {
   const [histOpen, setHistOpen] = useState(false)
   const current = snapshots.at(-1)
-  const val = current ? (current[def.key] as number | null) : null
-  if (val === null && snapshots.every((s) => (s[def.key] as number | null) === null)) return null
+  const val = current != null ? (current[def.key] as number | null | undefined) ?? null : null
+  if (val == null && snapshots.every((s) => (s[def.key] as number | null | undefined) == null)) return null
 
   const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null
-  const prevVal = prev ? (prev[def.key] as number | null) : null
-  const delta = val !== null && prevVal !== null ? val - prevVal : null
+  const prevVal = prev != null ? ((prev[def.key] as number | null | undefined) ?? null) : null
+  const delta = val != null && prevVal != null ? val - prevVal : null
   const isIncrease = delta !== null ? delta > 0 : null
   const isGood =
     delta === null || def.trendType === 'neutral'
@@ -331,7 +325,7 @@ const IndicatorCard = ({
       : def.trendType === 'up-good'
         ? isIncrease!
         : !isIncrease!
-  const hasHistory = snapshots.filter((s) => (s[def.key] as number | null) !== null).length > 1
+  const hasHistory = snapshots.filter((s) => (s[def.key] as number | null | undefined) != null).length > 1
 
   return (
     <>
@@ -378,32 +372,161 @@ const IndicatorCard = ({
   )
 }
 
+/* ─── FII indicator definitions ────────────────────────────────── */
+
+interface FiiTextDef {
+  type: 'text'
+  key: keyof FundamentalSnapshot
+  label: string
+  inputPlaceholder?: string
+}
+
+interface FiiNumericDef {
+  type: 'number'
+  key: keyof FundamentalSnapshot
+  label: string
+  format: (v: number) => string
+  trendType: TrendType
+  inputStep?: string
+  inputLabel?: string
+}
+
+type FiiIndicatorDef = FiiNumericDef | FiiTextDef
+
+const directPct = (v: number) => v.toFixed(2) + '%'
+
+const FII_COMMON: FiiIndicatorDef[] = [
+  { type: 'number', key: 'dividendYield', label: 'DY', format: directPct, trendType: 'up-good', inputStep: '0.01', inputLabel: 'DY em % (ex: 8.5)' },
+  { type: 'number', key: 'priceToBook', label: 'P/VP', format: ratio, trendType: 'neutral', inputStep: '0.01', inputLabel: 'P/VP (ex: 0.95)' },
+  { type: 'number', key: 'debtToEquity', label: 'Alavancagem (Dívida/PL)', format: ratio, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Alavancagem (Dívida/PL) (ex: 0.30)' },
+  { type: 'text', key: 'majorRevenueConcentration', label: 'Concentração de Receita', inputPlaceholder: 'Ex: Tenant A — 35% da receita' },
+]
+
+const FII_TIJOLO: FiiIndicatorDef[] = [
+  { type: 'number', key: 'physicalVacancy', label: 'Vacância Física', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Física em % (ex: 8)' },
+  { type: 'number', key: 'financialVacancy', label: 'Vacância Financeira', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Financeira em % (ex: 6)' },
+  { type: 'number', key: 'propertyCount', label: 'Qtd. Imóveis', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de imóveis' },
+  { type: 'number', key: 'tenantCount', label: 'Qtd. Inquilinos', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de inquilinos' },
+  { type: 'text', key: 'regionDiversification', label: 'Diversificação por Região', inputPlaceholder: 'Ex: SP 60%, RJ 25%, MG 15%' },
+  { type: 'text', key: 'rentalContracts', label: 'Contratos de Aluguel', inputPlaceholder: 'Ex: 70% típico, 30% atípico' },
+]
+
+const FII_PAPEL: FiiIndicatorDef[] = [
+  { type: 'text', key: 'creditQuality', label: 'Qualidade do Crédito', inputPlaceholder: 'Ex: 80% AAA/AA, 15% A, 5% BB' },
+  { type: 'text', key: 'indexationType', label: 'Tipo de Indexação', inputPlaceholder: 'Ex: 75% IPCA, 25% CDI' },
+  { type: 'text', key: 'paperSegments', label: 'Segmentos', inputPlaceholder: 'Ex: Residencial, Logística, Shoppings' },
+  { type: 'text', key: 'debtorConcentration', label: 'Concentração de Devedores', inputPlaceholder: 'Ex: Top 5 devedores = 40% da carteira' },
+  { type: 'number', key: 'spread', label: 'Spread Médio', format: directPct, trendType: 'up-good', inputStep: '0.01', inputLabel: 'Spread em % (ex: 8)' },
+  { type: 'number', key: 'ltv', label: 'LTV', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'LTV em % (ex: 60)' },
+  { type: 'number', key: 'defaultRate', label: 'Inadimplência', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Inadimplência em % (ex: 2)' },
+]
+
+/* ─── Text indicator card ───────────────────────────────────────── */
+
+const TextIndicatorCard = ({
+  def,
+  snapshots,
+}: {
+  def: FiiTextDef
+  snapshots: FundamentalSnapshot[]
+}) => {
+  const [histOpen, setHistOpen] = useState(false)
+  const entries = [...snapshots]
+    .reverse()
+    .filter((s) => (s[def.key] as string | null | undefined) != null && (s[def.key] as string) !== '')
+
+  const current = entries[0]
+  const val = current ? (current[def.key] as string) : null
+  if (!val && entries.length === 0) return null
+
+  const hasHistory = entries.length > 1
+
+  return (
+    <>
+      <div className="rounded-lg border border-border p-3 col-span-2 sm:col-span-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{def.label}</span>
+          {hasHistory && (
+            <button
+              onClick={() => setHistOpen(true)}
+              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            >
+              <Clock size={11} />
+            </button>
+          )}
+        </div>
+        {val ? (
+          <p className="text-sm font-medium text-foreground leading-snug">{val}</p>
+        ) : (
+          <span className="text-sm text-muted-foreground/40">—</span>
+        )}
+      </div>
+
+      {hasHistory && (
+        <HistoryDialog title={def.label} open={histOpen} onOpenChange={setHistOpen}>
+          {entries.map((s) => (
+            <div
+              key={s.fetchedAt}
+              className="text-xs py-1.5 border-b border-border last:border-0"
+            >
+              <span className="text-muted-foreground block mb-0.5">{fmtDate(s.fetchedAt)}</span>
+              <span className="text-foreground">{s[def.key] as string}</span>
+            </div>
+          ))}
+        </HistoryDialog>
+      )}
+    </>
+  )
+}
+
 /* ─── Manual snapshot dialog ────────────────────────────────────── */
 
 const ManualSnapshotDialog = ({
   ticker,
+  isFii,
   open,
   onOpenChange,
   onSave,
 }: {
   ticker: string
+  isFii: boolean
   open: boolean
   onOpenChange: (v: boolean) => void
   onSave: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
 }) => {
-  const indicators = STOCK_INDICATORS
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+
+  const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
+
+  const buildPartial = (defs: FiiIndicatorDef[]): Partial<FundamentalSnapshot> => {
+    const partial: Partial<FundamentalSnapshot> = {}
+    for (const def of defs) {
+      const raw = form[def.key as string]
+      if (raw === undefined || raw === '') continue
+      if (def.type === 'number') {
+        ;(partial as Record<string, number>)[def.key as string] = Number(raw)
+      } else {
+        ;(partial as Record<string, string>)[def.key as string] = raw
+      }
+    }
+    return partial
+  }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const partial: Partial<FundamentalSnapshot> = {}
-      for (const def of indicators) {
-        const raw = form[def.key as string]
-        if (raw !== undefined && raw !== '') {
-          ;(partial as Record<string, number>)[def.key as string] = Number(raw)
+      let partial: Partial<FundamentalSnapshot>
+      if (isFii) {
+        partial = {
+          ...buildPartial(FII_COMMON),
+          ...buildPartial(FII_TIJOLO),
+          ...buildPartial(FII_PAPEL),
         }
+      } else {
+        partial = buildPartial(
+          STOCK_INDICATORS.map((d) => ({ ...d, type: 'number' as const })),
+        )
       }
       await onSave(ticker, partial)
       onOpenChange(false)
@@ -413,30 +536,72 @@ const ManualSnapshotDialog = ({
     }
   }
 
+  const renderField = (def: FiiIndicatorDef) => {
+    const key = def.key as string
+    if (def.type === 'number') {
+      return (
+        <div key={key}>
+          <label className="text-xs text-muted-foreground mb-1 block">
+            {def.inputLabel ?? def.label}
+          </label>
+          <input
+            className={inputClass}
+            type="number"
+            step={def.inputStep}
+            placeholder="—"
+            value={form[key] ?? ''}
+            onChange={(e) => setField(key, e.target.value)}
+          />
+        </div>
+      )
+    }
+    return (
+      <div key={key}>
+        <label className="text-xs text-muted-foreground mb-1 block">{def.label}</label>
+        <input
+          className={inputClass}
+          type="text"
+          placeholder={def.inputPlaceholder ?? '—'}
+          value={form[key] ?? ''}
+          onChange={(e) => setField(key, e.target.value)}
+        />
+      </div>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar indicadores — {ticker}</DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground -mt-1">
           Salva os dados do mês atual. Deixe em branco para não alterar.
         </p>
-        <div className="space-y-3 mt-2">
-          {indicators.map((def) => (
-            <div key={def.key as string}>
-              <label className="text-xs text-muted-foreground mb-1 block">{def.inputLabel}</label>
-              <input
-                className={inputClass}
-                type="number"
-                step={def.inputStep}
-                placeholder="—"
-                value={form[def.key as string] ?? ''}
-                onChange={(e) => setForm((p) => ({ ...p, [def.key as string]: e.target.value }))}
-              />
-            </div>
-          ))}
-        </div>
+
+        {isFii ? (
+          <div className="space-y-3 mt-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest pt-2 pb-1 border-b border-border">
+              Todos os FIIs
+            </p>
+            {FII_COMMON.map(renderField)}
+
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest pt-2 pb-1 border-b border-border">
+              FII de Tijolo
+            </p>
+            {FII_TIJOLO.map(renderField)}
+
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest pt-2 pb-1 border-b border-border">
+              FII de Papel
+            </p>
+            {FII_PAPEL.map(renderField)}
+          </div>
+        ) : (
+          <div className="space-y-3 mt-2">
+            {STOCK_INDICATORS.map((def) => renderField({ ...def, type: 'number' }))}
+          </div>
+        )}
+
         <DialogFooter className="mt-4">
           <button
             onClick={() => onOpenChange(false)}
@@ -457,172 +622,249 @@ const ManualSnapshotDialog = ({
   )
 }
 
-/* ─── CVM documents ─────────────────────────────────────────────── */
+/* ─── FII info dialog ───────────────────────────────────────────── */
 
-const CATEGORY_BADGE: Record<string, string> = {
-  'Fato Relevante': 'bg-destructive/15 text-destructive',
-  'Comunicado ao Mercado': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-  'Relatório Gerencial': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-}
+const FII_INFO_FIELDS: {
+  key: keyof Omit<FiiInfo, 'ticker' | 'updatedAt'>
+  label: string
+  placeholder: string
+}[] = [
+  {
+    key: 'longName',
+    label: 'Nome do Fundo',
+    placeholder: 'Ex: XP Malls Fundo de Investimento Imobiliário',
+  },
+  { key: 'cnpj', label: 'CNPJ', placeholder: 'Ex: 28.757.546/0001-00' },
+  { key: 'startDate', label: 'Início do Fundo', placeholder: 'Ex: 2012-05-17 ou 17/05/2012' },
+  {
+    key: 'segment',
+    label: 'Segmento',
+    placeholder: 'Ex: Shoppings, Lajes Corporativas, Logística...',
+  },
+  { key: 'marketCap', label: 'Valor de Mercado', placeholder: 'Ex: R$ 2,4 bi' },
+  {
+    key: 'adminName',
+    label: 'Administradora',
+    placeholder: 'Ex: BTG Pactual Serviços Financeiros',
+  },
+  { key: 'adminFee', label: 'Taxa de Administração', placeholder: 'Ex: 0,85% a.a.' },
+  {
+    key: 'performanceFee',
+    label: 'Taxa de Performance',
+    placeholder: 'Ex: 20% sobre IPCA+6% ou Não há',
+  },
+]
 
-const useDocuments = (assetName: string) => {
-  const [docs, setDocs] = useState<CvmDocument[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [tick, setTick] = useState(0)
+const FiiInfoDialog = ({
+  ticker,
+  existing,
+  open,
+  onOpenChange,
+  onSave,
+}: {
+  ticker: string
+  existing: FiiInfo | undefined
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSave: (data: FiiInfo) => Promise<void>
+}) => {
+  const empty = {
+    longName: '',
+    cnpj: '',
+    startDate: '',
+    segment: '',
+    marketCap: '',
+    adminName: '',
+    adminFee: '',
+    performanceFee: '',
+  }
+  const [form, setForm] = useState<Omit<FiiInfo, 'ticker' | 'updatedAt'>>(
+    existing
+      ? {
+          longName: existing.longName,
+          cnpj: existing.cnpj,
+          startDate: existing.startDate,
+          segment: existing.segment,
+          marketCap: existing.marketCap,
+          adminName: existing.adminName,
+          adminFee: existing.adminFee,
+          performanceFee: existing.performanceFee,
+        }
+      : empty,
+  )
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
-    fetchCvmDocuments(assetName).then(
-      (data) => {
-        if (!cancelled) {
-          setDocs(data)
-          setError(null)
-          setLoading(false)
-        }
-      },
-      (e) => {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Erro ao buscar documentos')
-          setLoading(false)
-        }
-      },
-    )
-    return () => {
-      cancelled = true
+    if (open) {
+      setForm(
+        existing
+          ? {
+              longName: existing.longName,
+              cnpj: existing.cnpj,
+              startDate: existing.startDate,
+              segment: existing.segment,
+              marketCap: existing.marketCap,
+              adminName: existing.adminName,
+              adminFee: existing.adminFee,
+              performanceFee: existing.performanceFee,
+            }
+          : empty,
+      )
     }
-  }, [assetName, tick])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
-  const reload = useCallback(() => {
-    setLoading(true)
-    setTick((n) => n + 1)
-  }, [])
+  const handleSave = async () => {
+    setSaving(true)
+    await onSave({ ticker, updatedAt: new Date().toISOString(), ...form })
+    setSaving(false)
+    onOpenChange(false)
+  }
 
-  return { docs, loading, error, reload }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-base">
+            Informações do Fundo
+            <span className="ml-2 text-xs font-normal text-muted-foreground">{ticker}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 py-1">
+          {FII_INFO_FIELDS.map(({ key, label, placeholder }) => (
+            <div key={key}>
+              <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+              <input
+                className={inputClass}
+                placeholder={placeholder}
+                value={form[key]}
+                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="px-4 py-2 text-sm rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
-const DocumentsList = ({
-  docs,
-  loading,
-  error,
-}: {
-  docs: CvmDocument[] | null
-  loading: boolean
-  error: string | null
-}) => (
-  <div>
-    {error && <p className="text-xs text-destructive mb-2">{error}</p>}
-    {loading && docs === null && (
-      <p className="text-xs text-muted-foreground">Buscando documentos...</p>
-    )}
-    {!loading && docs !== null && docs.length === 0 && (
-      <p className="text-xs text-muted-foreground italic">Nenhum documento encontrado.</p>
-    )}
-    {docs !== null && docs.length > 0 && (
-      <div className="space-y-2">
-        {docs.map((d, i) => (
-          <a
-            key={i}
-            href={d.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-start gap-2 group hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${CATEGORY_BADGE[d.category] ?? 'bg-muted text-muted-foreground'}`}
-                >
-                  {d.category}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{fmtDate(d.deliveryDate)}</span>
-              </div>
-              {(d.subject || d.type) && (
-                <p className="text-xs text-foreground line-clamp-2">{d.subject || d.type}</p>
-              )}
-            </div>
-            <ExternalLink
-              size={11}
-              className="text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-1"
-            />
-          </a>
-        ))}
+/* ─── FII info section ──────────────────────────────────────────── */
+
+const FiiInfoSection = ({ info, onEdit }: { info: FiiInfo | undefined; onEdit: () => void }) => {
+  const fields: { label: string; value: string }[] = info
+    ? [
+        { label: 'Nome do Fundo', value: info.longName },
+        { label: 'CNPJ', value: info.cnpj },
+        { label: 'Início', value: info.startDate },
+        { label: 'Segmento', value: info.segment },
+        { label: 'Valor de Mercado', value: info.marketCap },
+        { label: 'Administradora', value: info.adminName },
+        { label: 'Taxa de Adm.', value: info.adminFee },
+        { label: 'Taxa de Performance', value: info.performanceFee },
+      ].filter((f) => f.value.trim() !== '')
+    : []
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Informações do Fundo
+        </p>
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil size={11} />
+          {info ? 'Editar' : 'Preencher'}
+        </button>
       </div>
-    )}
-  </div>
-)
+      {fields.length > 0 ? (
+        <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+          {fields.map((f) => (
+            <div key={f.label} className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                {f.label}
+              </p>
+              <p className="text-sm font-medium text-foreground break-words">{f.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground">Nenhuma informação registrada.</p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /* ─── Asset detail view (inline) ───────────────────────────────── */
 
 const AssetDetailView = ({
   asset,
   record,
+  isFii,
+  fiiInfoData,
   onBack,
   onSaveSnapshot,
+  onSaveFiiInfo,
 }: {
   asset: Asset
   record: FundamentalRecord | undefined
+  isFii: boolean
+  fiiInfoData: FiiInfo | undefined
   onBack: () => void
   onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
+  onSaveFiiInfo: (data: FiiInfo) => Promise<void>
 }) => {
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [docsFilter, setDocsFilter] = useState('')
-  const {
-    docs,
-    loading: docsLoading,
-    error: docsError,
-    reload: reloadDocs,
-  } = useDocuments(asset.name)
+  const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
 
-  const filteredDocs = docs
-    ? docs.filter((d) => {
-        const q = docsFilter.toLowerCase()
-        return (
-          d.category.toLowerCase().includes(q) ||
-          (d.subject ?? '').toLowerCase().includes(q) ||
-          (d.type ?? '').toLowerCase().includes(q)
-        )
-      })
-    : null
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
   const indicators = STOCK_INDICATORS
 
   return (
     <>
-      <div className="space-y-5">
-        {/* Top bar: back + name + action */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              <ArrowLeft size={16} />
-              Voltar
-            </button>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <h2 className="text-xl font-bold text-foreground shrink-0">{asset.ticker}</h2>
-              <span className="text-muted-foreground hidden sm:block">·</span>
-              <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
-              {current?.sector && (
-                <Badge variant="secondary" className="shrink-0">
-                  {current.sector}
-                </Badge>
-              )}
-            </div>
-          </div>
+      <div className="space-y-6">
+        {/* Top bar: back + ticker + badges */}
+        <div className="flex items-center gap-3 min-w-0">
           <button
-            onClick={() => setRegisterOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
-            <Pencil size={13} />
-            Registrar
+            <ArrowLeft size={16} />
+            Voltar
           </button>
+          <span className="text-muted-foreground">/</span>
+          <h2 className="text-xl font-bold text-foreground shrink-0">{asset.ticker}</h2>
+          <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
+          {current?.sector && (
+            <Badge variant="secondary" className="shrink-0">
+              {current.sector}
+            </Badge>
+          )}
         </div>
 
-        {/* Price + industry row */}
-        <div className="flex items-baseline gap-4 flex-wrap">
+        {/* Price row */}
+        <div className="flex items-baseline gap-3 flex-wrap">
           <span className="text-3xl font-bold text-foreground">
             {formatCurrency(asset.currentPrice)}
           </span>
@@ -631,60 +873,71 @@ const AssetDetailView = ({
           )}
         </div>
 
-        {/* Indicators grid */}
+        {/* FII fund info */}
+        {isFii && <FiiInfoSection info={fiiInfoData} onEdit={() => setFiiInfoOpen(true)} />}
+
+        {/* Indicators */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Indicadores
-          </p>
-          {snapshots.length > 0 ? (
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Indicadores
+            </p>
+            <button
+              onClick={() => setRegisterOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Plus size={12} />
+              Registrar indicadores
+            </button>
+          </div>
+          {isFii ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              <PriceCard points={record?.priceHistory ?? []} currentPrice={asset.currentPrice} />
-              {indicators.map((def) => (
-                <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
-              ))}
+              {[...FII_COMMON, ...FII_TIJOLO, ...FII_PAPEL].map((def) =>
+                def.type === 'number' ? (
+                  <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                ) : (
+                  <TextIndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                ),
+              )}
+              {snapshots.length === 0 && (
+                <p className="text-xs text-muted-foreground col-span-full mt-1">
+                  Nenhum indicador registrado ainda.
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               <PriceCard points={record?.priceHistory ?? []} currentPrice={asset.currentPrice} />
-              <p className="text-xs text-muted-foreground col-span-full mt-1">
-                Nenhum indicador registrado. Clique em "Registrar" para adicionar.
-              </p>
+              {snapshots.length > 0 ? (
+                indicators.map((def) => (
+                  <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground col-span-full mt-1">
+                  Nenhum indicador registrado ainda.
+                </p>
+              )}
             </div>
           )}
-        </div>
-
-        {/* CVM docs */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Documentos CVM
-            </p>
-            <button
-              onClick={reloadDocs}
-              disabled={docsLoading}
-              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors disabled:opacity-40"
-            >
-              <RefreshCw size={11} className={docsLoading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-          <input
-            className={`${inputClass} mb-2`}
-            placeholder="Filtrar documentos..."
-            value={docsFilter}
-            onChange={(e) => setDocsFilter(e.target.value)}
-          />
-          <div className="rounded-lg border border-border p-3">
-            <DocumentsList docs={filteredDocs} loading={docsLoading} error={docsError} />
-          </div>
         </div>
       </div>
 
       <ManualSnapshotDialog
         ticker={asset.ticker}
+        isFii={isFii}
         open={registerOpen}
         onOpenChange={setRegisterOpen}
         onSave={onSaveSnapshot}
       />
+      {isFii && (
+        <FiiInfoDialog
+          ticker={asset.ticker}
+          existing={fiiInfoData}
+          open={fiiInfoOpen}
+          onOpenChange={setFiiInfoOpen}
+          onSave={onSaveFiiInfo}
+        />
+      )}
     </>
   )
 }
@@ -764,7 +1017,13 @@ const AssetCompactCard = ({
 
 /* ─── Main tab ──────────────────────────────────────────────────── */
 
-export const AnalysisTab = ({ assets, fundamentals, saveManualSnapshot }: Props) => {
+export const AnalysisTab = ({
+  assets,
+  fundamentals,
+  saveManualSnapshot,
+  fiiInfo,
+  saveFiiInfo,
+}: Props) => {
   const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
 
@@ -786,8 +1045,11 @@ export const AnalysisTab = ({ assets, fundamentals, saveManualSnapshot }: Props)
       <AssetDetailView
         asset={selectedAsset}
         record={fundamentals[selectedAsset.ticker.toUpperCase()]}
+        isFii={subTab === 'fii'}
+        fiiInfoData={fiiInfo[selectedAsset.ticker.toUpperCase()]}
         onBack={() => setSelectedTicker(null)}
         onSaveSnapshot={saveManualSnapshot}
+        onSaveFiiInfo={saveFiiInfo}
       />
     )
   }

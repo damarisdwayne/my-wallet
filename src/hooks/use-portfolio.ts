@@ -14,7 +14,9 @@ import {
 import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
 import {
   fetchBrapiSummary,
+  saveFiiInfo as saveFiiInfoService,
   saveFiiManualData,
+  subscribeToFiiInfo,
   subscribeToFiiManual,
   subscribeToFundamentals,
   upsertMonthlySnapshot,
@@ -28,6 +30,7 @@ import type {
   Asset,
   AssetAnswers,
   Diagram,
+  FiiInfo,
   FiiManualData,
   FundamentalRecord,
   ImportItem,
@@ -67,6 +70,7 @@ export const usePortfolio = () => {
   const [priceError, setPriceError] = useState<string | null>(null)
   const [fundamentals, setFundamentals] = useState<Record<string, FundamentalRecord>>({})
   const [fiiManual, setFiiManual] = useState<Record<string, FiiManualData>>({})
+  const [fiiInfo, setFiiInfo] = useState<Record<string, FiiInfo>>({})
   const [refreshingFundamentals, setRefreshingFundamentals] = useState<Record<string, boolean>>({})
   const [fundamentalErrors, setFundamentalErrors] = useState<Record<string, string>>({})
   const seededRef = useRef(false)
@@ -110,6 +114,7 @@ export const usePortfolio = () => {
       }),
       subscribeToFundamentals(user.uid, setFundamentals),
       subscribeToFiiManual(user.uid, setFiiManual),
+      subscribeToFiiInfo(user.uid, setFiiInfo),
       subscribeToTrades(user.uid, setTrades),
     ]
     return () => unsubs.forEach((u) => u())
@@ -340,16 +345,22 @@ export const usePortfolio = () => {
   const saveManualSnapshot = async (
     ticker: string,
     partial: Partial<import('@/types').FundamentalSnapshot>,
+    priceOverride?: number,
   ) => {
     if (!user) return
     const existing = fundamentals[ticker.toUpperCase()] ?? null
     const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
-    await upsertMonthlySnapshot(user.uid, ticker, partial, existing, asset?.currentPrice)
+    await upsertMonthlySnapshot(user.uid, ticker, partial, existing, priceOverride ?? asset?.currentPrice)
   }
 
   const saveFiiManual = (data: FiiManualData) => {
     if (!user) return Promise.resolve()
     return saveFiiManualData(user.uid, data)
+  }
+
+  const saveFiiInfo = (data: FiiInfo) => {
+    if (!user) return Promise.resolve()
+    return saveFiiInfoService(user.uid, data)
   }
 
   const syncMissingTrades = async () => {
@@ -443,6 +454,8 @@ export const usePortfolio = () => {
     priceError,
     fundamentals,
     fiiManual,
+    fiiInfo,
+    saveFiiInfo,
     refreshingFundamentals,
     fundamentalErrors,
     refreshFundamentals,

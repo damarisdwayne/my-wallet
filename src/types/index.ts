@@ -169,6 +169,7 @@ export interface ImportRecord {
 
 export interface FundamentalSnapshot {
   fetchedAt: string
+  // Stock / shared
   priceEarnings: number | null
   priceToBook: number | null
   returnOnEquity: number | null
@@ -182,6 +183,23 @@ export interface FundamentalSnapshot {
   returnOnAssets: number | null
   sector: string | null
   industry: string | null
+  // FII - todos
+  majorRevenueConcentration?: string | null
+  // FII - tijolo
+  physicalVacancy?: number | null
+  financialVacancy?: number | null
+  propertyCount?: number | null
+  tenantCount?: number | null
+  regionDiversification?: string | null
+  rentalContracts?: string | null
+  // FII - papel
+  creditQuality?: string | null
+  indexationType?: string | null
+  debtorConcentration?: string | null
+  paperSegments?: string | null
+  spread?: number | null
+  ltv?: number | null
+  defaultRate?: number | null
 }
 
 export interface PricePoint {
@@ -194,6 +212,19 @@ export interface FundamentalRecord {
   updatedAt: string
   snapshots: FundamentalSnapshot[]
   priceHistory?: PricePoint[]
+}
+
+export interface FiiInfo {
+  ticker: string
+  longName: string
+  cnpj: string
+  startDate: string
+  segment: string
+  marketCap: string
+  adminName: string
+  adminFee: string
+  performanceFee: string
+  updatedAt: string
 }
 
 export interface FiiManualData {

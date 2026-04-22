@@ -1,6 +1,7 @@
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
-import type { FiiManualData, FundamentalRecord, FundamentalSnapshot, PricePoint } from '@/types'
+import type { FiiInfo, FiiManualData, FundamentalRecord, FundamentalSnapshot, PricePoint } from '@/types'
+
 
 const MAX_MONTHS = 12
 
@@ -37,6 +38,23 @@ export const fetchBrapiSummary = async (
     industry: r?.summaryProfile?.industry ?? null,
   }
 }
+
+/* ─── Firestore – FII static info (manual) ─────────────────────── */
+
+export const saveFiiInfo = (userId: string, data: FiiInfo) =>
+  setDoc(doc(db, 'users', userId, 'fii-info', data.ticker.toUpperCase()), data)
+
+export const subscribeToFiiInfo = (
+  userId: string,
+  cb: (data: Record<string, FiiInfo>) => void,
+) =>
+  onSnapshot(collection(db, 'users', userId, 'fii-info'), (snap) => {
+    const records: Record<string, FiiInfo> = {}
+    snap.docs.forEach((d) => {
+      records[d.id] = d.data() as FiiInfo
+    })
+    cb(records)
+  })
 
 /* ─── Firestore – monthly snapshot upsert ──────────────────────── */
 

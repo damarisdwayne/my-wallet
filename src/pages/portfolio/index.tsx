@@ -7,7 +7,7 @@ import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
 import { TradesTab } from './components/trades-tab'
 
-const tabs = ['Visão Geral', 'Alocação', 'Aporte', 'Movimentações', 'Importações', 'Análise']
+const tabs = ['Visão Geral', 'Meta', 'Aporte', 'Movimentações', 'Importações', 'Análise']
 
 export const PortfolioPage = () => {
   const {
@@ -34,6 +34,8 @@ export const PortfolioPage = () => {
     priceError,
     fundamentals,
     saveManualSnapshot,
+    fiiInfo,
+    saveFiiInfo,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -110,6 +112,8 @@ export const PortfolioPage = () => {
           assets={assets}
           fundamentals={fundamentals}
           saveManualSnapshot={saveManualSnapshot}
+          fiiInfo={fiiInfo}
+          saveFiiInfo={saveFiiInfo}
         />
       )}
     </div>

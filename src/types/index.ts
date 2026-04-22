@@ -190,6 +190,7 @@ export interface FundamentalSnapshot {
   financialVacancy?: number | null
   propertyCount?: number | null
   tenantCount?: number | null
+  propertyQuality?: string | null
   regionDiversification?: string | null
   rentalContracts?: string | null
   // FII - papel

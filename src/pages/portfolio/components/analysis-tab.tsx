@@ -406,6 +406,7 @@ const FII_TIJOLO: FiiIndicatorDef[] = [
   { type: 'number', key: 'physicalVacancy', label: 'Vacância Física', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Física em % (ex: 8)' },
   { type: 'number', key: 'financialVacancy', label: 'Vacância Financeira', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Financeira em % (ex: 6)' },
   { type: 'number', key: 'propertyCount', label: 'Qtd. Imóveis', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de imóveis' },
+  { type: 'text', key: 'propertyQuality', label: 'Qualidade dos Imóveis', inputPlaceholder: 'Ex: AAA — lajes corporativas classe A em SP' },
   { type: 'number', key: 'tenantCount', label: 'Qtd. Inquilinos', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de inquilinos' },
   { type: 'text', key: 'regionDiversification', label: 'Diversificação por Região', inputPlaceholder: 'Ex: SP 60%, RJ 25%, MG 15%' },
   { type: 'text', key: 'rentalContracts', label: 'Contratos de Aluguel', inputPlaceholder: 'Ex: 70% típico, 30% atípico' },

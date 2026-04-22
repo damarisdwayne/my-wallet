@@ -41,12 +41,11 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  categories: { id: string; name: string }[]
+  categories: { id: string; name: string; type?: string }[]
   onAdd: (asset: Asset) => Promise<void>
 }
 
 const empty = () => ({
-  name: '',
   fixedIncomeType: 'CDB' as FixedIncomeType,
   institution: '',
   issuer: '',
@@ -59,26 +58,49 @@ const empty = () => ({
   categoryId: '',
 })
 
+const RATE_LABEL: Record<RateType, string> = {
+  prefixado: 'Pré',
+  pos_cdi: 'Pós CDI',
+  ipca_plus: 'IPCA+',
+  igpm_plus: 'IGP-M+',
+  pos_selic: 'Pós SELIC',
+}
+
+const buildName = (f: ReturnType<typeof empty>): string => {
+  const parts: string[] = [f.fixedIncomeType, RATE_LABEL[f.rateType]]
+
+  const rate = f.rateType === 'prefixado' ? f.prefixedRate : f.indexerRate
+  if (rate) parts.push(`${rate}%`)
+
+  const emitter = f.issuer || f.institution
+  if (emitter) parts.push(emitter)
+
+  return parts.join(' ')
+}
+
 export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Props) => {
+  const fiCatId = categories.find((c) => c.type === 'fixed_income')?.id ?? ''
   const [form, setForm] = useState(empty())
   const [saving, setSaving] = useState(false)
 
   const set = (field: string, value: string) => setForm((p) => ({ ...p, [field]: value }))
 
-  const fixedIncomeCategories = categories.filter((c) => {
-    return true // show all categories so user can pick the right one
-  })
+  const handleOpenChange = (v: boolean) => {
+    setForm(v ? { ...empty(), categoryId: fiCatId } : empty())
+    onOpenChange(v)
+  }
 
   const handleSave = async () => {
     const invested = Number.parseFloat(form.totalInvested)
-    if (!form.name || invested <= 0) return
+    if (invested <= 0) return
     setSaving(true)
     try {
-      const ticker = `${form.fixedIncomeType}${form.institution ? `-${form.institution.toUpperCase().slice(0, 8)}` : ''}`
+      const suffix = form.institution ? `-${form.institution.toUpperCase().slice(0, 8)}` : ''
+      const ticker = `${form.fixedIncomeType}${suffix}`
       const asset: Asset = {
         id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         ticker,
-        name: form.name,
+        name: buildName(form),
         type: 'fixed_income',
         categoryId: form.categoryId,
         quantity: 1,
@@ -89,9 +111,9 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
         fixedIncomeType: form.fixedIncomeType,
         rateType: form.rateType,
         indexerRate:
-          form.rateType !== 'prefixado'
-            ? Number.parseFloat(form.indexerRate) || undefined
-            : undefined,
+          form.rateType === 'prefixado'
+            ? undefined
+            : Number.parseFloat(form.indexerRate) || undefined,
         prefixedRate:
           form.rateType === 'prefixado'
             ? Number.parseFloat(form.prefixedRate) || undefined
@@ -101,8 +123,7 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
         issuer: form.issuer || undefined,
       }
       await onAdd(asset)
-      setForm(empty())
-      onOpenChange(false)
+      handleOpenChange(false)
     } finally {
       setSaving(false)
     }
@@ -119,14 +140,10 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
     pos_selic: '% da SELIC',
   }
 
+  const preview = buildName(form)
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        if (!v) setForm(empty())
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Incluir Renda Fixa</DialogTitle>
@@ -134,17 +151,6 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
         </DialogHeader>
 
         <div className="space-y-3 mt-2">
-          <div>
-            <Label>Descrição / Nome</Label>
-            <input
-              className={inputClass}
-              placeholder="Ex: CDB Nubank 110% CDI"
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              autoFocus
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Tipo</Label>
@@ -152,6 +158,7 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
                 className={inputClass}
                 value={form.fixedIncomeType}
                 onChange={(e) => set('fixedIncomeType', e.target.value)}
+                autoFocus
               >
                 {FIXED_INCOME_TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -160,36 +167,6 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
                 ))}
               </select>
             </div>
-            <div>
-              <Label>Operação</Label>
-              <select className={inputClass} defaultValue="aplicacao" disabled>
-                <option value="aplicacao">Aplicação</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Data de aplicação</Label>
-              <input
-                className={inputClass}
-                type="date"
-                value={form.operationDate}
-                onChange={(e) => set('operationDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Instituição</Label>
-              <input
-                className={inputClass}
-                placeholder="Nubank, Inter, XP..."
-                value={form.institution}
-                onChange={(e) => set('institution', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Tipo de Taxa</Label>
               <select
@@ -204,27 +181,18 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
                 ))}
               </select>
             </div>
-            <div>
-              <Label>Vencimento</Label>
-              <input
-                className={inputClass}
-                type="date"
-                value={form.maturityDate}
-                onChange={(e) => set('maturityDate', e.target.value)}
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label>Indexador / {rateLabel[form.rateType]}</Label>
+              <Label>{rateLabel[form.rateType]}</Label>
               {showIndexerRate && (
                 <input
                   className={inputClass}
                   type="number"
                   min={0}
                   step={0.1}
-                  placeholder={form.rateType === 'pos_cdi' ? '110' : '6,5'}
+                  placeholder={form.rateType === 'pos_cdi' ? '110' : '6.5'}
                   value={form.indexerRate}
                   onChange={(e) => set('indexerRate', e.target.value)}
                 />
@@ -242,6 +210,27 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
               )}
             </div>
             <div>
+              <Label>Vencimento</Label>
+              <input
+                className={inputClass}
+                type="date"
+                value={form.maturityDate}
+                onChange={(e) => set('maturityDate', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label>Instituição</Label>
+              <input
+                className={inputClass}
+                placeholder="Nubank, Inter, XP..."
+                value={form.institution}
+                onChange={(e) => set('institution', e.target.value)}
+              />
+            </div>
+            <div>
               <Label>Emissor (opcional)</Label>
               <input
                 className={inputClass}
@@ -254,6 +243,15 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
 
           <div className="grid grid-cols-2 gap-2">
             <div>
+              <Label>Data de aplicação</Label>
+              <input
+                className={inputClass}
+                type="date"
+                value={form.operationDate}
+                onChange={(e) => set('operationDate', e.target.value)}
+              />
+            </div>
+            <div>
               <Label>Total investido (R$)</Label>
               <input
                 className={inputClass}
@@ -265,22 +263,28 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
                 onChange={(e) => set('totalInvested', e.target.value)}
               />
             </div>
-            <div>
-              <Label>Categoria</Label>
-              <select
-                className={inputClass}
-                value={form.categoryId}
-                onChange={(e) => set('categoryId', e.target.value)}
-              >
-                <option value="">Sem categoria</option>
-                {fixedIncomeCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
+
+          <div>
+            <Label>Categoria</Label>
+            <select
+              className={inputClass}
+              value={form.categoryId}
+              onChange={(e) => set('categoryId', e.target.value)}
+            >
+              <option value="">Sem categoria</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+            <span className="font-medium text-foreground">Nome: </span>
+            {preview}
+          </p>
         </div>
 
         <DialogFooter className="mt-4">
@@ -292,7 +296,7 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
           </button>
           <button
             onClick={handleSave}
-            disabled={!form.name || !form.totalInvested || saving}
+            disabled={!form.totalInvested || saving}
             className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
           >
             {saving ? 'Salvando...' : 'Confirmar'}

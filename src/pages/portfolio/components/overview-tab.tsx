@@ -463,8 +463,15 @@ export const OverviewTab = ({
                   className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors"
                 >
                   <td className="py-3">
-                    <p className="font-semibold text-foreground">{a.ticker}</p>
-                    <p className="text-xs text-muted-foreground">{a.name}</p>
+                    <p className="font-semibold text-foreground">{a.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isFlatFixedIncome(a) ? (a.institution ?? a.ticker) : a.ticker}
+                      {a.maturityDate && (
+                        <span className="ml-1.5 text-muted-foreground/70">
+                          · venc. {a.maturityDate.slice(5, 7)}/{a.maturityDate.slice(0, 4)}
+                        </span>
+                      )}
+                    </p>
                   </td>
                   <td className="py-3">
                     {cat ? (

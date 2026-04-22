@@ -246,7 +246,8 @@ const StandardForm = ({
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
-  const autoCatId = categories.find((c) => c.type === type)?.id ?? ''
+  const catType = type === 'etf' || type === 'bdr' ? 'stock' : type
+  const autoCatId = categories.find((c) => c.type === catType)?.id ?? ''
   const resolvedCatId = form.autoCategory ? autoCatId : form.categoryId
   const resolvedCatName = form.autoCategory
     ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma encontrada')
@@ -380,6 +381,31 @@ const StandardForm = ({
   )
 }
 
+const RATE_LABEL: Record<RateType, string> = {
+  prefixado: 'Pré',
+  pos_cdi: 'Pós CDI',
+  ipca_plus: 'IPCA+',
+  igpm_plus: 'IGP-M+',
+  pos_selic: 'Pós SELIC',
+}
+
+const buildFiName = (f: {
+  fixedIncomeType: FixedIncomeType
+  rateType: RateType
+  indexerRate: string
+  prefixedRate: string
+  issuer: string
+  institution: string
+  maturityDate: string
+}): string => {
+  const parts: string[] = [f.fixedIncomeType, RATE_LABEL[f.rateType]]
+  const rate = f.rateType === 'prefixado' ? f.prefixedRate : f.indexerRate
+  if (rate) parts.push(`${rate}%`)
+  const emitter = f.issuer || f.institution
+  if (emitter) parts.push(emitter)
+  return parts.join(' ')
+}
+
 const TESOURO_RATE_TYPE: Partial<Record<FixedIncomeType, RateType>> = {
   'Tesouro IPCA+': 'ipca_plus',
   'Tesouro Selic': 'pos_selic',
@@ -395,8 +421,8 @@ const FixedIncomeForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
+  const fiCatId = categories.find((c) => c.type === 'fixed_income')?.id ?? ''
   const [form, setForm] = useState({
-    name: '',
     fixedIncomeType: 'CDB' as FixedIncomeType,
     institution: '',
     issuer: '',
@@ -409,7 +435,7 @@ const FixedIncomeForm = ({
     maturityYear: '',
     operationDate: '',
     maturityDate: '',
-    categoryId: '',
+    categoryId: fiCatId,
   })
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
@@ -434,21 +460,10 @@ const FixedIncomeForm = ({
 
   const canSave = isTesouro
     ? Number.parseFloat(form.quantity) > 0 && Number.parseFloat(form.avgPrice) > 0
-    : form.name !== '' && Number.parseFloat(form.totalInvested) > 0
+    : Number.parseFloat(form.totalInvested) > 0
 
   return (
     <div className="space-y-3 mt-2">
-      {!isTesouro && (
-        <Field label="Descrição / Nome">
-          <input
-            className={inputClass}
-            placeholder="CDB Nubank 110% CDI"
-            value={form.name}
-            onChange={(e) => set('name', e.target.value)}
-            autoFocus
-          />
-        </Field>
-      )}
       <div className="grid grid-cols-2 gap-2">
         <Field label="Tipo">
           <select
@@ -619,7 +634,8 @@ const FixedIncomeForm = ({
             const qty = Number.parseFloat(form.quantity)
             const pu = Number.parseFloat(form.avgPrice)
             const year = form.maturityYear.trim()
-            const ticker = `${form.fixedIncomeType.toUpperCase()}${year ? ` ${year}` : ''}`
+            const yearSuffix = year ? ` ${year}` : ''
+            const ticker = `${form.fixedIncomeType.toUpperCase()}${yearSuffix}`
             onSave({
               ticker,
               name: ticker,
@@ -632,9 +648,9 @@ const FixedIncomeForm = ({
               fixedIncomeType: form.fixedIncomeType,
               rateType: form.rateType,
               indexerRate:
-                form.rateType !== 'prefixado'
-                  ? Number.parseFloat(form.indexerRate) || undefined
-                  : undefined,
+                form.rateType === 'prefixado'
+                  ? undefined
+                  : Number.parseFloat(form.indexerRate) || undefined,
               prefixedRate:
                 form.rateType === 'prefixado'
                   ? Number.parseFloat(form.prefixedRate) || undefined
@@ -647,7 +663,7 @@ const FixedIncomeForm = ({
             const ticker = `${form.fixedIncomeType}${suffix}`
             onSave({
               ticker,
-              name: form.name,
+              name: buildFiName(form),
               type: 'fixed_income',
               categoryId: form.categoryId,
               quantity: 1,
@@ -658,9 +674,9 @@ const FixedIncomeForm = ({
               fixedIncomeType: form.fixedIncomeType,
               rateType: form.rateType,
               indexerRate:
-                form.rateType !== 'prefixado'
-                  ? Number.parseFloat(form.indexerRate) || undefined
-                  : undefined,
+                form.rateType === 'prefixado'
+                  ? undefined
+                  : Number.parseFloat(form.indexerRate) || undefined,
               prefixedRate:
                 form.rateType === 'prefixado'
                   ? Number.parseFloat(form.prefixedRate) || undefined
@@ -687,12 +703,13 @@ const CryptoForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
+  const cryptoCatId = categories.find((c) => c.type === 'crypto')?.id ?? ''
   const [ticker, setTicker] = useState('')
   const [customTicker, setCustomTicker] = useState('')
   const [isCustom, setIsCustom] = useState(false)
   const [quantity, setQuantity] = useState('')
   const [avgPrice, setAvgPrice] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [categoryId, setCategoryId] = useState(cryptoCatId)
 
   const resolvedTicker = isCustom ? customTicker.toUpperCase() : ticker
   const resolvedName = isCustom

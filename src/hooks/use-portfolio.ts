@@ -40,6 +40,12 @@ import { addDividends } from '@/services/dividends'
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
+const deleteExpiredAssets = async (uid: string, assets: Asset[]) => {
+  const { deleteDoc, doc } = await import('firebase/firestore')
+  const { db } = await import('@/lib/firestore')
+  await Promise.all(assets.map((a) => deleteDoc(doc(db, 'users', uid, 'assets', a.id))))
+}
+
 const makeDefaultCategories = (): PortfolioCategory[] => [
   { id: mkId(), name: 'Fundos Imobiliários', type: 'fii', targetPercent: 30, color: '#f97316' },
   { id: mkId(), name: 'Renda Fixa', type: 'fixed_income', targetPercent: 30, color: '#3b82f6' },
@@ -74,7 +80,12 @@ export const usePortfolio = () => {
     }
     const unsubs = [
       subscribeToAssets(user.uid, (data) => {
-        setAssets(data)
+        const today = new Date().toISOString().slice(0, 10)
+        const expired = data.filter(
+          (a) => a.type === 'fixed_income' && a.maturityDate && a.maturityDate < today,
+        )
+        if (expired.length > 0) void deleteExpiredAssets(user.uid, expired)
+        setAssets(data.filter((a) => !expired.some((e) => e.id === a.id)))
         onLoad()
       }),
       subscribeToCategories(user.uid, (data) => {

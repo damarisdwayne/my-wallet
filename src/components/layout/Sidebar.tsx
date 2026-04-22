@@ -27,7 +27,7 @@ export const Sidebar = () => {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col shrink-0 border-r border-border bg-card min-h-screen transition-all duration-200',
+        'hidden md:flex flex-col shrink-0 border-r border-border bg-card h-full transition-all duration-200',
         expanded ? 'w-56' : 'w-15',
       )}
     >
@@ -52,7 +52,7 @@ export const Sidebar = () => {
             title={expanded ? undefined : item.label}
             className={({ isActive }) =>
               cn(
-                'w-full flex items-center rounded-md text-sm transition-colors py-2.5',
+                'w-full flex flex-nowrap items-center rounded-md text-sm transition-colors py-2.5 ',
                 expanded ? 'gap-3 px-3' : 'justify-center px-2',
                 isActive
                   ? 'bg-primary/10 text-primary font-medium'

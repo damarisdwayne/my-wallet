@@ -348,6 +348,7 @@ export const AllocationTab = ({
         const catValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
         const actualPct = totalValue > 0 ? (catValue / totalValue) * 100 : 0
         const diff = actualPct - cat.targetPercent
+        const catTargetValue = (cat.targetPercent / 100) * totalValue
         const expanded = expandedCatId === cat.id
         const manual = isManualCat(cat.id)
         const draftActive = !!manualDrafts[cat.id]
@@ -366,9 +367,11 @@ export const AllocationTab = ({
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-muted-foreground">Meta: {cat.targetPercent}%</span>
-                  <span className="font-medium text-foreground">
-                    Atual: {actualPct.toFixed(1)}%
+                  <span className="hidden sm:inline text-xs text-muted-foreground">
+                    Meta: {cat.targetPercent}% · {formatCurrency(catTargetValue)}
+                  </span>
+                  <span className="hidden sm:inline text-xs font-medium text-foreground">
+                    Atual: {actualPct.toFixed(1)}% · {formatCurrency(catValue)}
                   </span>
                   <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
                     {diff >= 0 ? '+' : ''}

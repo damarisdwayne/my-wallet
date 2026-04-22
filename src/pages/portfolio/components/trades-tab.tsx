@@ -52,6 +52,11 @@ export const TradesTab = ({
     [assets],
   )
 
+  const tickerToAsset = useMemo(
+    () => Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a])),
+    [assets],
+  )
+
   const activeCategories = useMemo(
     () => categories.filter((c) => assets.some((a) => a.categoryId === c.id)),
     [categories, assets],
@@ -156,6 +161,9 @@ export const TradesTab = ({
         <div className="rounded-lg border border-border overflow-hidden">
           {grouped.map(({ ticker, items, bought, sold, totalInvested }, idx) => {
             const isExpanded = expandedTickers.has(ticker)
+            const asset = tickerToAsset[ticker.toUpperCase()]
+            const isFixedIncome = asset?.type === 'fixed_income'
+            const displayName = isFixedIncome && asset?.name ? asset.name : ticker
             return (
               <div key={ticker} className={cn(idx > 0 && 'border-t border-border')}>
                 <button
@@ -169,8 +177,13 @@ export const TradesTab = ({
                       isExpanded && 'rotate-180',
                     )}
                   />
-                  <span className="font-semibold text-foreground text-sm w-20 shrink-0">
-                    {ticker}
+                  <span
+                    className={cn(
+                      'font-semibold text-foreground text-sm shrink-0',
+                      isFixedIncome ? 'flex-1 truncate' : 'w-20',
+                    )}
+                  >
+                    {displayName}
                   </span>
                   <span className="text-xs text-muted-foreground">{items.length} op.</span>
                   <span className="text-xs text-success ml-2">+{bought}</span>

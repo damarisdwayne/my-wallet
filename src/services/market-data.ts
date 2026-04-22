@@ -65,7 +65,7 @@ export async function fetchMarketData(): Promise<MarketData> {
     safeJson<CgResp>(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl&include_24hr_change=true',
     ),
-    safeJson<BcbEntry[]>(`${BCB}.11/dados/ultimos/1?formato=json`), // SELIC % a.d.
+    safeJson<BcbEntry[]>(`${BCB}.432/dados/ultimos/1?formato=json`), // Selic meta % a.a.
     safeJson<BcbEntry[]>(`${BCB}.433/dados/ultimos/12?formato=json`), // IPCA mensal
     safeJson<BcbEntry[]>(`${BCB}.189/dados/ultimos/12?formato=json`), // IGP-M mensal
   ])
@@ -76,9 +76,8 @@ export async function fetchMarketData(): Promise<MarketData> {
   const btcBrl = cg?.bitcoin?.brl ?? 0
   const btcBrlChange = cg?.bitcoin?.brl_24h_change ?? 0
 
-  // SELIC diária (% a.d.) → anualizar base 252 dias úteis
-  const selicDay = selicRaw?.[0] ? parseFloat(selicRaw[0].valor) : 0
-  const selic = selicDay > 0 ? ((1 + selicDay / 100) ** 252 - 1) * 100 : 0
+  // Selic meta (série 432) já vem em % a.a.
+  const selic = selicRaw?.[0] ? Number.parseFloat(selicRaw[0].valor) : 0
 
   const ipca12m = ipcaRaw ? compound(ipcaRaw.map((e) => parseFloat(e.valor))) : 0
   const igpm12m = igpmRaw ? compound(igpmRaw.map((e) => parseFloat(e.valor))) : 0

@@ -217,19 +217,30 @@ export const AllocationTab = ({
   const isManualCat = (catId: string) =>
     assets.filter((a) => a.categoryId === catId).some((a) => (a.targetPercent ?? 0) > 0)
 
-  const getDraft = (catId: string, catAssets: Asset[]) => {
+  const getDraft = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
     if (manualDrafts[catId]) return manualDrafts[catId]
+    // Convert stored portfolio-% back to within-category %
     return Object.fromEntries(
-      catAssets.map((a) => [a.id, a.targetPercent > 0 ? String(a.targetPercent) : '']),
+      catAssets.map((a) => {
+        if (a.targetPercent > 0 && cat.targetPercent > 0) {
+          return [a.id, ((a.targetPercent / cat.targetPercent) * 100).toFixed(1)]
+        }
+        return [a.id, '0']
+      }),
     )
   }
 
   const enterManual = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
-    const share = (cat.targetPercent / catAssets.length).toFixed(1)
+    const share = (100 / catAssets.length).toFixed(1)
     setManualDrafts((prev) => ({
       ...prev,
       [catId]: Object.fromEntries(
-        catAssets.map((a) => [a.id, a.targetPercent > 0 ? String(a.targetPercent) : share]),
+        catAssets.map((a) => {
+          if (a.targetPercent > 0 && cat.targetPercent > 0) {
+            return [a.id, ((a.targetPercent / cat.targetPercent) * 100).toFixed(1)]
+          }
+          return [a.id, share]
+        }),
       ),
     }))
   }
@@ -251,9 +262,14 @@ export const AllocationTab = ({
 
   const saveManual = async (catId: string, catAssets: Asset[]) => {
     const draft = manualDrafts[catId] ?? {}
+    const cat = categories.find((c) => c.id === catId)
+    const catPct = cat?.targetPercent ?? 0
     setSavingManual(catId)
     await Promise.all(
-      catAssets.map((a) => editAsset(a.id, { targetPercent: Number(draft[a.id]) || 0 })),
+      catAssets.map((a) => {
+        const withinCat = Number(draft[a.id]) || 0
+        return editAsset(a.id, { targetPercent: (withinCat / 100) * catPct })
+      }),
     )
     setSavingManual(null)
   }
@@ -467,12 +483,12 @@ export const AllocationTab = ({
                     {/* Manual mode */}
                     {inManualMode &&
                       (() => {
-                        const draft = getDraft(cat.id, catAssets)
+                        const draft = getDraft(cat.id, catAssets, cat)
                         const draftSum = catAssets.reduce(
                           (s, a) => s + (Number(draft[a.id]) || 0),
                           0,
                         )
-                        const sumOk = Math.abs(draftSum - cat.targetPercent) < 0.15
+                        const sumOk = Math.abs(draftSum - 100) < 0.15
                         return (
                           <div className="space-y-3">
                             {catAssets.map((a) => {
@@ -499,7 +515,7 @@ export const AllocationTab = ({
                                   <input
                                     type="range"
                                     min="0"
-                                    max={cat.targetPercent}
+                                    max={100}
                                     step="0.1"
                                     value={val}
                                     className="w-full accent-primary h-1.5 cursor-pointer"
@@ -513,7 +529,7 @@ export const AllocationTab = ({
                                 className={cn('text-xs', sumOk ? 'text-success' : 'text-warning')}
                               >
                                 Soma: {draftSum.toFixed(1)}%{' '}
-                                {sumOk ? '✓' : `(meta: ${cat.targetPercent}%)`}
+                                {sumOk ? '✓' : '(meta: 100%)'}
                               </span>
                               <button
                                 onClick={() => saveManual(cat.id, catAssets)}

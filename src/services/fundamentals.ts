@@ -1,6 +1,6 @@
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
-import type { FiiInfo, FiiManualData, FundamentalRecord, FundamentalSnapshot, PricePoint } from '@/types'
+import type { FiiInfo, FiiManualData, FundamentalRecord, FundamentalSnapshot, PricePoint, StockInfo } from '@/types'
 
 
 const MAX_MONTHS = 12
@@ -54,6 +54,21 @@ export const subscribeToFiiInfo = (
     snap.docs.forEach((d) => {
       records[d.id] = d.data() as FiiInfo
     })
+    cb(records)
+  })
+
+/* ─── Firestore – Stock static info (manual) ───────────────────── */
+
+export const saveStockInfo = (userId: string, data: StockInfo) =>
+  setDoc(doc(db, 'users', userId, 'stock-info', data.ticker.toUpperCase()), data)
+
+export const subscribeToStockInfo = (
+  userId: string,
+  cb: (data: Record<string, StockInfo>) => void,
+) =>
+  onSnapshot(collection(db, 'users', userId, 'stock-info'), (snap) => {
+    const records: Record<string, StockInfo> = {}
+    snap.docs.forEach((d) => { records[d.id] = d.data() as StockInfo })
     cb(records)
   })
 

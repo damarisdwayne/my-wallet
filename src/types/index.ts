@@ -183,6 +183,15 @@ export interface FundamentalSnapshot {
   returnOnAssets: number | null
   sector: string | null
   industry: string | null
+  // Stock - extended
+  roic?: number | null
+  netDebtToEbitda?: number | null
+  evToEbitda?: number | null
+  fcf?: number | null
+  fcfYield?: number | null
+  cashConversion?: number | null
+  pegRatio?: number | null
+  payout?: number | null
   // FII - todos
   majorRevenueConcentration?: string | null
   // FII - tijolo
@@ -197,6 +206,8 @@ export interface FundamentalSnapshot {
   regionDiversification?: string | null
   rentalContracts?: string | null
   avgContractDuration?: string | null
+  // Shared notes
+  notes?: string | null
   // FII - papel
   creditQuality?: string | null
   indexationType?: string | null
@@ -217,6 +228,7 @@ export interface FundamentalRecord {
   updatedAt: string
   snapshots: FundamentalSnapshot[]
   priceHistory?: PricePoint[]
+
 }
 
 export interface FiiInfo {
@@ -229,6 +241,22 @@ export interface FiiInfo {
   adminName: string
   adminFee: string
   performanceFee: string
+  updatedAt: string
+}
+
+export interface StockInfo {
+  ticker: string
+  companyName: string
+  sector: string
+  subsector: string
+  about: string
+  foundedYear: string
+  ipoYear: string
+  marketCap: string
+  governanceLevel: string
+  controller: string
+  geographicExposure: string
+  tagAlong: string
   updatedAt: string
 }
 

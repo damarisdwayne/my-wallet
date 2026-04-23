@@ -18,7 +18,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { formatCurrency } from '@/lib/utils'
-import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, PricePoint } from '@/types'
+import type {
+  Asset,
+  FiiInfo,
+  FundamentalRecord,
+  FundamentalSnapshot,
+  PricePoint,
+  StockInfo,
+} from '@/types'
 
 /* ─── Shared ────────────────────────────────────────────────────── */
 
@@ -31,6 +38,8 @@ interface Props {
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
   fiiInfo: Record<string, FiiInfo>
   saveFiiInfo: (data: FiiInfo) => Promise<void>
+  stockInfo: Record<string, StockInfo>
+  saveStockInfo: (data: StockInfo) => Promise<void>
 }
 
 type TrendType = 'up-good' | 'up-bad' | 'neutral'
@@ -44,7 +53,7 @@ interface IndicatorDef {
   inputLabel?: string
 }
 
-const pct = (v: number) => (v * 100).toFixed(1) + '%'
+const directPct = (v: number) => v.toFixed(2) + '%'
 const ratio = (v: number) => v.toFixed(2) + 'x'
 const num1 = (v: number) => v.toFixed(1) + 'x'
 
@@ -66,44 +75,76 @@ const STOCK_INDICATORS: IndicatorDef[] = [
     inputLabel: 'P/VP (ex: 1.40)',
   },
   {
-    key: 'returnOnEquity',
-    label: 'ROE',
-    format: pct,
+    key: 'dividendYield',
+    label: 'DY',
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'ROE decimal (ex: 0.25 = 25%)',
+    inputStep: '0.1',
+    inputLabel: 'DY em % (ex: 6)',
+  },
+  {
+    key: 'payout',
+    label: 'Payout',
+    format: directPct,
+    trendType: 'neutral',
+    inputStep: '0.1',
+    inputLabel: 'Payout em % (ex: 40)',
   },
   {
     key: 'profitMargins',
     label: 'Mg. Líquida',
-    format: pct,
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Margem Líquida decimal',
+    inputStep: '0.1',
+    inputLabel: 'Margem Líquida em % (ex: 18)',
   },
   {
     key: 'grossMargins',
     label: 'Mg. Bruta',
-    format: pct,
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Margem Bruta decimal',
+    inputStep: '0.1',
+    inputLabel: 'Margem Bruta em % (ex: 45)',
   },
   {
     key: 'ebitdaMargins',
     label: 'Mg. EBITDA',
-    format: pct,
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Margem EBITDA decimal',
+    inputStep: '0.1',
+    inputLabel: 'Margem EBITDA em % (ex: 30)',
+  },
+  {
+    key: 'evToEbitda',
+    label: 'EV/EBITDA',
+    format: ratio,
+    trendType: 'neutral',
+    inputStep: '0.01',
+    inputLabel: 'EV/EBITDA (ex: 8.5)',
+  },
+  {
+    key: 'returnOnEquity',
+    label: 'ROE',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.1',
+    inputLabel: 'ROE em % (ex: 25)',
+  },
+  {
+    key: 'roic',
+    label: 'ROIC',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.1',
+    inputLabel: 'ROIC em % (ex: 15)',
   },
   {
     key: 'returnOnAssets',
     label: 'ROA',
-    format: pct,
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'ROA decimal',
+    inputStep: '0.1',
+    inputLabel: 'ROA em % (ex: 10)',
   },
   {
     key: 'debtToEquity',
@@ -114,28 +155,60 @@ const STOCK_INDICATORS: IndicatorDef[] = [
     inputLabel: 'Dívida/PL (ex: 1.60)',
   },
   {
-    key: 'dividendYield',
-    label: 'DY',
-    format: pct,
-    trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'DY decimal (ex: 0.05 = 5%)',
-  },
-  {
-    key: 'earningsGrowth',
-    label: 'Cresc. Lucro',
-    format: pct,
-    trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Cresc. Lucro decimal',
+    key: 'netDebtToEbitda',
+    label: 'Dív. Líq./EBITDA',
+    format: ratio,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Dívida Líquida/EBITDA (ex: 2.5)',
   },
   {
     key: 'revenueGrowth',
     label: 'Cresc. Receita',
-    format: pct,
+    format: directPct,
     trendType: 'up-good',
-    inputStep: '0.001',
-    inputLabel: 'Cresc. Receita decimal',
+    inputStep: '0.1',
+    inputLabel: 'Crescimento de Receita em % (ex: 8)',
+  },
+  {
+    key: 'earningsGrowth',
+    label: 'Cresc. Lucro',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.1',
+    inputLabel: 'Crescimento de Lucro em % (ex: 12)',
+  },
+  {
+    key: 'fcf',
+    label: 'FCF',
+    format: (v) => `R$ ${v.toFixed(0)} M`,
+    trendType: 'up-good',
+    inputStep: '1',
+    inputLabel: 'FCF em R$ milhões (ex: 2300)',
+  },
+  {
+    key: 'fcfYield',
+    label: 'FCF Yield',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.1',
+    inputLabel: 'FCF Yield em % (ex: 8)',
+  },
+  {
+    key: 'cashConversion',
+    label: 'Conv. de Caixa',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.1',
+    inputLabel: 'Conversão de Caixa em % (ex: 80)',
+  },
+  {
+    key: 'pegRatio',
+    label: 'PEG Ratio',
+    format: ratio,
+    trendType: 'neutral',
+    inputStep: '0.01',
+    inputLabel: 'PEG Ratio (ex: 1.5)',
   },
 ]
 
@@ -157,8 +230,6 @@ const TrendIcon = ({ isIncrease, isGood }: { isIncrease: boolean; isGood: boolea
     <TrendingDown size={11} className={colorClass} />
   )
 }
-
-/* ─── Indicator cards ───────────────────────────────────────────── */
 
 /* ─── History dialog ────────────────────────────────────────────── */
 
@@ -183,7 +254,7 @@ const HistoryDialog = ({
   </Dialog>
 )
 
-/* ─── Indicator cards ───────────────────────────────────────────── */
+/* ─── Price card ────────────────────────────────────────────────── */
 
 const PriceCard = ({ points, currentPrice }: { points: PricePoint[]; currentPrice: number }) => {
   const [histOpen, setHistOpen] = useState(false)
@@ -396,8 +467,6 @@ interface FiiNumericDef {
 }
 
 type FiiIndicatorDef = FiiNumericDef | FiiTextDef
-
-const directPct = (v: number) => v.toFixed(2) + '%'
 
 const FII_COMMON: FiiIndicatorDef[] = [
   {
@@ -682,6 +751,9 @@ const ManualSnapshotDialog = ({
       } else {
         partial = buildPartial(STOCK_INDICATORS.map((d) => ({ ...d, type: 'number' as const })))
       }
+      if (form['notes'] !== undefined && form['notes'] !== '') {
+        ;(partial as Record<string, string>)['notes'] = form['notes']
+      }
       await onSave(ticker, partial)
       onOpenChange(false)
       setForm({})
@@ -755,6 +827,20 @@ const ManualSnapshotDialog = ({
             {STOCK_INDICATORS.map((def) => renderField({ ...def, type: 'number' }))}
           </div>
         )}
+
+        <div className="mt-2">
+          <label htmlFor="snapshot-notes" className="text-xs text-muted-foreground mb-1 block">
+            Observações
+          </label>
+          <textarea
+            id="snapshot-notes"
+            className={`${inputClass} resize-none`}
+            rows={3}
+            placeholder="Ex: Vacância alta em 2026, reavaliar no próximo trimestre"
+            value={form['notes'] ?? ''}
+            onChange={(e) => setField('notes', e.target.value)}
+          />
+        </div>
 
         <DialogFooter className="mt-4">
           <button
@@ -969,6 +1055,213 @@ const FiiInfoSection = ({ info, onEdit }: { info: FiiInfo | undefined; onEdit: (
   )
 }
 
+/* ─── Stock info fields / dialog / section ─────────────────────── */
+
+const STOCK_INFO_FIELDS: {
+  key: keyof Omit<StockInfo, 'ticker' | 'updatedAt'>
+  label: string
+  placeholder: string
+  multiline?: boolean
+}[] = [
+  { key: 'companyName', label: 'Nome da Empresa', placeholder: 'Ex: Itaú Unibanco Holding S.A.' },
+  { key: 'sector', label: 'Setor', placeholder: 'Ex: Financeiro' },
+  { key: 'subsector', label: 'Subsetor / Segmento', placeholder: 'Ex: Bancos / Large Caps' },
+  {
+    key: 'about',
+    label: 'Sobre a Empresa',
+    placeholder: 'Mini descrição da empresa e modelo de negócio...',
+    multiline: true,
+  },
+  { key: 'foundedYear', label: 'Fundação', placeholder: 'Ex: 1945' },
+  { key: 'ipoYear', label: 'IPO', placeholder: 'Ex: 2002' },
+  { key: 'marketCap', label: 'Valor de Mercado', placeholder: 'Ex: R$ 280 bi' },
+  {
+    key: 'governanceLevel',
+    label: 'Governança',
+    placeholder: 'Ex: Novo Mercado, Nível 2, Nível 1',
+  },
+  { key: 'controller', label: 'Controlador', placeholder: 'Ex: Família Villela / Itaúsa' },
+  {
+    key: 'geographicExposure',
+    label: 'Exposição Geográfica',
+    placeholder: 'Ex: Brasil 85%, América Latina 15%',
+  },
+  { key: 'tagAlong', label: 'Tag Along', placeholder: 'Ex: 100%' },
+]
+
+const StockInfoDialog = ({
+  ticker,
+  existing,
+  open,
+  onOpenChange,
+  onSave,
+}: {
+  ticker: string
+  existing: StockInfo | undefined
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSave: (data: StockInfo) => Promise<void>
+}) => {
+  const empty: Omit<StockInfo, 'ticker' | 'updatedAt'> = {
+    companyName: '',
+    sector: '',
+    subsector: '',
+    about: '',
+    foundedYear: '',
+    ipoYear: '',
+    marketCap: '',
+    governanceLevel: '',
+    controller: '',
+    geographicExposure: '',
+    tagAlong: '',
+  }
+
+  const fromExisting = (e: StockInfo): Omit<StockInfo, 'ticker' | 'updatedAt'> => ({
+    companyName: e.companyName,
+    sector: e.sector,
+    subsector: e.subsector,
+    about: e.about,
+    foundedYear: e.foundedYear,
+    ipoYear: e.ipoYear,
+    marketCap: e.marketCap,
+    governanceLevel: e.governanceLevel,
+    controller: e.controller,
+    geographicExposure: e.geographicExposure,
+    tagAlong: e.tagAlong,
+  })
+
+  const [form, setForm] = useState<Omit<StockInfo, 'ticker' | 'updatedAt'>>(
+    existing ? fromExisting(existing) : empty,
+  )
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setForm(existing ? fromExisting(existing) : empty)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const handleSave = async () => {
+    setSaving(true)
+    await onSave({ ticker, updatedAt: new Date().toISOString(), ...form })
+    setSaving(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base">
+            Informações da Empresa
+            <span className="ml-2 text-xs font-normal text-muted-foreground">{ticker}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 py-1">
+          {STOCK_INFO_FIELDS.map(({ key, label, placeholder, multiline }) => (
+            <div key={key}>
+              <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+              {multiline ? (
+                <textarea
+                  className={`${inputClass} resize-none`}
+                  rows={3}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              ) : (
+                <input
+                  className={inputClass}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="px-4 py-2 text-sm rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* ─── Stock info section ────────────────────────────────────────── */
+
+const StockInfoSection = ({
+  info,
+  onEdit,
+}: {
+  info: StockInfo | undefined
+  onEdit: () => void
+}) => {
+  const fields: { label: string; value: string }[] = info
+    ? [
+        { label: 'Nome da Empresa', value: info.companyName },
+        { label: 'Setor', value: info.sector },
+        { label: 'Subsetor / Segmento', value: info.subsector },
+        { label: 'Fundação', value: info.foundedYear },
+        { label: 'IPO', value: info.ipoYear },
+        { label: 'Valor de Mercado', value: info.marketCap },
+        { label: 'Governança', value: info.governanceLevel },
+        { label: 'Controlador', value: info.controller },
+        { label: 'Exposição Geográfica', value: info.geographicExposure },
+        { label: 'Tag Along', value: info.tagAlong },
+        { label: 'Sobre a Empresa', value: info.about },
+      ].filter((f) => f.value.trim() !== '')
+    : []
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Informações da Empresa
+        </p>
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil size={11} />
+          {info ? 'Editar' : 'Preencher'}
+        </button>
+      </div>
+      {fields.length > 0 ? (
+        <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+          {fields.map((f) => (
+            <div key={f.label} className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                {f.label}
+              </p>
+              <p className="text-sm font-medium text-foreground break-words">{f.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground">Nenhuma informação registrada.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── Asset detail view (inline) ───────────────────────────────── */
 
 const AssetDetailView = ({
@@ -976,20 +1269,25 @@ const AssetDetailView = ({
   record,
   isFii,
   fiiInfoData,
+  stockInfoData,
   onBack,
   onSaveSnapshot,
   onSaveFiiInfo,
+  onSaveStockInfo,
 }: {
   asset: Asset
   record: FundamentalRecord | undefined
   isFii: boolean
   fiiInfoData: FiiInfo | undefined
+  stockInfoData: StockInfo | undefined
   onBack: () => void
   onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
   onSaveFiiInfo: (data: FiiInfo) => Promise<void>
+  onSaveStockInfo: (data: StockInfo) => Promise<void>
 }) => {
   const [registerOpen, setRegisterOpen] = useState(false)
   const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
+  const [stockInfoOpen, setStockInfoOpen] = useState(false)
 
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
@@ -1030,6 +1328,9 @@ const AssetDetailView = ({
         {/* FII fund info */}
         {isFii && <FiiInfoSection info={fiiInfoData} onEdit={() => setFiiInfoOpen(true)} />}
 
+        {/* Stock company info */}
+        {!isFii && <StockInfoSection info={stockInfoData} onEdit={() => setStockInfoOpen(true)} />}
+
         {/* Indicators */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -1053,24 +1354,31 @@ const AssetDetailView = ({
                   <TextIndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
                 ),
               )}
+              <TextIndicatorCard
+                def={{ type: 'text', key: 'notes', label: 'Observações' }}
+                snapshots={snapshots}
+              />
               {snapshots.length === 0 && (
                 <p className="text-xs text-muted-foreground col-span-full mt-1">
-                  Nenhum indicador registrado ainda.
+                  Nenhum indicador registrado ainda
                 </p>
               )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              <PriceCard points={record?.priceHistory ?? []} currentPrice={asset.currentPrice} />
               {snapshots.length > 0 ? (
                 indicators.map((def) => (
                   <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
                 ))
               ) : (
                 <p className="text-xs text-muted-foreground col-span-full mt-1">
-                  Nenhum indicador registrado ainda.
+                  Nenhum indicador registrado ainda
                 </p>
               )}
+              <TextIndicatorCard
+                def={{ type: 'text', key: 'notes', label: 'Observações' }}
+                snapshots={snapshots}
+              />
             </div>
           )}
         </div>
@@ -1090,6 +1398,15 @@ const AssetDetailView = ({
           open={fiiInfoOpen}
           onOpenChange={setFiiInfoOpen}
           onSave={onSaveFiiInfo}
+        />
+      )}
+      {!isFii && (
+        <StockInfoDialog
+          ticker={asset.ticker}
+          existing={stockInfoData}
+          open={stockInfoOpen}
+          onOpenChange={setStockInfoOpen}
+          onSave={onSaveStockInfo}
         />
       )}
     </>
@@ -1181,6 +1498,8 @@ export const AnalysisTab = ({
   saveManualSnapshot,
   fiiInfo,
   saveFiiInfo,
+  stockInfo,
+  saveStockInfo,
 }: Props) => {
   const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
@@ -1206,9 +1525,11 @@ export const AnalysisTab = ({
         record={fundamentals[selectedAsset.ticker.toUpperCase()]}
         isFii={subTab === 'fii'}
         fiiInfoData={fiiInfo[selectedAsset.ticker.toUpperCase()]}
+        stockInfoData={stockInfo[selectedAsset.ticker.toUpperCase()]}
         onBack={() => setSelectedTicker(null)}
         onSaveSnapshot={saveManualSnapshot}
         onSaveFiiInfo={saveFiiInfo}
+        onSaveStockInfo={saveStockInfo}
       />
     )
   }

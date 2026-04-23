@@ -16,9 +16,11 @@ import {
   fetchBrapiSummary,
   saveFiiInfo as saveFiiInfoService,
   saveFiiManualData,
+  saveStockInfo as saveStockInfoService,
   subscribeToFiiInfo,
   subscribeToFiiManual,
   subscribeToFundamentals,
+  subscribeToStockInfo,
   upsertMonthlySnapshot,
 } from '@/services/fundamentals'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
@@ -36,6 +38,7 @@ import type {
   ImportItem,
   ImportRecord,
   PortfolioCategory,
+  StockInfo,
   Trade,
 } from '@/types'
 import type { B3Asset, B3Dividend, B3RawTrade } from '@/services/b3-import'
@@ -71,6 +74,7 @@ export const usePortfolio = () => {
   const [fundamentals, setFundamentals] = useState<Record<string, FundamentalRecord>>({})
   const [fiiManual, setFiiManual] = useState<Record<string, FiiManualData>>({})
   const [fiiInfo, setFiiInfo] = useState<Record<string, FiiInfo>>({})
+  const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({})
   const [refreshingFundamentals, setRefreshingFundamentals] = useState<Record<string, boolean>>({})
   const [fundamentalErrors, setFundamentalErrors] = useState<Record<string, string>>({})
   const seededRef = useRef(false)
@@ -116,6 +120,7 @@ export const usePortfolio = () => {
       subscribeToFiiManual(user.uid, setFiiManual),
       subscribeToFiiInfo(user.uid, setFiiInfo),
       subscribeToTrades(user.uid, setTrades),
+      subscribeToStockInfo(user.uid, setStockInfo),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -363,6 +368,11 @@ export const usePortfolio = () => {
     return saveFiiInfoService(user.uid, data)
   }
 
+  const saveStockInfo = (data: StockInfo) => {
+    if (!user) return Promise.resolve()
+    return saveStockInfoService(user.uid, data)
+  }
+
   const syncMissingTrades = async () => {
     if (!user) return
     const today = new Date().toISOString().slice(0, 10)
@@ -456,6 +466,8 @@ export const usePortfolio = () => {
     fiiManual,
     fiiInfo,
     saveFiiInfo,
+    stockInfo,
+    saveStockInfo,
     refreshingFundamentals,
     fundamentalErrors,
     refreshFundamentals,

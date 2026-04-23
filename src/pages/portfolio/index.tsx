@@ -36,6 +36,8 @@ export const PortfolioPage = () => {
     saveManualSnapshot,
     fiiInfo,
     saveFiiInfo,
+    stockInfo,
+    saveStockInfo,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
 
@@ -114,6 +116,8 @@ export const PortfolioPage = () => {
           saveManualSnapshot={saveManualSnapshot}
           fiiInfo={fiiInfo}
           saveFiiInfo={saveFiiInfo}
+          stockInfo={stockInfo}
+          saveStockInfo={saveStockInfo}
         />
       )}
     </div>

@@ -9,7 +9,6 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
   Dialog,
@@ -1669,12 +1668,16 @@ const AssetDetailView = ({
             Voltar
           </button>
           <span className="text-muted-foreground">/</span>
-          <h2 className="text-xl font-bold text-foreground shrink-0">{asset.ticker}</h2>
-          <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
-          {current?.sector && (
-            <Badge variant="secondary" className="shrink-0">
-              {current.sector}
-            </Badge>
+          <a
+            href={`https://investidor10.com.br/${isFii ? 'fiis' : 'acoes'}/${asset.ticker.toLowerCase()}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-bold text-foreground shrink-0 hover:underline"
+          >
+            {asset.ticker}
+          </a>
+          {asset.name !== asset.ticker && (
+            <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
           )}
         </div>
 
@@ -1810,15 +1813,10 @@ const AssetCompactCard = ({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-foreground">{asset.ticker}</span>
-              {current?.sector && (
-                <Badge variant="secondary" className="text-xs">
-                  {current.sector}
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
+            <span className="font-bold text-foreground">{asset.ticker}</span>
+            {asset.name !== asset.ticker && (
+              <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
+            )}
           </div>
           <ChevronRight
             size={14}

@@ -97,7 +97,13 @@ export const PortfolioPage = () => {
         />
       )}
       {activeTab === 2 && (
-        <AporteTab assets={assets} categories={categories} totalValue={totalValue} />
+        <AporteTab
+          assets={assets}
+          categories={categories}
+          diagrams={diagrams}
+          answers={answers}
+          totalValue={totalValue}
+        />
       )}
       {activeTab === 3 && (
         <TradesTab

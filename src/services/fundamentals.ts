@@ -17,6 +17,7 @@ interface BrapiResp {
   error?: boolean
 }
 
+
 export const fetchBrapiSummary = async (
   ticker: string,
 ): Promise<{ priceEarnings: number | null; sector: string | null; industry: string | null }> => {

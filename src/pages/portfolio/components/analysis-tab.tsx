@@ -261,7 +261,9 @@ const IndicatorHistoryContent = ({
   snapshots: FundamentalSnapshot[]
   def: IndicatorDef
 }) => {
-  const entries = [...snapshots].reverse().filter((s) => (s[def.key] as number | null | undefined) != null)
+  const entries = [...snapshots]
+    .reverse()
+    .filter((s) => (s[def.key] as number | null | undefined) != null)
   return (
     <>
       {entries.map((s, i) => {
@@ -312,8 +314,9 @@ const IndicatorCard = ({
 }) => {
   const [histOpen, setHistOpen] = useState(false)
   const current = snapshots.at(-1)
-  const val = current != null ? (current[def.key] as number | null | undefined) ?? null : null
-  if (val == null && snapshots.every((s) => (s[def.key] as number | null | undefined) == null)) return null
+  const val = current != null ? ((current[def.key] as number | null | undefined) ?? null) : null
+  if (val == null && snapshots.every((s) => (s[def.key] as number | null | undefined) == null))
+    return null
 
   const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null
   const prevVal = prev != null ? ((prev[def.key] as number | null | undefined) ?? null) : null
@@ -325,7 +328,8 @@ const IndicatorCard = ({
       : def.trendType === 'up-good'
         ? isIncrease!
         : !isIncrease!
-  const hasHistory = snapshots.filter((s) => (s[def.key] as number | null | undefined) != null).length > 1
+  const hasHistory =
+    snapshots.filter((s) => (s[def.key] as number | null | undefined) != null).length > 1
 
   return (
     <>
@@ -396,30 +400,180 @@ type FiiIndicatorDef = FiiNumericDef | FiiTextDef
 const directPct = (v: number) => v.toFixed(2) + '%'
 
 const FII_COMMON: FiiIndicatorDef[] = [
-  { type: 'number', key: 'dividendYield', label: 'DY', format: directPct, trendType: 'up-good', inputStep: '0.01', inputLabel: 'DY em % (ex: 8.5)' },
-  { type: 'number', key: 'priceToBook', label: 'P/VP', format: ratio, trendType: 'neutral', inputStep: '0.01', inputLabel: 'P/VP (ex: 0.95)' },
-  { type: 'number', key: 'debtToEquity', label: 'Alavancagem (Dívida/PL)', format: ratio, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Alavancagem (Dívida/PL) (ex: 0.30)' },
-  { type: 'text', key: 'majorRevenueConcentration', label: 'Concentração de Receita', inputPlaceholder: 'Ex: Tenant A — 35% da receita' },
+  {
+    type: 'number',
+    key: 'dividendYield',
+    label: 'DY',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.01',
+    inputLabel: 'DY em % (ex: 8.5)',
+  },
+  {
+    type: 'number',
+    key: 'priceToBook',
+    label: 'P/VP',
+    format: ratio,
+    trendType: 'neutral',
+    inputStep: '0.01',
+    inputLabel: 'P/VP (ex: 0.95)',
+  },
+  {
+    type: 'number',
+    key: 'debtToEquity',
+    label: 'Alavancagem (Dívida/PL)',
+    format: ratio,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Alavancagem (Dívida/PL) (ex: 0.30)',
+  },
+  {
+    type: 'text',
+    key: 'majorRevenueConcentration',
+    label: 'Concentração de Receita',
+    inputPlaceholder: 'Ex: Tenant A — 35% da receita',
+  },
 ]
 
 const FII_TIJOLO: FiiIndicatorDef[] = [
-  { type: 'number', key: 'physicalVacancy', label: 'Vacância Física', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Física em % (ex: 8)' },
-  { type: 'number', key: 'financialVacancy', label: 'Vacância Financeira', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Vacância Financeira em % (ex: 6)' },
-  { type: 'number', key: 'propertyCount', label: 'Qtd. Imóveis', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de imóveis' },
-  { type: 'text', key: 'propertyQuality', label: 'Qualidade dos Imóveis', inputPlaceholder: 'Ex: AAA — lajes corporativas classe A em SP' },
-  { type: 'number', key: 'tenantCount', label: 'Qtd. Inquilinos', format: (v) => String(Math.round(v)), trendType: 'up-good', inputStep: '1', inputLabel: 'Quantidade de inquilinos' },
-  { type: 'text', key: 'regionDiversification', label: 'Diversificação por Região', inputPlaceholder: 'Ex: SP 60%, RJ 25%, MG 15%' },
-  { type: 'text', key: 'rentalContracts', label: 'Contratos de Aluguel', inputPlaceholder: 'Ex: 70% típico, 30% atípico' },
+  {
+    type: 'number',
+    key: 'physicalVacancy',
+    label: 'Vacância Física',
+    format: directPct,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Vacância Física em % (ex: 8)',
+  },
+  {
+    type: 'number',
+    key: 'financialVacancy',
+    label: 'Vacância Financeira',
+    format: directPct,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Vacância Financeira em % (ex: 6)',
+  },
+  {
+    type: 'number',
+    key: 'propertyCount',
+    label: 'Qtd. Imóveis',
+    format: (v) => String(Math.round(v)),
+    trendType: 'up-good',
+    inputStep: '1',
+    inputLabel: 'Quantidade de imóveis',
+  },
+  {
+    type: 'text',
+    key: 'propertyQuality',
+    label: 'Qualidade dos Imóveis',
+    inputPlaceholder: 'Ex: AAA — lajes corporativas classe A em SP',
+  },
+  {
+    type: 'number',
+    key: 'noiPerSqm',
+    label: 'NOI/m²',
+    format: (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    trendType: 'up-good',
+    inputStep: '0.01',
+    inputLabel: 'NOI por m² em R$ (ex: 85.50)',
+  },
+  {
+    type: 'number',
+    key: 'salesPerSqm',
+    label: 'Vendas/m²',
+    format: (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    trendType: 'up-good',
+    inputStep: '0.01',
+    inputLabel: 'Vendas por m² em R$ (ex: 1119)',
+  },
+  {
+    type: 'text',
+    key: 'operators',
+    label: 'Operadores',
+    inputPlaceholder: 'Ex: Multiplan, BR Malls, Iguatemi',
+  },
+  {
+    type: 'number',
+    key: 'tenantCount',
+    label: 'Qtd. Inquilinos',
+    format: (v) => String(Math.round(v)),
+    trendType: 'up-good',
+    inputStep: '1',
+    inputLabel: 'Quantidade de inquilinos',
+  },
+  {
+    type: 'text',
+    key: 'regionDiversification',
+    label: 'Diversificação por Região',
+    inputPlaceholder: 'Ex: SP 60%, RJ 25%, MG 15%',
+  },
+  {
+    type: 'text',
+    key: 'rentalContracts',
+    label: 'Contratos de Aluguel',
+    inputPlaceholder: 'Ex: 70% típico, 30% atípico',
+  },
+  {
+    type: 'text',
+    key: 'avgContractDuration',
+    label: 'Prazo Médio dos Contratos',
+    inputPlaceholder: 'Ex: 7 anos (vencimento médio 2031)',
+  },
 ]
 
 const FII_PAPEL: FiiIndicatorDef[] = [
-  { type: 'text', key: 'creditQuality', label: 'Qualidade do Crédito', inputPlaceholder: 'Ex: 80% AAA/AA, 15% A, 5% BB' },
-  { type: 'text', key: 'indexationType', label: 'Tipo de Indexação', inputPlaceholder: 'Ex: 75% IPCA, 25% CDI' },
-  { type: 'text', key: 'paperSegments', label: 'Segmentos', inputPlaceholder: 'Ex: Residencial, Logística, Shoppings' },
-  { type: 'text', key: 'debtorConcentration', label: 'Concentração de Devedores', inputPlaceholder: 'Ex: Top 5 devedores = 40% da carteira' },
-  { type: 'number', key: 'spread', label: 'Spread Médio', format: directPct, trendType: 'up-good', inputStep: '0.01', inputLabel: 'Spread em % (ex: 8)' },
-  { type: 'number', key: 'ltv', label: 'LTV', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'LTV em % (ex: 60)' },
-  { type: 'number', key: 'defaultRate', label: 'Inadimplência', format: directPct, trendType: 'up-bad', inputStep: '0.01', inputLabel: 'Inadimplência em % (ex: 2)' },
+  {
+    type: 'text',
+    key: 'creditQuality',
+    label: 'Qualidade do Crédito',
+    inputPlaceholder: 'Ex: 80% AAA/AA, 15% A, 5% BB',
+  },
+  {
+    type: 'text',
+    key: 'indexationType',
+    label: 'Tipo de Indexação',
+    inputPlaceholder: 'Ex: 75% IPCA, 25% CDI',
+  },
+  {
+    type: 'text',
+    key: 'paperSegments',
+    label: 'Segmentos',
+    inputPlaceholder: 'Ex: Residencial, Logística, Shoppings',
+  },
+  {
+    type: 'text',
+    key: 'debtorConcentration',
+    label: 'Concentração de Devedores',
+    inputPlaceholder: 'Ex: Top 5 devedores = 40% da carteira',
+  },
+  {
+    type: 'number',
+    key: 'spread',
+    label: 'Spread Médio',
+    format: directPct,
+    trendType: 'up-good',
+    inputStep: '0.01',
+    inputLabel: 'Spread em % (ex: 8)',
+  },
+  {
+    type: 'number',
+    key: 'ltv',
+    label: 'LTV',
+    format: directPct,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'LTV em % (ex: 60)',
+  },
+  {
+    type: 'number',
+    key: 'defaultRate',
+    label: 'Inadimplência',
+    format: directPct,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Inadimplência em % (ex: 2)',
+  },
 ]
 
 /* ─── Text indicator card ───────────────────────────────────────── */
@@ -434,7 +588,9 @@ const TextIndicatorCard = ({
   const [histOpen, setHistOpen] = useState(false)
   const entries = [...snapshots]
     .reverse()
-    .filter((s) => (s[def.key] as string | null | undefined) != null && (s[def.key] as string) !== '')
+    .filter(
+      (s) => (s[def.key] as string | null | undefined) != null && (s[def.key] as string) !== '',
+    )
 
   const current = entries[0]
   const val = current ? (current[def.key] as string) : null
@@ -446,7 +602,9 @@ const TextIndicatorCard = ({
     <>
       <div className="rounded-lg border border-border p-3 col-span-2 sm:col-span-1">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{def.label}</span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            {def.label}
+          </span>
           {hasHistory && (
             <button
               onClick={() => setHistOpen(true)}
@@ -466,10 +624,7 @@ const TextIndicatorCard = ({
       {hasHistory && (
         <HistoryDialog title={def.label} open={histOpen} onOpenChange={setHistOpen}>
           {entries.map((s) => (
-            <div
-              key={s.fetchedAt}
-              className="text-xs py-1.5 border-b border-border last:border-0"
-            >
+            <div key={s.fetchedAt} className="text-xs py-1.5 border-b border-border last:border-0">
               <span className="text-muted-foreground block mb-0.5">{fmtDate(s.fetchedAt)}</span>
               <span className="text-foreground">{s[def.key] as string}</span>
             </div>
@@ -525,9 +680,7 @@ const ManualSnapshotDialog = ({
           ...buildPartial(FII_PAPEL),
         }
       } else {
-        partial = buildPartial(
-          STOCK_INDICATORS.map((d) => ({ ...d, type: 'number' as const })),
-        )
+        partial = buildPartial(STOCK_INDICATORS.map((d) => ({ ...d, type: 'number' as const })))
       }
       await onSave(ticker, partial)
       onOpenChange(false)
@@ -645,8 +798,8 @@ const FII_INFO_FIELDS: {
   { key: 'marketCap', label: 'Valor de Mercado', placeholder: 'Ex: R$ 2,4 bi' },
   {
     key: 'adminName',
-    label: 'Administradora',
-    placeholder: 'Ex: BTG Pactual Serviços Financeiros',
+    label: 'Administradora / Gestora',
+    placeholder: 'Ex: BTG Pactual (adm.) / XP Asset (gestora)',
   },
   { key: 'adminFee', label: 'Taxa de Administração', placeholder: 'Ex: 0,85% a.a.' },
   {
@@ -776,7 +929,7 @@ const FiiInfoSection = ({ info, onEdit }: { info: FiiInfo | undefined; onEdit: (
         { label: 'Início', value: info.startDate },
         { label: 'Segmento', value: info.segment },
         { label: 'Valor de Mercado', value: info.marketCap },
-        { label: 'Administradora', value: info.adminName },
+        { label: 'Administradora / Gestora', value: info.adminName },
         { label: 'Taxa de Adm.', value: info.adminFee },
         { label: 'Taxa de Performance', value: info.performanceFee },
       ].filter((f) => f.value.trim() !== '')
@@ -958,12 +1111,16 @@ const AssetCompactCard = ({
 }) => {
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
-  const indicators = STOCK_INDICATORS
 
-  // Show up to 2 key indicators at a glance
-  const keyDefs = isFii
-    ? indicators.filter((d) => d.key === 'dividendYield' || d.key === 'priceToBook')
-    : indicators.filter((d) => d.key === 'priceEarnings' || d.key === 'dividendYield')
+  const keyDefs: {
+    key: keyof FundamentalSnapshot
+    label: string
+    format: (v: number) => string
+  }[] = isFii
+    ? (FII_COMMON.filter(
+        (d) => d.key === 'dividendYield' || d.key === 'priceToBook',
+      ) as FiiNumericDef[])
+    : STOCK_INDICATORS.filter((d) => d.key === 'priceEarnings' || d.key === 'dividendYield')
 
   return (
     <Card
@@ -997,7 +1154,7 @@ const AssetCompactCard = ({
           <div className="flex gap-4">
             {keyDefs.map((def) => {
               const val = current[def.key] as number | null
-              if (val === null) return null
+              if (val == null) return null
               return (
                 <div key={def.key as string}>
                   <p className="text-[10px] text-muted-foreground">{def.label}</p>
@@ -1030,6 +1187,7 @@ export const AnalysisTab = ({
 
   const stocks = assets.filter((a) => a.type === 'stock')
   const fiis = assets.filter((a) => a.type === 'fii')
+
   const allShown = subTab === 'stock' ? stocks : fiis
   const selectedAsset = allShown.find((a) => a.ticker === selectedTicker) ?? null
 

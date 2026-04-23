@@ -191,8 +191,12 @@ export interface FundamentalSnapshot {
   propertyCount?: number | null
   tenantCount?: number | null
   propertyQuality?: string | null
+  noiPerSqm?: number | null
+  salesPerSqm?: number | null
+  operators?: string | null
   regionDiversification?: string | null
   rentalContracts?: string | null
+  avgContractDuration?: string | null
   // FII - papel
   creditQuality?: string | null
   indexationType?: string | null

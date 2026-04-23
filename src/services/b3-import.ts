@@ -20,6 +20,27 @@ export interface B3Dividend {
   ir?: number
 }
 
+const UNIT_TICKERS = new Set([
+  'TAEE11',
+  'SANB11',
+  'KLBN11',
+  'ENGI11',
+  'TIET11',
+  'ABCB11',
+  'BEES11',
+  'WIZC11',
+  'ROMI11',
+  'BRIV11',
+  'CAMB11',
+  'AGRO11',
+  'RCSL11',
+  'BGIP11',
+  'BRSR11',
+  'GGBR11',
+  'CCRO11',
+  'VALE11',
+])
+
 const ETF_TICKERS = new Set([
   'BOVA11',
   'SMAL11',
@@ -59,7 +80,11 @@ const inferType = (ticker: string): AssetType => {
     ticker.endsWith('35')
   )
     return 'bdr'
-  if (ticker.endsWith('11')) return ETF_TICKERS.has(ticker) ? 'etf' : 'fii'
+  if (ticker.endsWith('11')) {
+    if (ETF_TICKERS.has(ticker)) return 'etf'
+    if (UNIT_TICKERS.has(ticker)) return 'stock'
+    return 'fii'
+  }
   return 'stock'
 }
 

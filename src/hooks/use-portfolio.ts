@@ -355,7 +355,13 @@ export const usePortfolio = () => {
     if (!user) return
     const existing = fundamentals[ticker.toUpperCase()] ?? null
     const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
-    await upsertMonthlySnapshot(user.uid, ticker, partial, existing, priceOverride ?? asset?.currentPrice)
+    await upsertMonthlySnapshot(
+      user.uid,
+      ticker,
+      partial,
+      existing,
+      priceOverride ?? asset?.currentPrice,
+    )
   }
 
   const saveFiiManual = (data: FiiManualData) => {

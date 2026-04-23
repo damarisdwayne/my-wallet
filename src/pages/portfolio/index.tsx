@@ -103,6 +103,8 @@ export const PortfolioPage = () => {
           diagrams={diagrams}
           answers={answers}
           totalValue={totalValue}
+          refreshPrices={refreshPrices}
+          refreshingPrices={refreshingPrices}
         />
       )}
       {activeTab === 3 && (

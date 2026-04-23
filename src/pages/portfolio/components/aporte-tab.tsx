@@ -109,9 +109,19 @@ interface Props {
   diagrams: Diagram[]
   answers: Record<string, AssetAnswers>
   totalValue: number
+  refreshPrices: () => Promise<void>
+  refreshingPrices: boolean
 }
 
-export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }: Props) => {
+export const AporteTab = ({
+  assets,
+  categories,
+  diagrams,
+  answers,
+  totalValue,
+  refreshPrices,
+  refreshingPrices,
+}: Props) => {
   const [aporteInput, setAporteInput] = useState('')
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -123,9 +133,10 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
       return next
     })
 
-  const calcular = () => {
+  const calcular = async () => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
+    await refreshPrices()
     const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
     setDistribution(calcDistribution(aporte, categories, assets, totalValue, assetTargets))
   }
@@ -136,7 +147,9 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end gap-3">
         <div>
-          <label htmlFor="aporte-input" className="text-xs text-muted-foreground mb-1 block">Valor do aporte (R$)</label>
+          <label htmlFor="aporte-input" className="text-xs text-muted-foreground mb-1 block">
+            Valor do aporte (R$)
+          </label>
           <input
             id="aporte-input"
             className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring w-52"
@@ -155,10 +168,10 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
         </div>
         <button
           onClick={calcular}
-          disabled={!aporteInput || Number.parseFloat(aporteInput) <= 0}
+          disabled={!aporteInput || Number.parseFloat(aporteInput) <= 0 || refreshingPrices}
           className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors disabled:opacity-40 sm:mb-0"
         >
-          Calcular
+          {refreshingPrices ? 'Calculando...' : 'Calcular'}
         </button>
       </div>
 
@@ -201,14 +214,17 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
                       <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
                         rec. {formatCurrency(catRecommendedValue)}
                         <span className="mx-1">→</span>
-                        <span className="text-foreground">após {formatCurrency(catValueAfterAporte)}</span>
+                        <span className="text-foreground">
+                          após {formatCurrency(catValueAfterAporte)}
+                        </span>
                       </p>
                     </div>
                     <div className="flex items-center gap-4 text-xs shrink-0">
                       <span className="text-muted-foreground hidden sm:inline">
-                        {catPercentBefore.toFixed(1)}%
-                        <span className="mx-1">→</span>
-                        <span className="text-foreground font-medium">{catPercentAfter.toFixed(1)}%</span>
+                        {catPercentBefore.toFixed(1)}%<span className="mx-1">→</span>
+                        <span className="text-foreground font-medium">
+                          {catPercentAfter.toFixed(1)}%
+                        </span>
                       </span>
                       <span className="font-semibold text-foreground text-sm min-w-20 text-right">
                         {formatCurrency(catAporte)}
@@ -228,7 +244,13 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
                   {isOpen && assetAllocations.length > 0 && (
                     <div className="divide-y divide-border">
                       {assetAllocations.map(
-                        ({ asset, aporte: assetAporte, quantityToBuy, recommendedValue, valueAfterAporte }) => (
+                        ({
+                          asset,
+                          aporte: assetAporte,
+                          quantityToBuy,
+                          recommendedValue,
+                          valueAfterAporte,
+                        }) => (
                           <div
                             key={asset.id}
                             className="flex items-center gap-3 px-4 py-2.5 pl-10 text-sm"
@@ -238,7 +260,9 @@ export const AporteTab = ({ assets, categories, diagrams, answers, totalValue }:
                               <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
                                 rec. {formatCurrency(recommendedValue)}
                                 <span className="mx-1">→</span>
-                                <span className="text-foreground">após {formatCurrency(valueAfterAporte)}</span>
+                                <span className="text-foreground">
+                                  após {formatCurrency(valueAfterAporte)}
+                                </span>
                               </p>
                             </div>
                             <div className="text-right shrink-0 min-w-20">

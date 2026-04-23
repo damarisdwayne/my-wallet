@@ -228,7 +228,6 @@ export interface FundamentalRecord {
   updatedAt: string
   snapshots: FundamentalSnapshot[]
   priceHistory?: PricePoint[]
-
 }
 
 export interface FiiInfo {

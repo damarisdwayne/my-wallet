@@ -1,7 +1,13 @@
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
-import type { FiiInfo, FiiManualData, FundamentalRecord, FundamentalSnapshot, PricePoint, StockInfo } from '@/types'
-
+import type {
+  FiiInfo,
+  FiiManualData,
+  FundamentalRecord,
+  FundamentalSnapshot,
+  PricePoint,
+  StockInfo,
+} from '@/types'
 
 const MAX_MONTHS = 12
 
@@ -16,7 +22,6 @@ interface BrapiResp {
   results?: BrapiResult[]
   error?: boolean
 }
-
 
 export const fetchBrapiSummary = async (
   ticker: string,
@@ -45,10 +50,7 @@ export const fetchBrapiSummary = async (
 export const saveFiiInfo = (userId: string, data: FiiInfo) =>
   setDoc(doc(db, 'users', userId, 'fii-info', data.ticker.toUpperCase()), data)
 
-export const subscribeToFiiInfo = (
-  userId: string,
-  cb: (data: Record<string, FiiInfo>) => void,
-) =>
+export const subscribeToFiiInfo = (userId: string, cb: (data: Record<string, FiiInfo>) => void) =>
   onSnapshot(collection(db, 'users', userId, 'fii-info'), (snap) => {
     const records: Record<string, FiiInfo> = {}
     snap.docs.forEach((d) => {
@@ -68,7 +70,9 @@ export const subscribeToStockInfo = (
 ) =>
   onSnapshot(collection(db, 'users', userId, 'stock-info'), (snap) => {
     const records: Record<string, StockInfo> = {}
-    snap.docs.forEach((d) => { records[d.id] = d.data() as StockInfo })
+    snap.docs.forEach((d) => {
+      records[d.id] = d.data() as StockInfo
+    })
     cb(records)
   })
 

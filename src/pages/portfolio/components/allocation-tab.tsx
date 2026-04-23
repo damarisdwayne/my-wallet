@@ -528,8 +528,7 @@ export const AllocationTab = ({
                               <span
                                 className={cn('text-xs', sumOk ? 'text-success' : 'text-warning')}
                               >
-                                Soma: {draftSum.toFixed(1)}%{' '}
-                                {sumOk ? '✓' : '(meta: 100%)'}
+                                Soma: {draftSum.toFixed(1)}% {sumOk ? '✓' : '(meta: 100%)'}
                               </span>
                               <button
                                 onClick={() => saveManual(cat.id, catAssets)}
@@ -623,12 +622,20 @@ export const AllocationTab = ({
                                     {yes}/{total}
                                   </span>
                                   <div className="w-28 shrink-0 text-right">
-                                    <p className="text-[10px] text-muted-foreground">Meta {metaPct}%</p>
-                                    <p className="text-xs font-medium text-foreground">{formatCurrency(metaValue)}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      Meta {metaPct}%
+                                    </p>
+                                    <p className="text-xs font-medium text-foreground">
+                                      {formatCurrency(metaValue)}
+                                    </p>
                                   </div>
                                   <div className="w-28 shrink-0 text-right">
-                                    <p className="text-[10px] text-muted-foreground">Atual {atualPct}%</p>
-                                    <p className="text-xs font-medium text-foreground">{formatCurrency(atualValue)}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      Atual {atualPct}%
+                                    </p>
+                                    <p className="text-xs font-medium text-foreground">
+                                      {formatCurrency(atualValue)}
+                                    </p>
                                   </div>
                                   <ChevronRight
                                     size={12}
@@ -660,8 +667,12 @@ export const AllocationTab = ({
                       return (
                         <div key={a.id} className="text-xs p-2 rounded bg-muted space-y-0.5">
                           <p className="font-semibold text-foreground">{a.ticker}</p>
-                          <p className="text-muted-foreground">Meta {metaPct}% · {formatCurrency(metaValue)}</p>
-                          <p className="text-muted-foreground">Atual {atualPct}% · {formatCurrency(atualValue)}</p>
+                          <p className="text-muted-foreground">
+                            Meta {metaPct}% · {formatCurrency(metaValue)}
+                          </p>
+                          <p className="text-muted-foreground">
+                            Atual {atualPct}% · {formatCurrency(atualValue)}
+                          </p>
                         </div>
                       )
                     })}

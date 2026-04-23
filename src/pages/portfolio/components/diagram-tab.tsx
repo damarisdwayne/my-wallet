@@ -318,8 +318,11 @@ export const DiagramTab = ({
                           <span className="w-12 text-xs text-right text-muted-foreground shrink-0">
                             alvo{' '}
                             {cat.targetPercent > 0
-                              ? (((assetTargets.get(a.id) ?? 0) / cat.targetPercent) * 100).toFixed(1)
-                              : '0.0'}%
+                              ? (((assetTargets.get(a.id) ?? 0) / cat.targetPercent) * 100).toFixed(
+                                  1,
+                                )
+                              : '0.0'}
+                            %
                           </span>
                           <ChevronRight
                             size={14}

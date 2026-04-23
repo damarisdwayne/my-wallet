@@ -459,7 +459,8 @@ export const OverviewTab = ({
               const catCurrentValue = assets
                 .filter((x) => x.categoryId === a.categoryId)
                 .reduce((s, x) => s + x.currentPrice * x.quantity, 0)
-              const withinCatRatio = cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
+              const withinCatRatio =
+                cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
               const recommended = withinCatRatio * catCurrentValue
 
               const flatFI = isFlatFixedIncome(a)

@@ -455,9 +455,13 @@ export const OverviewTab = ({
               const baseValue = filterCatId === ALL ? totalValue : filteredTotal
               const pct = baseValue > 0 ? (totalAtual / baseValue) * 100 : 0
               const targetPct = assetTargets.get(a.id) ?? 0
-              const recommended = (targetPct / 100) * totalValue
-              const diff = totalAtual - recommended
               const cat = categories.find((c) => c.id === a.categoryId)
+              const catCurrentValue = assets
+                .filter((x) => x.categoryId === a.categoryId)
+                .reduce((s, x) => s + x.currentPrice * x.quantity, 0)
+              const withinCatRatio = cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
+              const recommended = withinCatRatio * catCurrentValue
+
               const flatFI = isFlatFixedIncome(a)
               return (
                 <tr
@@ -512,10 +516,6 @@ export const OverviewTab = ({
                     ) : (
                       <>
                         <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
-                        <p className={`text-xs ${diff >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          {diff >= 0 ? '+' : ''}
-                          {formatCurrency(diff)}
-                        </p>
                       </>
                     )}
                   </td>

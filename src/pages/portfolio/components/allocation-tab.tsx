@@ -581,13 +581,22 @@ export const AllocationTab = ({
                                 answers[a.id] ?? {},
                                 diagram.questions,
                               )
-                              const pct = total > 0 ? (yes / total) * 100 : 0
+                              const scorePct = total > 0 ? (yes / total) * 100 : 0
                               const scoreColor =
-                                pct >= 75
+                                scorePct >= 75
                                   ? 'text-success'
-                                  : pct >= 50
+                                  : scorePct >= 50
                                     ? 'text-warning'
                                     : 'text-destructive'
+                              const withinCatRatio =
+                                cat.targetPercent > 0
+                                  ? (assetTargets.get(a.id) ?? 0) / cat.targetPercent
+                                  : 0
+                              const metaPct = (withinCatRatio * 100).toFixed(1)
+                              const metaValue = withinCatRatio * catValue
+                              const atualValue = a.currentPrice * a.quantity
+                              const atualPct =
+                                catValue > 0 ? ((atualValue / catValue) * 100).toFixed(1) : '0.0'
                               return (
                                 <button
                                   key={a.id}
@@ -602,7 +611,7 @@ export const AllocationTab = ({
                                   <div className="flex-1 bg-muted rounded-full h-1.5">
                                     <div
                                       className="h-1.5 rounded-full bg-primary transition-all"
-                                      style={{ width: `${pct}%` }}
+                                      style={{ width: `${scorePct}%` }}
                                     />
                                   </div>
                                   <span
@@ -613,9 +622,14 @@ export const AllocationTab = ({
                                   >
                                     {yes}/{total}
                                   </span>
-                                  <span className="w-12 text-xs text-right text-muted-foreground shrink-0">
-                                    {(assetTargets.get(a.id) ?? 0).toFixed(1)}%
-                                  </span>
+                                  <div className="w-28 shrink-0 text-right">
+                                    <p className="text-[10px] text-muted-foreground">Meta {metaPct}%</p>
+                                    <p className="text-xs font-medium text-foreground">{formatCurrency(metaValue)}</p>
+                                  </div>
+                                  <div className="w-28 shrink-0 text-right">
+                                    <p className="text-[10px] text-muted-foreground">Atual {atualPct}%</p>
+                                    <p className="text-xs font-medium text-foreground">{formatCurrency(atualValue)}</p>
+                                  </div>
                                   <ChevronRight
                                     size={12}
                                     className="text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -633,17 +647,24 @@ export const AllocationTab = ({
                 {/* Collapsed: just show asset chips */}
                 {!expanded && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {catAssets.map((a) => (
-                      <div key={a.id} className="text-xs p-2 rounded bg-muted">
-                        <p className="font-semibold text-foreground">{a.ticker}</p>
-                        <p className="text-muted-foreground">
-                          {formatCurrency(a.currentPrice * a.quantity)}
-                        </p>
-                        <p className="text-muted-foreground">
-                          Alvo: {(assetTargets.get(a.id) ?? 0).toFixed(1)}%
-                        </p>
-                      </div>
-                    ))}
+                    {catAssets.map((a) => {
+                      const withinCatRatio =
+                        cat.targetPercent > 0
+                          ? (assetTargets.get(a.id) ?? 0) / cat.targetPercent
+                          : 0
+                      const metaPct = (withinCatRatio * 100).toFixed(1)
+                      const metaValue = withinCatRatio * catValue
+                      const atualValue = a.currentPrice * a.quantity
+                      const atualPct =
+                        catValue > 0 ? ((atualValue / catValue) * 100).toFixed(1) : '0.0'
+                      return (
+                        <div key={a.id} className="text-xs p-2 rounded bg-muted space-y-0.5">
+                          <p className="font-semibold text-foreground">{a.ticker}</p>
+                          <p className="text-muted-foreground">Meta {metaPct}% · {formatCurrency(metaValue)}</p>
+                          <p className="text-muted-foreground">Atual {atualPct}% · {formatCurrency(atualValue)}</p>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>

@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { CalculatorsPage } from '@/pages/calculators'
 import { DashboardPage } from '@/pages/dashboard'
 import { DividendsPage } from '@/pages/dividends'
 import { ExpensesPage } from '@/pages/expenses'
@@ -25,6 +26,7 @@ export const Router = () => {
           <Route path="/dividends" element={<DividendsPage />} />
           <Route path="/tax" element={<TaxPage />} />
           <Route path="/sales" element={<SalesPage />} />
+          <Route path="/calculators" element={<CalculatorsPage />} />
         </Route>
       </Route>
 

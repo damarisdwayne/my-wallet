@@ -14,6 +14,7 @@ export const mockDiagrams: Diagram[] = [
   {
     id: 'diag-acoes',
     name: 'Diagrama — Ações BR',
+    categoryId: '',
     appliesTo: ['stock'],
     questions: [
       { id: 'q1', text: 'Receita crescente e consistente nos últimos 5 anos?' },
@@ -29,6 +30,7 @@ export const mockDiagrams: Diagram[] = [
   {
     id: 'diag-fiis',
     name: 'Diagrama — Fundos Imobiliários',
+    categoryId: '',
     appliesTo: ['fii'],
     questions: [
       { id: 'q1', text: 'Vacância abaixo de 10%?' },
@@ -44,6 +46,7 @@ export const mockDiagrams: Diagram[] = [
   {
     id: 'diag-internacional',
     name: 'Diagrama — Internacionais (BDR/ETF)',
+    categoryId: '',
     appliesTo: ['bdr', 'etf'],
     questions: [
       { id: 'q1', text: 'Empresa/índice com histórico sólido de crescimento?' },
@@ -57,6 +60,7 @@ export const mockDiagrams: Diagram[] = [
   {
     id: 'diag-renda-fixa',
     name: 'Diagrama — Renda Fixa',
+    categoryId: '',
     appliesTo: ['fixed_income'],
     questions: [
       { id: 'q1', text: 'Emissor com rating elevado (baixo risco)?' },

@@ -24,7 +24,6 @@ import type {
   FiiInfo,
   FundamentalRecord,
   FundamentalSnapshot,
-  PricePoint,
   StockInfo,
 } from '@/types'
 
@@ -402,76 +401,6 @@ const HistoryDialog = ({
   </Dialog>
 )
 
-/* ─── Price card ────────────────────────────────────────────────── */
-
-const PriceCard = ({ points, currentPrice }: { points: PricePoint[]; currentPrice: number }) => {
-  const [histOpen, setHistOpen] = useState(false)
-  const today = new Date().toISOString().slice(0, 10)
-  const allPoints = points.length > 0 ? points : [{ date: today, close: currentPrice }]
-  const current = allPoints.at(-1)!
-  const prev = allPoints.length >= 2 ? allPoints[allPoints.length - 2] : null
-  const delta = prev ? current.close - prev.close : null
-  const isIncrease = delta !== null ? delta > 0 : null
-  const hasHistory = allPoints.length > 1
-
-  return (
-    <>
-      <div className="rounded-lg border border-border p-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Preço</span>
-          {hasHistory && (
-            <button
-              onClick={() => setHistOpen(true)}
-              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            >
-              <Clock size={11} />
-            </button>
-          )}
-        </div>
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <span className="text-sm font-bold text-foreground">{formatCurrency(current.close)}</span>
-          {delta !== null && Math.abs(delta) > 0.001 && (
-            <span
-              className={`flex items-center gap-0.5 text-xs ${isIncrease ? 'text-success' : 'text-destructive'}`}
-            >
-              <TrendIcon isIncrease={isIncrease!} isGood={isIncrease} />
-              {delta > 0 ? '+' : ''}
-              {formatCurrency(delta)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <HistoryDialog title="Preço" open={histOpen} onOpenChange={setHistOpen}>
-        {[...allPoints].reverse().map((p, i, arr) => {
-          const nextP = arr[i + 1]
-          const d = nextP ? p.close - nextP.close : null
-          const up = d !== null ? d > 0 : null
-          return (
-            <div
-              key={p.date}
-              className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0"
-            >
-              <span className="text-muted-foreground">{fmtDate(p.date)}</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium">{formatCurrency(p.close)}</span>
-                {d !== null && Math.abs(d) > 0.001 && (
-                  <span
-                    className={`flex items-center gap-0.5 ${up ? 'text-success' : 'text-destructive'}`}
-                  >
-                    <TrendIcon isIncrease={up!} isGood={up} />
-                    {d > 0 ? '+' : ''}
-                    {formatCurrency(d)}
-                  </span>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </HistoryDialog>
-    </>
-  )
-}
 
 const IndicatorHistoryContent = ({
   snapshots,

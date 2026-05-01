@@ -44,7 +44,7 @@ export const InterImportDialog = ({ open, onOpenChange, existingAssets, onImport
     setParsing(true)
     try {
       const parsed = await parseInterPdf(buffer)
-      const withAction: ParsedRow[] = parsed.map((a) => ({
+      const withAction: ParsedRow[] = parsed.assets.map((a) => ({
         ...a,
         action: existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker) ? 'update' : 'new',
       }))

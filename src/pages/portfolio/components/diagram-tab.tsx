@@ -52,7 +52,7 @@ export const DiagramTab = ({
   const [manualDrafts, setManualDrafts] = useState<Record<string, Record<string, string>>>({})
   const [savingManual, setSavingManual] = useState<string | null>(null)
 
-  const visibleDiagrams = diagrams.filter((d) => d.appliesTo.some((t) => t !== 'fixed_income'))
+  const visibleDiagrams = diagrams.filter((d) => d.appliesTo?.some((t) => t !== 'fixed_income'))
 
   const activeDiagramId = selectedDiagramId || visibleDiagrams[0]?.id || ''
   const diagram = visibleDiagrams.find((d) => d.id === activeDiagramId) ?? visibleDiagrams[0]
@@ -66,7 +66,7 @@ export const DiagramTab = ({
   }
 
   const diagramAssets = assets.filter(
-    (a) => diagram.appliesTo.includes(a.type) && a.type !== 'fixed_income',
+    (a) => diagram.appliesTo?.includes(a.type) && a.type !== 'fixed_income',
   )
 
   // Group by category

@@ -40,7 +40,7 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
   const processBuffer = (buffer: ArrayBuffer) => {
     try {
       const parsed = parseB3Excel(buffer)
-      const withAction: ParsedRow[] = parsed
+      const withAction: ParsedRow[] = parsed.assets
         .filter((a) => {
           const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
           return a.quantity > 0 || exists // skip pure sells with no existing position

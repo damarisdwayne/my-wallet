@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePortfolio } from '@/hooks/use-portfolio'
 import { fetchTesouroBonds, type TesouroBond } from '@/services/tesouro'
 import {
   CalcActions,
@@ -52,10 +53,16 @@ type Results = {
 }
 
 export const TesouroDiretoCalc = () => {
+  const { assets } = usePortfolio()
+  const portfolioTesouro = assets.filter(
+    (a) => a.type === 'fixed_income' && a.ticker.toUpperCase().startsWith('TESOURO'),
+  )
+
   const [bonds, setBonds] = useState<TesouroBond[]>([])
   const [bondsLoading, setBondsLoading] = useState(true)
   const [bondsError, setBondsError] = useState<string | null>(null)
   const [selectedKey, setSelectedKey] = useState('')
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState('')
 
   const [bondType, setBondType] = useState<BondType>('prefixado')
   const [amount, setAmount] = useState('')
@@ -96,8 +103,26 @@ export const TesouroDiretoCalc = () => {
     setAutoFilledDate(bond.dataBase)
   }
 
+  const onPortfolioSelect = (id: string) => {
+    setSelectedPortfolioId(id)
+    setResults(null)
+    if (!id) return
+    const asset = portfolioTesouro.find((a) => a.id === id)
+    if (!asset) return
+    const type = toBondType(asset.ticker)
+    if (type) setBondType(type)
+    setAmount(String(asset.avgPrice.toFixed(2)))
+    const rate = asset.prefixedRate ?? asset.indexerRate
+    if (rate) setSpreadBuy(String(rate))
+    if (asset.operationDate) setBuyDate(asset.operationDate)
+    if (asset.maturityDate) setMaturityDate(asset.maturityDate)
+    setSelectedKey('')
+    setAutoFilledDate(null)
+  }
+
   const clear = () => {
     setSelectedKey('')
+    setSelectedPortfolioId('')
     setAmount('')
     setSpreadBuy('')
     setSpreadNow('')
@@ -183,6 +208,24 @@ export const TesouroDiretoCalc = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Portfolio picker */}
+          {portfolioTesouro.length > 0 && (
+            <Field label="Meus títulos no portfólio">
+              <select
+                value={selectedPortfolioId}
+                onChange={(e) => onPortfolioSelect(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">— selecione para preencher automaticamente —</option>
+                {portfolioTesouro.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.ticker}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
           {/* Bond picker */}
           <Field label="Selecionar título">
             <select
@@ -219,13 +262,13 @@ export const TesouroDiretoCalc = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CurrencyInput
               id="td-amount"
-              label="Valor investido"
+              label="Preço de compra (PU)"
               value={amount}
               onChange={(v) => {
                 setAmount(v)
                 setResults(null)
               }}
-              placeholder="5000"
+              placeholder="2870.00"
             />
             <PercentInput
               id="td-spread-buy"
@@ -478,6 +521,29 @@ export const TesouroDiretoCalc = () => {
           </div>
         </>
       )}
+
+      <Card className="bg-muted/30">
+        <CardContent className="pt-4 pb-4">
+          <p className="text-sm font-semibold text-foreground mb-2">Quando vale a pena vender?</p>
+          <p className="text-sm text-muted-foreground mb-3">
+            O preço sobe quando a taxa cai. Quanto mais tempo resta até o vencimento, maior o impacto
+            de cada ponto percentual (pp) de queda.
+          </p>
+          <div className="space-y-2">
+            {[
+              { range: 'Taxa subiu', action: 'Não vende — você realizaria prejuízo', color: 'text-destructive' },
+              { range: 'Caiu < 0,5 pp', action: 'Não vale — IR come o ganho', color: 'text-destructive' },
+              { range: 'Caiu 0,5–1 pp', action: 'Talvez — compare as rentabilidades acima', color: 'text-warning' },
+              { range: 'Caiu > 1 pp', action: 'Provavelmente sim, principalmente com vencimento longo', color: 'text-success' },
+            ].map((row) => (
+              <div key={row.range} className="flex items-start gap-3 text-sm">
+                <span className="text-muted-foreground w-28 shrink-0">{row.range}</span>
+                <span className={row.color}>{row.action}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -196,6 +196,31 @@ export const PeriodInput = ({
   )
 }
 
+/** [input type=date] */
+export const DateInput = ({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) => (
+  <Field id={id} label={label}>
+    <div className={groupCls}>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputCls}
+      />
+    </div>
+  </Field>
+)
+
 /** Plain labeled select */
 export const SelectField = ({
   id,

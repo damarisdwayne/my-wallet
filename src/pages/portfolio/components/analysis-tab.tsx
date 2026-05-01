@@ -19,13 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatCurrency } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import type {
-  Asset,
-  FiiInfo,
-  FundamentalRecord,
-  FundamentalSnapshot,
-  StockInfo,
-} from '@/types'
+import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, StockInfo } from '@/types'
 
 /* ─── Shared ────────────────────────────────────────────────────── */
 
@@ -400,7 +394,6 @@ const HistoryDialog = ({
     </DialogContent>
   </Dialog>
 )
-
 
 const IndicatorHistoryContent = ({
   snapshots,

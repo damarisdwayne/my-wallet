@@ -40,14 +40,23 @@ export const LciCdbCalc = () => {
 
   const currentTypeOpt = RATE_TYPE_OPTIONS.find((t) => t.value === rateType) ?? RATE_TYPE_OPTIONS[0]
 
-  const clear = () => { setLciRate(''); setPeriod(''); setResults(null) }
+  const clear = () => {
+    setLciRate('')
+    setPeriod('')
+    setResults(null)
+  }
 
   const calcular = () => {
     const lci = Number(lciRate)
     const p = Number(period) || 12
     if (lci <= 0) return
     const irInfo = getIrRate(toDays(p, periodUnit))
-    setResults({ lciRate: lci, lciSuffix: rateSuffix[rateType], irInfo, cdbEquivalent: lci / (1 - irInfo.rate) })
+    setResults({
+      lciRate: lci,
+      lciSuffix: rateSuffix[rateType],
+      irInfo,
+      cdbEquivalent: lci / (1 - irInfo.rate),
+    })
   }
 
   return (
@@ -64,20 +73,32 @@ export const LciCdbCalc = () => {
               id="lci-rate"
               label="Taxa da LCI / LCA"
               value={lciRate}
-              onChange={(v) => { setLciRate(v); setResults(null) }}
+              onChange={(v) => {
+                setLciRate(v)
+                setResults(null)
+              }}
               placeholder={currentTypeOpt.placeholder}
               showPrefix={false}
               selectValue={rateType}
               selectOptions={RATE_TYPE_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
-              onSelectChange={(v) => { setRateType(v as RateType); setResults(null) }}
+              onSelectChange={(v) => {
+                setRateType(v as RateType)
+                setResults(null)
+              }}
             />
             <PeriodInput
               id="lci-period"
               label="Prazo"
               value={period}
-              onChange={(v) => { setPeriod(v); setResults(null) }}
+              onChange={(v) => {
+                setPeriod(v)
+                setResults(null)
+              }}
               unit={periodUnit}
-              onUnitChange={(u) => { setPeriodUnit(u); setResults(null) }}
+              onUnitChange={(u) => {
+                setPeriodUnit(u)
+                setResults(null)
+              }}
             />
           </div>
 
@@ -101,7 +122,8 @@ export const LciCdbCalc = () => {
                 <span className="text-2xl ml-1">{results.lciSuffix}</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                considerando IR de {(results.irInfo.rate * 100).toFixed(2)}% ({results.irInfo.label})
+                considerando IR de {(results.irInfo.rate * 100).toFixed(2)}% ({results.irInfo.label}
+                )
               </p>
             </CardContent>
           </Card>
@@ -116,7 +138,9 @@ export const LciCdbCalc = () => {
                   <tr className="border-b border-border">
                     <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Prazo</th>
                     <th className="text-right py-2 pr-4 font-medium text-muted-foreground">IR</th>
-                    <th className="text-right py-2 font-medium text-muted-foreground">CDB bruto equivalente</th>
+                    <th className="text-right py-2 font-medium text-muted-foreground">
+                      CDB bruto equivalente
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,7 +161,9 @@ export const LciCdbCalc = () => {
                           )}
                         </td>
                         <td className="py-2.5 pr-4 text-right">{(row.rate * 100).toFixed(2)}%</td>
-                        <td className="py-2.5 text-right">{equiv.toFixed(2)} {results.lciSuffix}</td>
+                        <td className="py-2.5 text-right">
+                          {equiv.toFixed(2)} {results.lciSuffix}
+                        </td>
                       </tr>
                     )
                   })}

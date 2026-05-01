@@ -20,7 +20,12 @@ const buildMonthlyRows = (PV: number, PMT: number, rMonthly: number, n: number):
   return Array.from({ length: n }, (_, i) => {
     balance = balance * (1 + rMonthly) + PMT
     const invested = PV + PMT * (i + 1)
-    return { label: `${i + 1}º mês`, totalInvested: invested, balance, earnings: balance - invested }
+    return {
+      label: `${i + 1}º mês`,
+      totalInvested: invested,
+      balance,
+      earnings: balance - invested,
+    }
   })
 }
 
@@ -32,7 +37,12 @@ const buildYearlyRows = (PV: number, PMT: number, rMonthly: number, n: number): 
     for (let m = 0; m < monthsThisYear; m++) balance = balance * (1 + rMonthly) + PMT
     const yearMonths = Math.min((i + 1) * 12, n)
     const invested = PV + PMT * yearMonths
-    return { label: `${i + 1}º ano`, totalInvested: invested, balance, earnings: balance - invested }
+    return {
+      label: `${i + 1}º ano`,
+      totalInvested: invested,
+      balance,
+      earnings: balance - invested,
+    }
   })
 }
 
@@ -56,7 +66,11 @@ export const AposentadoriaCalc = () => {
   const [results, setResults] = useState<Results | null>(null)
 
   const reset = () => {
-    setInitialCapital(''); setMonthlyContrib(''); setRate(''); setPeriod(''); setResults(null)
+    setInitialCapital('')
+    setMonthlyContrib('')
+    setRate('')
+    setPeriod('')
+    setResults(null)
   }
 
   const calcular = () => {
@@ -159,7 +173,9 @@ export const AposentadoriaCalc = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Total investido</CardTitle>
-                <p className="text-2xl font-bold text-foreground">{fmtBRL(results.totalInvested)}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {fmtBRL(results.totalInvested)}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {((results.totalInvested / results.finalAmount) * 100).toFixed(2)}% do patrimônio
                 </p>
@@ -170,7 +186,8 @@ export const AposentadoriaCalc = () => {
                 <CardTitle>Rendimentos totais</CardTitle>
                 <p className="text-2xl font-bold text-success">{fmtBRL(results.totalEarnings)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {((results.totalEarnings / results.totalInvested) * 100).toFixed(2)}% sobre o investido
+                  {((results.totalEarnings / results.totalInvested) * 100).toFixed(2)}% sobre o
+                  investido
                 </p>
               </CardHeader>
             </Card>
@@ -187,8 +204,14 @@ export const AposentadoriaCalc = () => {
                   <span>Juros: {results.earningsBarWidth.toFixed(2)}%</span>
                 </div>
                 <div className="h-4 rounded-full overflow-hidden bg-muted flex">
-                  <div className="h-full bg-primary" style={{ width: `${100 - results.earningsBarWidth}%` }} />
-                  <div className="h-full bg-success" style={{ width: `${results.earningsBarWidth}%` }} />
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${100 - results.earningsBarWidth}%` }}
+                  />
+                  <div
+                    className="h-full bg-success"
+                    style={{ width: `${results.earningsBarWidth}%` }}
+                  />
                 </div>
                 <div className="flex gap-4 text-xs text-muted-foreground pt-1">
                   <div className="flex items-center gap-1.5">
@@ -213,19 +236,33 @@ export const AposentadoriaCalc = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2.5 px-5 font-medium text-muted-foreground">Período</th>
-                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">Total investido</th>
-                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">Rendimentos</th>
-                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">Patrimônio</th>
+                      <th className="text-left py-2.5 px-5 font-medium text-muted-foreground">
+                        Período
+                      </th>
+                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">
+                        Total investido
+                      </th>
+                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">
+                        Rendimentos
+                      </th>
+                      <th className="text-right py-2.5 px-5 font-medium text-muted-foreground">
+                        Patrimônio
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.rows.map((row) => (
                       <tr key={row.label} className="border-b border-border/40 hover:bg-muted/30">
                         <td className="py-2.5 px-5 text-foreground">{row.label}</td>
-                        <td className="py-2.5 px-5 text-right text-foreground">{fmtBRL(row.totalInvested)}</td>
-                        <td className="py-2.5 px-5 text-right text-success">{fmtBRL(row.earnings)}</td>
-                        <td className="py-2.5 px-5 text-right font-medium text-foreground">{fmtBRL(row.balance)}</td>
+                        <td className="py-2.5 px-5 text-right text-foreground">
+                          {fmtBRL(row.totalInvested)}
+                        </td>
+                        <td className="py-2.5 px-5 text-right text-success">
+                          {fmtBRL(row.earnings)}
+                        </td>
+                        <td className="py-2.5 px-5 text-right font-medium text-foreground">
+                          {fmtBRL(row.balance)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

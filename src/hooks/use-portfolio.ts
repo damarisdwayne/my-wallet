@@ -27,6 +27,7 @@ import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/serv
 import { addTrades, deleteTrade as deleteTradeService, subscribeToTrades } from '@/services/trades'
 import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
+import { clearTesouroBondsCache } from '@/services/tesouro'
 import { useAuth } from '@/store/auth'
 import type {
   Asset,
@@ -404,9 +405,14 @@ export const usePortfolio = () => {
     setRefreshingPrices(true)
     setPriceError(null)
     clearQuoteCache()
+    clearTesouroBondsCache()
     try {
-      // Stocks, FIIs, ETFs, BDRs, crypto
-      const priceable = assets.filter((a) => a.type !== 'fixed_income' && a.type !== 'other')
+      // Stocks, FIIs, ETFs, BDRs, crypto + Tesouro Direto
+      const priceable = assets.filter(
+        (a) =>
+          (a.type !== 'fixed_income' && a.type !== 'other') ||
+          a.ticker.toUpperCase().startsWith('TESOURO'),
+      )
       const prices = await fetchLivePrices(
         priceable.map((a) => ({ ticker: a.ticker, type: a.type })),
       )

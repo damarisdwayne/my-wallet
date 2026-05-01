@@ -146,7 +146,9 @@ export const PercentInput = ({
           className={suffixSelectCls}
         >
           {selectOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       )}
@@ -188,7 +190,9 @@ export const PeriodInput = ({
           className={suffixSelectCls}
         >
           {PERIOD_UNITS.map((u) => (
-            <option key={u.value} value={u.value}>{u.label}</option>
+            <option key={u.value} value={u.value}>
+              {u.label}
+            </option>
           ))}
         </select>
       </div>
@@ -243,20 +247,16 @@ export const SelectField = ({
       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
     >
       {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
       ))}
     </select>
   </Field>
 )
 
 /** Calcular + Limpar row */
-export const CalcActions = ({
-  onCalc,
-  onClear,
-}: {
-  onCalc: () => void
-  onClear: () => void
-}) => (
+export const CalcActions = ({ onCalc, onClear }: { onCalc: () => void; onClear: () => void }) => (
   <div className="flex items-center gap-4">
     <button
       onClick={onCalc}

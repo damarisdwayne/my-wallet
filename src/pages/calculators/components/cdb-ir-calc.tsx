@@ -13,7 +13,12 @@ import {
 
 type RateType = 'prefixado' | 'cdi' | 'ipca'
 
-const RATE_TYPE_OPTIONS: { value: RateType; label: string; placeholder: string; refLabel: string }[] = [
+const RATE_TYPE_OPTIONS: {
+  value: RateType
+  label: string
+  placeholder: string
+  refLabel: string
+}[] = [
   { value: 'prefixado', label: 'Pré', placeholder: 'ex: 13', refLabel: '' },
   { value: 'cdi', label: 'CDI', placeholder: 'ex: 110', refLabel: 'CDI de referência (% a.a.)' },
   { value: 'ipca', label: 'IPCA', placeholder: 'ex: 6', refLabel: 'IPCA de referência (% a.a.)' },
@@ -46,7 +51,11 @@ export const CdbIrCalc = () => {
   const needsRef = rateType === 'cdi' || rateType === 'ipca'
 
   const clear = () => {
-    setCapital(''); setRate(''); setReferenceRate(''); setPeriod(''); setResults(null)
+    setCapital('')
+    setRate('')
+    setReferenceRate('')
+    setPeriod('')
+    setResults(null)
   }
 
   const calcular = () => {
@@ -108,26 +117,40 @@ export const CdbIrCalc = () => {
               id="cdb-capital"
               label="Capital inicial"
               value={capital}
-              onChange={(v) => { setCapital(v); setResults(null) }}
+              onChange={(v) => {
+                setCapital(v)
+                setResults(null)
+              }}
               placeholder="10000"
             />
             <PercentInput
               id="cdb-rate"
               label="Taxa do CDB"
               value={rate}
-              onChange={(v) => { setRate(v); setResults(null) }}
+              onChange={(v) => {
+                setRate(v)
+                setResults(null)
+              }}
               placeholder={currentType.placeholder}
               showPrefix={false}
               selectValue={rateType}
               selectOptions={RATE_TYPE_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
-              onSelectChange={(v) => { setRateType(v as RateType); setRate(''); setReferenceRate(''); setResults(null) }}
+              onSelectChange={(v) => {
+                setRateType(v as RateType)
+                setRate('')
+                setReferenceRate('')
+                setResults(null)
+              }}
             />
             {needsRef && (
               <PercentInput
                 id="cdb-ref-rate"
                 label={currentType.refLabel}
                 value={referenceRate}
-                onChange={(v) => { setReferenceRate(v); setResults(null) }}
+                onChange={(v) => {
+                  setReferenceRate(v)
+                  setResults(null)
+                }}
                 placeholder="ex: 13.65"
               />
             )}
@@ -135,9 +158,15 @@ export const CdbIrCalc = () => {
               id="cdb-period"
               label="Prazo"
               value={period}
-              onChange={(v) => { setPeriod(v); setResults(null) }}
+              onChange={(v) => {
+                setPeriod(v)
+                setResults(null)
+              }}
               unit={periodUnit}
-              onUnitChange={(u) => { setPeriodUnit(u); setResults(null) }}
+              onUnitChange={(u) => {
+                setPeriodUnit(u)
+                setResults(null)
+              }}
             />
           </div>
 
@@ -152,7 +181,9 @@ export const CdbIrCalc = () => {
               <CardHeader>
                 <CardTitle>Rendimento bruto</CardTitle>
                 <p className="text-2xl font-bold text-foreground">{fmtBRL(results.grossReturn)}</p>
-                <p className="text-xs text-muted-foreground">{results.grossRatePeriod.toFixed(2)}% no período</p>
+                <p className="text-xs text-muted-foreground">
+                  {results.grossRatePeriod.toFixed(2)}% no período
+                </p>
               </CardHeader>
             </Card>
             <Card>
@@ -168,7 +199,9 @@ export const CdbIrCalc = () => {
               <CardHeader>
                 <CardTitle>Rendimento líquido</CardTitle>
                 <p className="text-2xl font-bold text-success">{fmtBRL(results.netReturn)}</p>
-                <p className="text-xs text-muted-foreground">{results.netRatePeriod.toFixed(2)}% no período</p>
+                <p className="text-xs text-muted-foreground">
+                  {results.netRatePeriod.toFixed(2)}% no período
+                </p>
               </CardHeader>
             </Card>
           </div>
@@ -182,14 +215,31 @@ export const CdbIrCalc = () => {
                 { label: 'Taxa efetiva utilizada', value: results.rateDescription },
                 { label: 'Capital investido', value: fmtBRL(results.capital) },
                 { label: 'Rendimento bruto', value: fmtBRL(results.grossReturn) },
-                { label: `IR (${(results.irRate * 100).toFixed(2)}% — ${results.irLabel})`, value: `- ${fmtBRL(results.irAmount)}`, color: 'text-destructive' },
-                { label: 'Rendimento líquido', value: fmtBRL(results.netReturn), color: 'text-success' },
+                {
+                  label: `IR (${(results.irRate * 100).toFixed(2)}% — ${results.irLabel})`,
+                  value: `- ${fmtBRL(results.irAmount)}`,
+                  color: 'text-destructive',
+                },
+                {
+                  label: 'Rendimento líquido',
+                  value: fmtBRL(results.netReturn),
+                  color: 'text-success',
+                },
                 { label: 'Valor final líquido', value: fmtBRL(results.finalAmount) },
-                { label: 'Taxa líquida efetiva (a.a.)', value: `${results.effectiveNetAnnual.toFixed(2)}% a.a.`, color: 'text-success' },
+                {
+                  label: 'Taxa líquida efetiva (a.a.)',
+                  value: `${results.effectiveNetAnnual.toFixed(2)}% a.a.`,
+                  color: 'text-success',
+                },
               ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
+                >
                   <p className="text-sm text-foreground">{row.label}</p>
-                  <p className={`text-sm font-semibold ${row.color ?? 'text-foreground'}`}>{row.value}</p>
+                  <p className={`text-sm font-semibold ${row.color ?? 'text-foreground'}`}>
+                    {row.value}
+                  </p>
                 </div>
               ))}
             </CardContent>

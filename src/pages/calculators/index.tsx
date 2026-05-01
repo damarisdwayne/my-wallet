@@ -8,7 +8,10 @@ import { TesouroDiretoCalc } from './components/tesouro-calc'
 const tabs = [
   { label: 'LCI/LCA vs CDB', description: 'Equivalência de taxa considerando isenção de IR' },
   { label: 'CDB com IR', description: 'Rendimento líquido após imposto de renda' },
-  { label: 'Tesouro Direto', description: 'Marcação a mercado — vender agora ou segurar até o vencimento?' },
+  {
+    label: 'Tesouro Direto',
+    description: 'Marcação a mercado — vender agora ou segurar até o vencimento?',
+  },
   { label: 'Aposentadoria', description: 'Simulação de juros compostos com aportes mensais' },
 ]
 

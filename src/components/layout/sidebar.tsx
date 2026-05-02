@@ -7,7 +7,6 @@ import {
   PanelLeft,
   PanelLeftClose,
   Receipt,
-  ShoppingBag,
   TrendingUp,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
@@ -19,7 +18,7 @@ const navItems = [
   { to: '/portfolio', label: 'Carteira', icon: <TrendingUp size={20} /> },
   { to: '/dividends', label: 'Proventos', icon: <BarChart3 size={20} /> },
   { to: '/tax', label: 'Imposto de Renda', icon: <Home size={20} /> },
-  { to: '/sales', label: 'Vendas', icon: <ShoppingBag size={20} /> },
+  // { to: '/sales', label: 'Vendas', icon: <ShoppingBag size={20} /> },
   { to: '/calculators', label: 'Calculadoras', icon: <Calculator size={20} /> },
 ]
 

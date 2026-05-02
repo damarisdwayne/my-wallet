@@ -63,14 +63,14 @@ export const Sidebar = () => {
             title={expanded ? undefined : item.label}
             className={({ isActive }) =>
               cn(
-                'w-full flex items-center rounded-md text-sm transition-colors py-2',
+                'mx-2 flex items-center rounded-md text-sm transition-colors py-2',
                 isActive
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )
             }
           >
-            <span className={ICON_SLOT}>{item.icon}</span>
+            <span className="w-11 shrink-0 flex items-center justify-center">{item.icon}</span>
             <span
               className={cn(
                 'overflow-hidden whitespace-nowrap transition-all duration-200 pr-3',

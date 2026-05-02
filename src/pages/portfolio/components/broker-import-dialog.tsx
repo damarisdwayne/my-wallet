@@ -377,7 +377,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
         {rows && (
           <>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{rows.length} ativo(s) encontrado(s):</span>
+              <span>{rows.length} ativo(s):</span>
               {newCount > 0 && <span className="text-success font-medium">+{newCount} novos</span>}
               {updateCount > 0 && (
                 <span className="text-foreground font-medium">{updateCount} a atualizar</span>
@@ -385,11 +385,16 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
               {sellCount > 0 && (
                 <span className="text-destructive font-medium">-{sellCount} vendas</span>
               )}
+              {pendingDividends.length > 0 && (
+                <span className="text-primary font-medium">
+                  {pendingDividends.length} provento(s)
+                </span>
+              )}
               <button onClick={resetFile} className="ml-auto underline hover:text-foreground">
                 Trocar arquivo
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 rounded-md border border-border">
+            <div className="overflow-y-auto flex-1 min-h-0 rounded-md border border-border">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                   <tr className="text-left text-muted-foreground">
@@ -434,6 +439,36 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                   ))}
                 </tbody>
               </table>
+
+              {pendingDividends.length > 0 && (
+                <>
+                  <div className="px-3 py-2 bg-muted/40 border-t border-border text-xs font-medium text-muted-foreground">
+                    Proventos ({pendingDividends.length})
+                  </div>
+                  {pendingDividends.map((d, i) => (
+                    <div
+                      key={`${d.ticker}-${d.paymentDate}-${i}`}
+                      className="flex items-center justify-between px-3 py-2 border-t border-border hover:bg-accent/20 transition-colors text-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-foreground w-16">{d.ticker}</span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {d.type === 'dividendo' ? 'Dividendo' : d.type === 'jcp' ? 'JCP' : d.type === 'rendimento' ? 'Rendimento' : 'Div. Ext.'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {d.paymentDate.slice(8, 10)}/{d.paymentDate.slice(5, 7)}/{d.paymentDate.slice(0, 4)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs tabular-nums">
+                        {d.ir && d.ir > 0 && (
+                          <span className="text-muted-foreground">IR: -{formatCurrency(d.ir)}</span>
+                        )}
+                        <span className="font-medium text-success">{formatCurrency(d.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               PM calculado pela média ponderada das compras.

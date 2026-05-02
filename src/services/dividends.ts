@@ -15,16 +15,29 @@ import type { Dividend } from '@/types'
 const dividendId = (d: Omit<Dividend, 'id'>) =>
   `${d.ticker}-${d.paymentDate}-${d.type === 'dividendo_ext' ? 'dividendo' : d.type}`
 
-export const addDividends = (userId: string, dividends: Omit<Dividend, 'id'>[]) =>
-  Promise.all(
-    dividends.map((d) => {
-      const id = dividendId(d)
+export const addDividends = (userId: string, dividends: Omit<Dividend, 'id'>[]) => {
+  // B3 can report the same dividend in multiple rows (e.g. repeated payments for the same lot).
+  // Merge by key and sum amounts so the stored value reflects the real total received.
+  const merged = new Map<string, Omit<Dividend, 'id'>>()
+  for (const d of dividends) {
+    const id = dividendId(d)
+    const existing = merged.get(id)
+    if (existing) {
+      existing.amount += d.amount
+      if (d.ir) existing.ir = (existing.ir ?? 0) + d.ir
+    } else {
+      merged.set(id, { ...d })
+    }
+  }
+  return Promise.all(
+    Array.from(merged.entries()).map(([id, d]) => {
       const data = Object.fromEntries(
         Object.entries({ ...d, id }).filter(([, v]) => v !== undefined),
       )
       return setDoc(doc(db, 'users', userId, 'dividends', id), data)
     }),
   )
+}
 
 export const subscribeToMonthlyDividends = (
   userId: string,

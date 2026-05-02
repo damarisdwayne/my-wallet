@@ -8,6 +8,7 @@ import {
   query,
   setDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Expense, FixedExpense, InstallmentExpense } from '@/types'
@@ -32,6 +33,16 @@ export const subscribeToAllExpenses = (userId: string, cb: (expenses: Expense[])
 
 export const addExpense = (userId: string, expense: Omit<Expense, 'id'>) =>
   addDoc(collection(db, 'users', userId, 'expenses'), expense)
+
+export const deleteExpense = (userId: string, id: string) =>
+  deleteDoc(doc(db, 'users', userId, 'expenses', id))
+
+export const addExpenses = async (userId: string, items: Omit<Expense, 'id'>[]) => {
+  const batch = writeBatch(db)
+  const col = collection(db, 'users', userId, 'expenses')
+  items.forEach((item) => batch.set(doc(col), item))
+  return batch.commit()
+}
 
 export const subscribeSalary = (userId: string, cb: (salary: Record<string, number>) => void) =>
   onSnapshot(collection(db, 'users', userId, 'salary'), (snap) => {

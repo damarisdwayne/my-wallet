@@ -10,9 +10,19 @@ export interface ExtratoEntry {
 }
 
 const PT_MONTHS: Record<string, string> = {
-  janeiro: '01', fevereiro: '02', março: '03', marco: '03', abril: '04',
-  maio: '05', junho: '06', julho: '07', agosto: '08',
-  setembro: '09', outubro: '10', novembro: '11', dezembro: '12',
+  janeiro: '01',
+  fevereiro: '02',
+  março: '03',
+  marco: '03',
+  abril: '04',
+  maio: '05',
+  junho: '06',
+  julho: '07',
+  agosto: '08',
+  setembro: '09',
+  outubro: '10',
+  novembro: '11',
+  dezembro: '12',
 }
 
 const parsePtDate = (line: string): string | null => {
@@ -56,7 +66,10 @@ interface RawEntry {
 }
 
 const parseExtratoText = (text: string): RawEntry[] => {
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
   const result: RawEntry[] = []
   let currentDate: string | null = null
   let pendingType: 'div' | 'tax' | null = null
@@ -75,8 +88,7 @@ const parseExtratoText = (text: string): RawEntry[] => {
       pendingText = ''
       return
     }
-    const typeLabel =
-      pendingType === 'div' ? 'Pagamento De Dividendos' : 'Imposto Sobre Dividendos'
+    const typeLabel = pendingType === 'div' ? 'Pagamento De Dividendos' : 'Imposto Sobre Dividendos'
     const idx = combined.indexOf(typeLabel)
     if (idx === -1) {
       pendingType = null

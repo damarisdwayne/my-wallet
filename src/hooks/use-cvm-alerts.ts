@@ -52,9 +52,7 @@ export const useCvmAlerts = () => {
     const assets = assetsRef.current
 
     // only FIIs and stocks have CVM reports
-    const relevant = assets.filter((a) =>
-      ['fii', 'stock', 'etf', 'bdr'].includes(a.type),
-    )
+    const relevant = assets.filter((a) => ['fii', 'stock', 'etf', 'bdr'].includes(a.type))
     if (relevant.length === 0) return
 
     setChecking(true)
@@ -103,9 +101,7 @@ export const useCvmAlerts = () => {
     }
 
     await Promise.all(
-      Object.entries(latest).map(([ticker, date]) =>
-        saveCvmLastSeen(user.uid, ticker, date),
-      ),
+      Object.entries(latest).map(([ticker, date]) => saveCvmLastSeen(user.uid, ticker, date)),
     )
 
     setAlerts([])

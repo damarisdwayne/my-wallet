@@ -286,10 +286,7 @@ const MonthlyChart = ({
               )}
               {b.ext > 0 && (
                 <p className="flex items-center gap-2">
-                  <span
-                    className="w-2 h-2 rounded-sm shrink-0"
-                    style={{ background: EXT_COLOR }}
-                  />
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: EXT_COLOR }} />
                   <span className="text-muted-foreground">Exterior</span>
                   <span className="ml-auto font-medium">{formatCurrency(b.ext)}</span>
                 </p>
@@ -376,7 +373,9 @@ export const DividendsPage = () => {
   const [usdRate, setUsdRate] = useState(0)
 
   useEffect(() => {
-    fetchUsdBrlRate().then(setUsdRate).catch(() => setUsdRate(0))
+    fetchUsdBrlRate()
+      .then(setUsdRate)
+      .catch(() => setUsdRate(0))
   }, [])
 
   useEffect(() => {
@@ -416,7 +415,10 @@ export const DividendsPage = () => {
 
   const byMonth = useMemo(() => {
     const map = Object.fromEntries(
-      last12Months.map((m) => [m, { total: 0, fii: 0, stock: 0, fixed: 0, ext: 0 } as MonthBreakdown]),
+      last12Months.map((m) => [
+        m,
+        { total: 0, fii: 0, stock: 0, fixed: 0, ext: 0 } as MonthBreakdown,
+      ]),
     )
     for (const d of last12Dividends) {
       const key = d.paymentDate.slice(0, 7)

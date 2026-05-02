@@ -8,13 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/store/auth'
 import { useTheme } from '@/store/theme'
 import type { CvmAlert } from '@/hooks/use-cvm-alerts'
@@ -127,7 +121,11 @@ export const Header = ({
               </div>
               {lastCheckedAt && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Última verificação: {lastCheckedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  Última verificação:{' '}
+                  {lastCheckedAt.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </p>
               )}
             </SheetHeader>

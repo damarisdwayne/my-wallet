@@ -25,7 +25,20 @@ const filterByRange = (data: PatrimonyPoint[], range: Range): PatrimonyPoint[] =
 }
 
 /* ─── month label ─── */
-const monthAbbr = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const monthAbbr = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+]
 const fmtMonth = (ym: string) => {
   const [y, m] = ym.split('-')
   return `${monthAbbr[Number(m) - 1]}/${y.slice(2)}`
@@ -100,9 +113,7 @@ export const PatrimonyChart = ({ history, currentValue, currentMonth }: Props) =
   // build SVG paths
   const pts = data.map((d, i) => ({ x: ptX(i, n), y: ptY(d.value, yMin, yRange) }))
   const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-  const areaPath =
-    linePath +
-    ` L ${pts[n - 1].x} ${PAD.top + CH} L ${pts[0].x} ${PAD.top + CH} Z`
+  const areaPath = linePath + ` L ${pts[n - 1].x} ${PAD.top + CH} L ${pts[0].x} ${PAD.top + CH} Z`
 
   // y-axis ticks
   const yTicks = Array.from({ length: Y_TICKS }, (_, i) => {

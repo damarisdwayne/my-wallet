@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pencil, PlusCircle, Repeat2, Trash2 } from 'lucide-react'
+import { OFXImportDialog } from './ofx-import-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import {
@@ -145,11 +146,7 @@ const MonthlyExpensesChart = ({
 
   return (
     <div className="relative w-full">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        onMouseLeave={() => setTooltip(null)}
-      >
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" onMouseLeave={() => setTooltip(null)}>
         {gridLines.map((val) => {
           const y = PAD_T + CHART_H - (val / niceMax) * CHART_H
           return (
@@ -192,9 +189,7 @@ const MonthlyExpensesChart = ({
               key={point.month}
               className="cursor-pointer"
               onClick={() => onSelectMonth(point.month)}
-              onMouseEnter={() =>
-                setTooltip({ pct: ((barX + bw / 2) / W) * 100, point })
-              }
+              onMouseEnter={() => setTooltip({ pct: ((barX + bw / 2) / W) * 100, point })}
             >
               {isSelected && (
                 <rect
@@ -284,6 +279,8 @@ export const ExpensesPage = () => {
     salaryByMonth,
     loading,
     addExpense,
+    addExpenses,
+    deleteExpense,
     updateSalary,
     getRecurringForMonth,
     addFixedExpense,
@@ -369,10 +366,7 @@ export const ExpensesPage = () => {
   const monthlyHistory = useMemo((): MonthPoint[] => {
     const months = [...availableMonths].reverse().slice(-12)
     return months.map((m) => {
-      const all = [
-        ...expenses.filter((e) => e.date.startsWith(m)),
-        ...getRecurringForMonth(m),
-      ]
+      const all = [...expenses.filter((e) => e.date.startsWith(m)), ...getRecurringForMonth(m)]
       const byCategory: Partial<Record<ExpenseCategory, number>> = {}
       for (const e of all) {
         byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount
@@ -481,6 +475,7 @@ export const ExpensesPage = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <OFXImportDialog onImport={addExpenses} />
           <Dialog open={addFixedOpen} onOpenChange={setAddFixedOpen}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-border text-sm text-foreground hover:bg-accent transition-colors">
@@ -893,7 +888,15 @@ export const ExpensesPage = () => {
             </div>
             <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
               <span>
-                <span className={spentPct >= 90 ? 'text-destructive' : spentPct >= 70 ? 'text-warning' : 'text-foreground'}>
+                <span
+                  className={
+                    spentPct >= 90
+                      ? 'text-destructive'
+                      : spentPct >= 70
+                        ? 'text-warning'
+                        : 'text-foreground'
+                  }
+                >
                   {spentPct.toFixed(1)}%
                 </span>{' '}
                 comprometido — {formatCurrency(grand)}
@@ -910,7 +913,9 @@ export const ExpensesPage = () => {
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ background: CATEGORY_SVG_COLORS[cat as ExpenseCategory] }}
                       />
-                      <span className="text-muted-foreground">{categoryLabel[cat as ExpenseCategory]}</span>
+                      <span className="text-muted-foreground">
+                        {categoryLabel[cat as ExpenseCategory]}
+                      </span>
                       <span className="font-medium text-foreground">{formatCurrency(val)}</span>
                     </div>
                   ))}
@@ -1037,7 +1042,7 @@ export const ExpensesPage = () => {
               {allEntries.map((e) => (
                 <div
                   key={e.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  className="group flex items-center justify-between py-2 border-b border-border last:border-0"
                 >
                   <div className="flex items-center gap-3">
                     <Badge variant={categoryColors[e.category]}>{categoryLabel[e.category]}</Badge>
@@ -1054,11 +1059,19 @@ export const ExpensesPage = () => {
                       {sourceLabel[e.source]}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">{formatDate(e.date)}</span>
                     <span className="text-sm font-semibold text-destructive">
                       - {formatCurrency(e.amount)}
                     </span>
+                    {(e.source === 'manual' || e.source === 'bank') && (
+                      <button
+                        onClick={() => deleteExpense(e.id)}
+                        className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

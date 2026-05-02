@@ -1,4 +1,4 @@
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 
 export interface PatrimonyPoint {
@@ -11,5 +11,9 @@ export const subscribeToPatrimonyHistory = (
   cb: (history: PatrimonyPoint[]) => void,
 ) => {
   const q = query(collection(db, 'users', userId, 'patrimonyHistory'), orderBy('month', 'asc'))
-  return onSnapshot(q, (snap) => cb(snap.docs.map((doc) => doc.data() as PatrimonyPoint)))
+  return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data() as PatrimonyPoint)))
 }
+
+// Uses month as doc ID so re-saving the same month overwrites the previous value.
+export const savePatrimonySnapshot = (userId: string, month: string, value: number) =>
+  setDoc(doc(db, 'users', userId, 'patrimonyHistory', month), { month, value })

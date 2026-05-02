@@ -19,7 +19,20 @@ import type { Asset, Dividend, Trade } from '@/types'
 
 const monthLabel = (ym: string) => {
   const [y, m] = ym.split('-')
-  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+  const months = [
+    'Jan',
+    'Fev',
+    'Mar',
+    'Abr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Set',
+    'Out',
+    'Nov',
+    'Dez',
+  ]
   return `${months[Number(m) - 1]}/${y}`
 }
 
@@ -199,12 +212,19 @@ const BenesSection = ({
                     </span>
                   </Td>
                   <Td className="text-muted-foreground max-w-[200px] truncate">{r.assetName}</Td>
-                  <Td right>{r.quantity > 0 ? r.quantity.toFixed(r.quantity % 1 === 0 ? 0 : 6) : '—'}</Td>
+                  <Td right>
+                    {r.quantity > 0 ? r.quantity.toFixed(r.quantity % 1 === 0 ? 0 : 6) : '—'}
+                  </Td>
                   <Td right className="text-muted-foreground">
                     {r.avgCost > 0 ? formatCurrency(r.avgCost) : '—'}
                   </Td>
                   <Td right>{r.priorCost > 0 ? formatCurrency(r.priorCost) : '—'}</Td>
-                  <Td right className={r.totalCost > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+                  <Td
+                    right
+                    className={
+                      r.totalCost > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
+                    }
+                  >
                     {r.totalCost > 0 ? formatCurrency(r.totalCost) : '—'}
                   </Td>
                 </tr>
@@ -215,9 +235,9 @@ const BenesSection = ({
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground flex items-start gap-1.5">
-        <AlertCircle size={13} className="mt-0.5 shrink-0" />
-        O custo é calculado pelo preço médio ponderado das compras registradas. Bonificações
-        recebidas são incluídas na quantidade sem acréscimo ao custo.
+        <AlertCircle size={13} className="mt-0.5 shrink-0" />O custo é calculado pelo preço médio
+        ponderado das compras registradas. Bonificações recebidas são incluídas na quantidade sem
+        acréscimo ao custo.
       </p>
     </Section>
   )
@@ -225,7 +245,13 @@ const BenesSection = ({
 
 /* ─── Rendimentos Isentos ── */
 
-const RendimentosIsentosSection = ({ year, dividends }: { year: number; dividends: Dividend[] }) => {
+const RendimentosIsentosSection = ({
+  year,
+  dividends,
+}: {
+  year: number
+  dividends: Dividend[]
+}) => {
   const items = calcRendimentosIsentos(dividends, year)
   const total = items.reduce((s, i) => s + i.amount, 0)
 
@@ -319,7 +345,10 @@ const TributacaoExclusivaSection = ({
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <EmptyRow cols={6} message="Nenhum rendimento com tributação exclusiva no ano selecionado." />
+              <EmptyRow
+                cols={6}
+                message="Nenhum rendimento com tributação exclusiva no ano selecionado."
+              />
             ) : (
               items.map((item, i) => (
                 <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
@@ -393,7 +422,11 @@ const RendaVariavelSection = ({
             value={totalGain}
             variant={totalGain >= 0 ? 'success' : 'destructive'}
           />
-          <AmountBadge label="IR devido (DARF)" value={totalIr} variant={totalIr > 0 ? 'destructive' : 'default'} />
+          <AmountBadge
+            label="IR devido (DARF)"
+            value={totalIr}
+            variant={totalIr > 0 ? 'destructive' : 'default'}
+          />
         </div>
       }
     >
@@ -442,7 +475,9 @@ const RendaVariavelSection = ({
                   </Td>
                   <Td right>
                     {m.irDue > 0 ? (
-                      <span className="text-destructive font-semibold">{formatCurrency(m.irDue)}</span>
+                      <span className="text-destructive font-semibold">
+                        {formatCurrency(m.irDue)}
+                      </span>
                     ) : (
                       '—'
                     )}
@@ -531,7 +566,13 @@ const RendaVariavelSection = ({
                       </Td>
                       <Td right>{formatCurrency(g.sellTotal)}</Td>
                       <Td right>
-                        <span className={g.gain >= 0 ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                        <span
+                          className={
+                            g.gain >= 0
+                              ? 'text-success font-medium'
+                              : 'text-destructive font-medium'
+                          }
+                        >
                           {formatCurrency(g.gain)}
                         </span>
                       </Td>
@@ -605,7 +646,10 @@ export const TaxPage = () => {
     [dividends, selectedYear],
   )
 
-  const gains = useMemo(() => calcRealizedGains(trades, selectedYear, assets), [trades, selectedYear, assets])
+  const gains = useMemo(
+    () => calcRealizedGains(trades, selectedYear, assets),
+    [trades, selectedYear, assets],
+  )
   const monthlyRV = useMemo(() => calcMonthlyRV(gains, selectedYear), [gains, selectedYear])
   const totalDARF = useMemo(() => monthlyRV.reduce((s, m) => s + m.irDue, 0), [monthlyRV])
 
@@ -658,7 +702,9 @@ export const TaxPage = () => {
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">DARF Renda Variável</p>
-          <p className={`text-xl font-bold mt-1 ${totalDARF > 0 ? 'text-destructive' : 'text-foreground'}`}>
+          <p
+            className={`text-xl font-bold mt-1 ${totalDARF > 0 ? 'text-destructive' : 'text-foreground'}`}
+          >
             {formatCurrency(totalDARF)}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">15% sobre ganhos tributáveis</p>
@@ -672,9 +718,9 @@ export const TaxPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary'
+                  ? 'border-b-2 border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -685,9 +731,7 @@ export const TaxPage = () => {
       </div>
 
       {/* tab content */}
-      {activeTab === 'bens' && (
-        <BenesSection year={selectedYear} trades={trades} assets={assets} />
-      )}
+      {activeTab === 'bens' && <BenesSection year={selectedYear} trades={trades} assets={assets} />}
       {activeTab === 'isentos' && (
         <RendimentosIsentosSection year={selectedYear} dividends={dividends} />
       )}

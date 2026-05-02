@@ -95,11 +95,7 @@ const applyTrade = (map: PositionMap, trade: Trade) => {
 /* ── public functions ── */
 
 /** Position per ticker at endDate (inclusive). */
-export const buildPositions = (
-  trades: Trade[],
-  endDate: string,
-  assets: Asset[],
-): IrPosition[] => {
+export const buildPositions = (trades: Trade[], endDate: string, assets: Asset[]): IrPosition[] => {
   const assetMap = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
   const map: PositionMap = {}
 
@@ -128,7 +124,11 @@ export const buildPositions = (
 }
 
 /** Realized gains for sells occurring in the given year. */
-export const calcRealizedGains = (allTrades: Trade[], year: number, assets: Asset[]): RealizedGain[] => {
+export const calcRealizedGains = (
+  allTrades: Trade[],
+  year: number,
+  assets: Asset[],
+): RealizedGain[] => {
   const assetMap = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
   const gains: RealizedGain[] = []
   const map: PositionMap = {}
@@ -207,7 +207,16 @@ export const calcMonthlyRV = (gains: RealizedGain[], year: number): MonthlyRV[] 
 
     const lossCarryoverOut = carryover
 
-    result.push({ month, sales, gain, isExempt, lossCarryoverIn, netTaxable, irDue, lossCarryoverOut })
+    result.push({
+      month,
+      sales,
+      gain,
+      isExempt,
+      lossCarryoverIn,
+      netTaxable,
+      irDue,
+      lossCarryoverOut,
+    })
   }
 
   return result
@@ -244,8 +253,13 @@ export const calcRendimentosIsentos = (dividends: Dividend[], year: number): Ren
 }
 
 /** Rendimentos sujeitos à tributação exclusiva (JCP). */
-export const calcRendimentosTributaveis = (dividends: Dividend[], year: number): RendimentoTributavel[] => {
-  const filtered = dividends.filter((d) => d.paymentDate.startsWith(String(year)) && d.type === 'jcp')
+export const calcRendimentosTributaveis = (
+  dividends: Dividend[],
+  year: number,
+): RendimentoTributavel[] => {
+  const filtered = dividends.filter(
+    (d) => d.paymentDate.startsWith(String(year)) && d.type === 'jcp',
+  )
 
   const byTicker: Record<string, { gross: number; ir: number }> = {}
   for (const d of filtered) {

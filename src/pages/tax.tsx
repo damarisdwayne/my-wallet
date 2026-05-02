@@ -45,7 +45,7 @@ const assetTypeLabel: Record<string, string> = {
   bdr: 'BDR',
   fixed_income: 'Renda Fixa',
   crypto: 'Cripto',
-  stock_us: 'Ações EUA',
+  stock_us: 'Exterior',
   other: 'Outros',
 }
 

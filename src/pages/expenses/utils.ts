@@ -64,6 +64,19 @@ export const monthDiff = (from: string, to: string): number => {
   return (ty - fy) * 12 + (tm - fm)
 }
 
+export const CATEGORY_SVG_COLORS: Record<ExpenseCategory, string> = {
+  housing: '#ef4444',
+  food: '#f97316',
+  transport: '#3b82f6',
+  health: '#22c55e',
+  education: '#6366f1',
+  entertainment: '#a855f7',
+  clothing: '#ec4899',
+  subscriptions: '#f59e0b',
+  investments: '#10b981',
+  other: '#6b7280',
+}
+
 export const addMonthStr = (month: string, n: number): string => {
   const [y, m] = month.split('-').map(Number)
   const d = new Date(y, m - 1 + n, 1)

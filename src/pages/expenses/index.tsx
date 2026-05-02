@@ -16,6 +16,7 @@ import { useExpenses } from '@/hooks/use-expenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { DisplayExpense, ExpenseCategory, FixedExpense } from '@/types'
 import {
+  CATEGORY_SVG_COLORS,
   addMonthStr,
   categoryColors,
   categoryLabel,
@@ -108,6 +109,173 @@ const emptyInstallment = {
   startMonth: todayMonth,
 }
 
+interface MonthPoint {
+  month: string
+  total: number
+  byCategory: Partial<Record<ExpenseCategory, number>>
+}
+
+const CATEGORIES = Object.keys(CATEGORY_SVG_COLORS) as ExpenseCategory[]
+
+const W = 600
+const H = 220
+const PAD_L = 48
+const PAD_R = 12
+const PAD_T = 16
+const PAD_B = 36
+const CHART_W = W - PAD_L - PAD_R
+const CHART_H = H - PAD_T - PAD_B
+
+const MonthlyExpensesChart = ({
+  data,
+  selectedMonth,
+  onSelectMonth,
+}: {
+  data: MonthPoint[]
+  selectedMonth: string
+  onSelectMonth: (m: string) => void
+}) => {
+  const [tooltip, setTooltip] = useState<{ pct: number; point: MonthPoint } | null>(null)
+
+  const niceMax = Math.ceil(Math.max(...data.map((d) => d.total), 1) / 500) * 500
+  const barW = data.length > 0 ? CHART_W / data.length : 0
+  const barPad = Math.max(barW * 0.15, (barW - 50) / 2)
+  const bw = barW - barPad * 2
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map((f) => f * niceMax)
+
+  return (
+    <div className="relative w-full">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {gridLines.map((val) => {
+          const y = PAD_T + CHART_H - (val / niceMax) * CHART_H
+          return (
+            <g key={val}>
+              <line
+                x1={PAD_L}
+                y1={y}
+                x2={W - PAD_R}
+                y2={y}
+                stroke="currentColor"
+                strokeOpacity={0.08}
+                strokeWidth={1}
+              />
+              <text
+                x={PAD_L - 5}
+                y={y + 4}
+                textAnchor="end"
+                fontSize={9}
+                fill="currentColor"
+                opacity={0.4}
+              >
+                {val >= 1000 ? `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k` : val}
+              </text>
+            </g>
+          )
+        })}
+
+        {data.map((point, i) => {
+          const x = PAD_L + i * barW
+          const barX = x + barPad
+          const isSelected = point.month === selectedMonth
+          const segments = CATEGORIES.filter((c) => (point.byCategory[c] ?? 0) > 0).map((c) => ({
+            cat: c,
+            value: point.byCategory[c]!,
+          }))
+          let stackY = PAD_T + CHART_H
+
+          return (
+            <g
+              key={point.month}
+              className="cursor-pointer"
+              onClick={() => onSelectMonth(point.month)}
+              onMouseEnter={() =>
+                setTooltip({ pct: ((barX + bw / 2) / W) * 100, point })
+              }
+            >
+              {isSelected && (
+                <rect
+                  x={x + 2}
+                  y={PAD_T}
+                  width={barW - 4}
+                  height={CHART_H}
+                  rx={3}
+                  fill="currentColor"
+                  opacity={0.06}
+                />
+              )}
+              {segments.map(({ cat, value }, si) => {
+                const bh = Math.max((value / niceMax) * CHART_H, 1)
+                stackY -= bh
+                const isTop = si === segments.length - 1
+                return (
+                  <rect
+                    key={cat}
+                    x={barX}
+                    y={stackY}
+                    width={bw}
+                    height={bh}
+                    fill={CATEGORY_SVG_COLORS[cat]}
+                    opacity={isSelected ? 1 : 0.65}
+                    rx={isTop ? 2 : 0}
+                  />
+                )
+              })}
+              <text
+                x={barX + bw / 2}
+                y={H - PAD_B + 14}
+                textAnchor="middle"
+                fontSize={9}
+                fill="currentColor"
+                opacity={isSelected ? 1 : 0.45}
+                fontWeight={isSelected ? '600' : '400'}
+              >
+                {formatMonthLabel(point.month)}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none z-10 bg-popover border border-border rounded-lg shadow-lg p-2.5 text-xs min-w-[150px]"
+          style={{ left: `${tooltip.pct}%`, top: '0%', transform: 'translate(-50%, 0)' }}
+        >
+          <p className="font-semibold text-foreground mb-1.5">
+            {formatMonthLabel(tooltip.point.month)}
+          </p>
+          {CATEGORIES.filter((c) => (tooltip.point.byCategory[c] ?? 0) > 0)
+            .sort((a, b) => (tooltip.point.byCategory[b] ?? 0) - (tooltip.point.byCategory[a] ?? 0))
+            .map((c) => (
+              <div key={c} className="flex items-center justify-between gap-3 py-0.5">
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: CATEGORY_SVG_COLORS[c] }}
+                  />
+                  <span className="text-muted-foreground">{categoryLabel[c]}</span>
+                </div>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(tooltip.point.byCategory[c]!)}
+                </span>
+              </div>
+            ))}
+          <div className="border-t border-border mt-1.5 pt-1.5 flex justify-between">
+            <span className="text-muted-foreground">Total</span>
+            <span className="font-semibold text-foreground">
+              {formatCurrency(tooltip.point.total)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export const ExpensesPage = () => {
   const {
     expenses,
@@ -198,14 +366,18 @@ export const ExpensesPage = () => {
   const leftover = salary - grand
   const spentPct = salary > 0 ? Math.min((grand / salary) * 100, 100) : 0
 
-  const monthlyHistory = useMemo(() => {
-    const months = [...availableMonths].reverse().slice(-7)
+  const monthlyHistory = useMemo((): MonthPoint[] => {
+    const months = [...availableMonths].reverse().slice(-12)
     return months.map((m) => {
-      const manualTotal = expenses
-        .filter((e) => e.date.startsWith(m))
-        .reduce((s, e) => s + e.amount, 0)
-      const recurringTotal = getRecurringForMonth(m).reduce((s, e) => s + e.amount, 0)
-      return { month: m, total: manualTotal + recurringTotal }
+      const all = [
+        ...expenses.filter((e) => e.date.startsWith(m)),
+        ...getRecurringForMonth(m),
+      ]
+      const byCategory: Partial<Record<ExpenseCategory, number>> = {}
+      for (const e of all) {
+        byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount
+      }
+      return { month: m, total: all.reduce((s, e) => s + e.amount, 0), byCategory }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenses, availableMonths, fixedExpenses, installmentExpenses])
@@ -273,8 +445,6 @@ export const ExpensesPage = () => {
 
   const inputClass =
     'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
-
-  const maxHistory = Math.max(...monthlyHistory.map((h) => h.total), 1)
 
   const sourceLabel: Record<DisplayExpense['source'], string> = {
     manual: 'manual',
@@ -709,16 +879,43 @@ export const ExpensesPage = () => {
             <CardTitle>Comprometimento do salário</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-              <div
-                className={`h-3 rounded-full transition-all ${spentPct >= 90 ? 'bg-destructive' : spentPct >= 70 ? 'bg-warning' : 'bg-primary'}`}
-                style={{ width: `${spentPct}%` }}
-              />
+            <div className="w-full h-5 rounded-full overflow-hidden flex bg-muted">
+              {Object.entries(totals).map(([cat, val]) => (
+                <div
+                  key={cat}
+                  style={{
+                    width: `${(val / salary) * 100}%`,
+                    background: CATEGORY_SVG_COLORS[cat as ExpenseCategory],
+                  }}
+                  title={`${categoryLabel[cat as ExpenseCategory]}: ${formatCurrency(val)}`}
+                />
+              ))}
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>R$ 0</span>
+            <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+              <span>
+                <span className={spentPct >= 90 ? 'text-destructive' : spentPct >= 70 ? 'text-warning' : 'text-foreground'}>
+                  {spentPct.toFixed(1)}%
+                </span>{' '}
+                comprometido — {formatCurrency(grand)}
+              </span>
               <span>{formatCurrency(salary)}</span>
             </div>
+            {Object.keys(totals).length > 0 && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-border">
+                {Object.entries(totals)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([cat, val]) => (
+                    <div key={cat} className="flex items-center gap-1.5 text-xs">
+                      <div
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ background: CATEGORY_SVG_COLORS[cat as ExpenseCategory] }}
+                      />
+                      <span className="text-muted-foreground">{categoryLabel[cat as ExpenseCategory]}</span>
+                      <span className="font-medium text-foreground">{formatCurrency(val)}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -730,35 +927,11 @@ export const ExpensesPage = () => {
             <CardTitle>Histórico mensal</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-2 h-28">
-              {monthlyHistory.map((h) => {
-                const pct = (h.total / maxHistory) * 100
-                const isSelected = h.month === selectedMonth
-                return (
-                  <button
-                    key={h.month}
-                    onClick={() => setSelectedMonth(h.month)}
-                    className="flex-1 flex flex-col items-center gap-1 group"
-                    title={formatCurrency(h.total)}
-                  >
-                    <span
-                      className={`text-[10px] font-medium transition-colors ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
-                    >
-                      {formatCurrency(h.total)}
-                    </span>
-                    <div
-                      className={`w-full rounded-t transition-colors ${isSelected ? 'bg-primary' : 'bg-primary/30 group-hover:bg-primary/50'}`}
-                      style={{ height: `${Math.max(pct, 4)}%` }}
-                    />
-                    <span
-                      className={`text-[10px] transition-colors ${isSelected ? 'text-primary font-medium' : 'text-muted-foreground'}`}
-                    >
-                      {formatMonthLabel(h.month)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+            <MonthlyExpensesChart
+              data={monthlyHistory}
+              selectedMonth={selectedMonth}
+              onSelectMonth={setSelectedMonth}
+            />
           </CardContent>
         </Card>
       )}

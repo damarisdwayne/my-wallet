@@ -12,7 +12,7 @@ const tabs = [
     label: 'Tesouro Direto',
     description: 'Marcação a mercado — vender agora ou segurar até o vencimento?',
   },
-  { label: 'Aposentadoria', description: 'Simulação de juros compostos com aportes mensais' },
+  { label: 'Simuladores', description: 'Juros compostos e simulador de independência financeira' },
 ]
 
 export const CalculatorsPage = () => {

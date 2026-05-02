@@ -255,6 +255,41 @@ export const SelectField = ({
   </Field>
 )
 
+/** Plain number input (for ages, counts, etc.) */
+export const NumberInput = ({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder = '0',
+  suffix,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  suffix?: string
+}) => (
+  <Field id={id} label={label}>
+    <div className={groupCls}>
+      <input
+        id={id}
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={inputCls}
+      />
+      {suffix && (
+        <span className="flex items-center px-3 bg-muted text-muted-foreground text-sm font-medium border-l border-border shrink-0 select-none">
+          {suffix}
+        </span>
+      )}
+    </div>
+  </Field>
+)
+
 /** Calcular + Limpar row */
 export const CalcActions = ({ onCalc, onClear }: { onCalc: () => void; onClear: () => void }) => (
   <div className="flex items-center gap-4">

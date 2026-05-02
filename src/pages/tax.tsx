@@ -10,6 +10,7 @@ import {
   buildPositions,
   calcMonthlyRV,
   calcRealizedGains,
+  calcRendimentosExterior,
   calcRendimentosIsentos,
   calcRendimentosTributaveis,
 } from '@/lib/ir-calc'
@@ -136,6 +137,34 @@ const AmountBadge = ({
 
 /* ─── Bens e Direitos ── */
 
+const TypeFilterChips = ({
+  types,
+  active,
+  onChange,
+}: {
+  types: string[]
+  active: string | null
+  onChange: (t: string | null) => void
+}) => (
+  <div className="flex flex-wrap gap-1.5 mb-4">
+    <button
+      onClick={() => onChange(null)}
+      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${active === null ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+    >
+      Todos
+    </button>
+    {types.map((t) => (
+      <button
+        key={t}
+        onClick={() => onChange(active === t ? null : t)}
+        className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${active === t ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+      >
+        {assetTypeLabel[t] ?? t}
+      </button>
+    ))}
+  </div>
+)
+
 const BenesSection = ({
   year,
   trades,
@@ -145,6 +174,8 @@ const BenesSection = ({
   trades: Trade[]
   assets: Asset[]
 }) => {
+  const [filterType, setFilterType] = useState<string | null>(null)
+
   const currentDate = `${year}-12-31`
   const priorDate = `${year - 1}-12-31`
 
@@ -153,23 +184,21 @@ const BenesSection = ({
 
   const priorMap = Object.fromEntries(prior.map((p) => [p.ticker, p.totalCost]))
 
-  const totalCurrent = current.reduce((s, p) => s + p.totalCost, 0)
-  const totalPrior = prior.reduce((s, p) => s + p.totalCost, 0)
+  const allRows = current.map((p) => ({ ...p, priorCost: priorMap[p.ticker] ?? 0 }))
 
-  const rows = current.map((p) => ({
-    ...p,
-    priorCost: priorMap[p.ticker] ?? 0,
-  }))
-
-  // also include positions held in prior year but sold in current year
   const tickers = new Set(current.map((p) => p.ticker))
   for (const p of prior) {
     if (!tickers.has(p.ticker)) {
-      rows.push({ ...p, quantity: 0, avgCost: 0, totalCost: 0, priorCost: p.totalCost })
+      allRows.push({ ...p, quantity: 0, avgCost: 0, totalCost: 0, priorCost: p.totalCost })
     }
   }
+  allRows.sort((a, b) => a.ticker.localeCompare(b.ticker))
 
-  rows.sort((a, b) => a.ticker.localeCompare(b.ticker))
+  const availableTypes = [...new Set(allRows.map((r) => r.assetType))].sort()
+  const rows = filterType ? allRows.filter((r) => r.assetType === filterType) : allRows
+
+  const totalCurrent = rows.reduce((s, r) => s + r.totalCost, 0)
+  const totalPrior = rows.reduce((s, r) => s + r.priorCost, 0)
 
   return (
     <Section
@@ -182,6 +211,9 @@ const BenesSection = ({
         </div>
       }
     >
+      {availableTypes.length > 1 && (
+        <TypeFilterChips types={availableTypes} active={filterType} onChange={setFilterType} />
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -392,6 +424,87 @@ const TributacaoExclusivaSection = ({
   )
 }
 
+/* ─── Rendimentos do Exterior ── */
+
+const RendimentosExteriorSection = ({
+  year,
+  dividends,
+}: {
+  year: number
+  dividends: Dividend[]
+}) => {
+  const items = calcRendimentosExterior(dividends, year)
+  const totalGross = items.reduce((s, i) => s + i.gross, 0)
+  const totalIr = items.reduce((s, i) => s + i.ir, 0)
+
+  return (
+    <Section
+      title="Rendimentos do Exterior"
+      subtitle="Dividendos de ETFs e ações estrangeiras — tributação pela tabela progressiva"
+      badge={
+        <div className="flex gap-2">
+          <AmountBadge label="IR retido (fonte)" value={totalIr} variant="destructive" />
+          <AmountBadge label="Total bruto" value={totalGross} />
+        </div>
+      }
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted/30">
+              <Th>Ticker</Th>
+              <Th>Tipo</Th>
+              <Th right>Bruto (BRL)</Th>
+              <Th right>IR Retido</Th>
+              <Th right>Líquido</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <EmptyRow cols={5} message="Nenhum dividendo do exterior no ano selecionado." />
+            ) : (
+              items.map((item) => (
+                <tr key={item.ticker} className="border-t border-border/50 hover:bg-muted/20">
+                  <Td className="font-semibold text-foreground">{item.ticker}</Td>
+                  <Td className="text-muted-foreground">{item.type}</Td>
+                  <Td right>{formatCurrency(item.gross)}</Td>
+                  <Td right className="text-destructive">
+                    {item.ir > 0 ? formatCurrency(item.ir) : '—'}
+                  </Td>
+                  <Td right className="font-medium">
+                    {formatCurrency(item.net)}
+                  </Td>
+                </tr>
+              ))
+            )}
+            {items.length > 0 && (
+              <tr className="border-t-2 border-border bg-muted/30">
+                <Td colSpan={2} className="font-semibold">
+                  Total
+                </Td>
+                <Td right className="font-semibold">
+                  {formatCurrency(totalGross)}
+                </Td>
+                <Td right className="font-semibold text-destructive">
+                  {totalIr > 0 ? formatCurrency(totalIr) : '—'}
+                </Td>
+                <Td right className="font-semibold">
+                  {formatCurrency(totalGross - totalIr)}
+                </Td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground flex items-start gap-1.5">
+        <AlertCircle size={13} className="mt-0.5 shrink-0" />
+        Valores convertidos para BRL na data do recebimento. O IR retido no exterior pode ser
+        compensado na declaração — verifique com seu contador.
+      </p>
+    </Section>
+  )
+}
+
 /* ─── Renda Variável ── */
 
 const RendaVariavelSection = ({
@@ -404,8 +517,17 @@ const RendaVariavelSection = ({
   assets: Asset[]
 }) => {
   const [showDetails, setShowDetails] = useState(false)
+  const [filterType, setFilterType] = useState<string | null>(null)
   const gains = useMemo(() => calcRealizedGains(trades, year, assets), [trades, year, assets])
   const monthly = useMemo(() => calcMonthlyRV(gains, year), [gains, year])
+  const availableGainTypes = useMemo(
+    () => [...new Set(gains.map((g) => g.assetType))].sort(),
+    [gains],
+  )
+  const filteredGains = useMemo(
+    () => (filterType ? gains.filter((g) => g.assetType === filterType) : gains),
+    [gains, filterType],
+  )
 
   const totalIr = monthly.reduce((s, m) => s + m.irDue, 0)
   const totalGain = monthly.reduce((s, m) => s + m.gain, 0)
@@ -531,7 +653,11 @@ const RendaVariavelSection = ({
           </button>
 
           {showDetails && (
-            <div className="mt-3 overflow-x-auto border border-border rounded-md">
+            <div className="mt-3">
+              {availableGainTypes.length > 1 && (
+                <TypeFilterChips types={availableGainTypes} active={filterType} onChange={setFilterType} />
+              )}
+              <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
@@ -547,7 +673,7 @@ const RendaVariavelSection = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {gains.map((g, i) => (
+                  {filteredGains.map((g, i) => (
                     <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
                       <Td className="text-muted-foreground">{g.date}</Td>
                       <Td className="font-semibold text-foreground">{g.ticker}</Td>
@@ -580,6 +706,7 @@ const RendaVariavelSection = ({
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
@@ -597,12 +724,13 @@ const RendaVariavelSection = ({
 
 /* ─── tabs ── */
 
-type Tab = 'bens' | 'isentos' | 'tributavel' | 'rv'
+type Tab = 'bens' | 'isentos' | 'tributavel' | 'exterior' | 'rv'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'bens', label: 'Bens e Direitos' },
   { id: 'isentos', label: 'Rendimentos Isentos' },
   { id: 'tributavel', label: 'Tributação Exclusiva' },
+  { id: 'exterior', label: 'Rendimentos do Exterior' },
   { id: 'rv', label: 'Renda Variável' },
 ]
 
@@ -643,6 +771,11 @@ export const TaxPage = () => {
 
   const totalIsento = useMemo(
     () => calcRendimentosIsentos(dividends, selectedYear).reduce((s, i) => s + i.amount, 0),
+    [dividends, selectedYear],
+  )
+
+  const totalExterior = useMemo(
+    () => calcRendimentosExterior(dividends, selectedYear).reduce((s, i) => s + i.gross, 0),
     [dividends, selectedYear],
   )
 
@@ -689,11 +822,16 @@ export const TaxPage = () => {
       </div>
 
       {/* summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">Rendimentos Isentos</p>
           <p className="text-xl font-bold text-success mt-1">{formatCurrency(totalIsento)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Dividendos + FII</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Rendimentos do Exterior</p>
+          <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(totalExterior)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">ETFs e ações estrangeiras</p>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">IR Retido na Fonte (JCP)</p>
@@ -737,6 +875,9 @@ export const TaxPage = () => {
       )}
       {activeTab === 'tributavel' && (
         <TributacaoExclusivaSection year={selectedYear} dividends={dividends} />
+      )}
+      {activeTab === 'exterior' && (
+        <RendimentosExteriorSection year={selectedYear} dividends={dividends} />
       )}
       {activeTab === 'rv' && (
         <RendaVariavelSection year={selectedYear} trades={trades} assets={assets} />

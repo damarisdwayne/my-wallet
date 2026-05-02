@@ -9,7 +9,7 @@ import { ImportsTab } from './components/imports-tab'
 import { OverviewTab } from './components/overview-tab'
 import { TradesTab } from './components/trades-tab'
 
-const tabs = ['Visão Geral', 'Meta', 'Aporte', 'Movimentações', 'Importações', 'Análise']
+const tabs = ['Visão Geral', 'Metas', 'Aporte', 'Movimentações', 'Importações', 'Análises']
 
 const PortfolioSkeleton = () => (
   <div className="p-6 space-y-6">

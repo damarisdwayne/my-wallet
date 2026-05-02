@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { subscribeToAllDividends } from '@/services/dividends'
+import { deleteDividend, subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { useAuth } from '@/store/auth'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -10,7 +11,20 @@ import type { Asset, Dividend } from '@/types'
 
 /* ─── constants ─── */
 
-const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const MONTH_SHORT = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+]
 const THIS_YEAR = new Date().getFullYear().toString()
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7)
 
@@ -46,6 +60,7 @@ interface MonthBreakdown {
   fii: number
   stock: number
   fixed: number
+  ext: number
 }
 
 /* ─── SVG bar chart ─── */
@@ -85,6 +100,7 @@ const MonthlyChart = ({
   const FII_COLOR = 'hsl(142 71% 45%)'
   const STOCK_COLOR = 'hsl(217 91% 60%)'
   const FIXED_COLOR = 'hsl(48 96% 53%)'
+  const EXT_COLOR = 'hsl(280 70% 60%)'
 
   return (
     <div className="relative select-none">
@@ -99,13 +115,22 @@ const MonthlyChart = ({
         {yTicks.map(({ v, y }, i) => (
           <g key={i}>
             <line
-              x1={PAD.left} y1={y} x2={PAD.left + CW} y2={y}
-              stroke="currentColor" strokeOpacity="0.07" strokeWidth="1"
+              x1={PAD.left}
+              y1={y}
+              x2={PAD.left + CW}
+              y2={y}
+              stroke="currentColor"
+              strokeOpacity="0.07"
+              strokeWidth="1"
             />
             <text
-              x={PAD.left - 8} y={y}
-              textAnchor="end" dominantBaseline="middle"
-              fontSize="11" fill="currentColor" opacity="0.45"
+              x={PAD.left - 8}
+              y={y}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fontSize="11"
+              fill="currentColor"
+              opacity="0.45"
             >
               {fmtCompact(v)}
             </text>
@@ -116,14 +141,22 @@ const MonthlyChart = ({
         {avg12 > 0 && (
           <g>
             <line
-              x1={PAD.left} y1={avgY} x2={PAD.left + CW} y2={avgY}
-              stroke="hsl(var(--primary))" strokeOpacity="0.5"
-              strokeWidth="1.5" strokeDasharray="6 4"
+              x1={PAD.left}
+              y1={avgY}
+              x2={PAD.left + CW}
+              y2={avgY}
+              stroke="hsl(var(--primary))"
+              strokeOpacity="0.5"
+              strokeWidth="1.5"
+              strokeDasharray="6 4"
             />
             <text
-              x={PAD.left + CW + 4} y={avgY}
-              dominantBaseline="middle" fontSize="10"
-              fill="hsl(var(--primary))" opacity="0.7"
+              x={PAD.left + CW + 4}
+              y={avgY}
+              dominantBaseline="middle"
+              fontSize="10"
+              fill="hsl(var(--primary))"
+              opacity="0.7"
             >
               méd
             </text>
@@ -136,11 +169,12 @@ const MonthlyChart = ({
           const isHov = hovIdx === i
           const isCurrent = key === CURRENT_MONTH
 
-          // stack from bottom: fii → stock → fixed
+          // stack from bottom: fii → stock → fixed → ext
           const segments: { v: number; color: string }[] = [
             { v: b.fii, color: FII_COLOR },
             { v: b.stock, color: STOCK_COLOR },
             { v: b.fixed, color: FIXED_COLOR },
+            { v: b.ext, color: EXT_COLOR },
           ].filter((s) => s.v > 0)
 
           let stackTop = PAD.top + CH
@@ -156,16 +190,22 @@ const MonthlyChart = ({
             <g key={key}>
               {isHov && (
                 <rect
-                  x={barLeft - 3} y={PAD.top}
-                  width={barW + 6} height={CH}
-                  fill="currentColor" fillOpacity="0.06" rx="3"
+                  x={barLeft - 3}
+                  y={PAD.top}
+                  width={barW + 6}
+                  height={CH}
+                  fill="currentColor"
+                  fillOpacity="0.06"
+                  rx="3"
                 />
               )}
               {rects.map((r, ri) => (
                 <rect
                   key={ri}
-                  x={barLeft} y={r.y}
-                  width={barW} height={r.h}
+                  x={barLeft}
+                  y={r.y}
+                  width={barW}
+                  height={r.h}
                   fill={r.color}
                   fillOpacity={isHov ? 1 : 0.72}
                   rx={r.isTop ? 2 : 0}
@@ -173,14 +213,19 @@ const MonthlyChart = ({
               ))}
               {isCurrent && (
                 <rect
-                  x={barLeft} y={PAD.top + CH + 6}
-                  width={barW} height={3}
-                  fill="hsl(var(--primary))" rx="1.5"
+                  x={barLeft}
+                  y={PAD.top + CH + 6}
+                  width={barW}
+                  height={3}
+                  fill="hsl(var(--primary))"
+                  rx="1.5"
                 />
               )}
               <text
-                x={barLeft + barW / 2} y={PAD.top + CH + 20}
-                textAnchor="middle" fontSize="11"
+                x={barLeft + barW / 2}
+                y={PAD.top + CH + 20}
+                textAnchor="middle"
+                fontSize="11"
                 fill="currentColor"
                 opacity={isCurrent ? 1 : 0.45}
                 fontWeight={isCurrent ? '600' : 'normal'}
@@ -193,51 +238,68 @@ const MonthlyChart = ({
       </svg>
 
       {/* floating tooltip */}
-      {hovIdx !== null && (() => {
-        const [key, b] = entries[hovIdx]
-        if (b.total === 0) return null
-        const barCenterX = PAD.left + hovIdx * barSpacing + barSpacing / 2
-        const leftPct = (barCenterX / W) * 100
+      {hovIdx !== null &&
+        (() => {
+          const [key, b] = entries[hovIdx]
+          if (b.total === 0) return null
+          const barCenterX = PAD.left + hovIdx * barSpacing + barSpacing / 2
+          const leftPct = (barCenterX / W) * 100
 
-        return (
-          <div
-            className="pointer-events-none absolute z-10 top-0 rounded-md border border-border bg-popover px-3 py-2 shadow-md text-xs space-y-1"
-            style={{
-              left: `${leftPct}%`,
-              transform: leftPct > 65 ? 'translate(-110%, 32px)' : 'translate(8px, 32px)',
-            }}
-          >
-            <p className="font-semibold text-foreground text-sm border-b border-border pb-1 mb-1">
-              {fmtMonth(key)}
-            </p>
-            {b.fii > 0 && (
-              <p className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FII_COLOR }} />
-                <span className="text-muted-foreground">FII/ETF</span>
-                <span className="ml-auto font-medium">{formatCurrency(b.fii)}</span>
+          return (
+            <div
+              className="pointer-events-none absolute z-10 top-0 rounded-md border border-border bg-popover px-3 py-2 shadow-md text-xs space-y-1"
+              style={{
+                left: `${leftPct}%`,
+                transform: leftPct > 65 ? 'translate(-110%, 32px)' : 'translate(8px, 32px)',
+              }}
+            >
+              <p className="font-semibold text-foreground text-sm border-b border-border pb-1 mb-1">
+                {fmtMonth(key)}
               </p>
-            )}
-            {b.stock > 0 && (
-              <p className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: STOCK_COLOR }} />
-                <span className="text-muted-foreground">Ações</span>
-                <span className="ml-auto font-medium">{formatCurrency(b.stock)}</span>
+              {b.fii > 0 && (
+                <p className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FII_COLOR }} />
+                  <span className="text-muted-foreground">FII/ETF</span>
+                  <span className="ml-auto font-medium">{formatCurrency(b.fii)}</span>
+                </p>
+              )}
+              {b.stock > 0 && (
+                <p className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-sm shrink-0"
+                    style={{ background: STOCK_COLOR }}
+                  />
+                  <span className="text-muted-foreground">Ações</span>
+                  <span className="ml-auto font-medium">{formatCurrency(b.stock)}</span>
+                </p>
+              )}
+              {b.fixed > 0 && (
+                <p className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-sm shrink-0"
+                    style={{ background: FIXED_COLOR }}
+                  />
+                  <span className="text-muted-foreground">Renda Fixa</span>
+                  <span className="ml-auto font-medium">{formatCurrency(b.fixed)}</span>
+                </p>
+              )}
+              {b.ext > 0 && (
+                <p className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-sm shrink-0"
+                    style={{ background: EXT_COLOR }}
+                  />
+                  <span className="text-muted-foreground">Exterior</span>
+                  <span className="ml-auto font-medium">{formatCurrency(b.ext)}</span>
+                </p>
+              )}
+              <p className="flex items-center gap-2 border-t border-border pt-1 mt-1">
+                <span className="text-muted-foreground">Total</span>
+                <span className="ml-auto font-bold text-success">{formatCurrency(b.total)}</span>
               </p>
-            )}
-            {b.fixed > 0 && (
-              <p className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FIXED_COLOR }} />
-                <span className="text-muted-foreground">Renda Fixa</span>
-                <span className="ml-auto font-medium">{formatCurrency(b.fixed)}</span>
-              </p>
-            )}
-            <p className="flex items-center gap-2 border-t border-border pt-1 mt-1">
-              <span className="text-muted-foreground">Total</span>
-              <span className="ml-auto font-bold text-success">{formatCurrency(b.total)}</span>
-            </p>
-          </div>
-        )
-      })()}
+            </div>
+          )
+        })()}
 
       {/* legend */}
       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
@@ -253,8 +315,15 @@ const MonthlyChart = ({
           <span className="w-2.5 h-2.5 rounded-sm" style={{ background: FIXED_COLOR }} />
           Renda Fixa
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: EXT_COLOR }} />
+          Exterior
+        </span>
         <span className="flex items-center gap-1.5 ml-auto">
-          <span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'hsl(var(--primary))' }} />
+          <span
+            className="w-5 border-t-2 border-dashed"
+            style={{ borderColor: 'hsl(var(--primary))' }}
+          />
           Média
         </span>
       </div>
@@ -277,12 +346,20 @@ const DividendsSkeleton = () => (
       ))}
     </div>
     <Card>
-      <CardHeader><Skeleton className="h-4 w-48" /></CardHeader>
-      <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+      <CardHeader>
+        <Skeleton className="h-4 w-48" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-64 w-full" />
+      </CardContent>
     </Card>
     <Card>
-      <CardHeader><Skeleton className="h-4 w-24" /></CardHeader>
-      <CardContent><Skeleton className="h-48 w-full" /></CardContent>
+      <CardHeader>
+        <Skeleton className="h-4 w-24" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-48 w-full" />
+      </CardContent>
     </Card>
   </div>
 )
@@ -299,10 +376,18 @@ export const DividendsPage = () => {
   useEffect(() => {
     if (!user) return
     let resolved = 0
-    const onLoad = () => { if (++resolved === 2) setLoading(false) }
+    const onLoad = () => {
+      if (++resolved === 2) setLoading(false)
+    }
     const unsubs = [
-      subscribeToAllDividends(user.uid, (data) => { setDividends(data); onLoad() }),
-      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
+      subscribeToAllDividends(user.uid, (data) => {
+        setDividends(data)
+        onLoad()
+      }),
+      subscribeToAssets(user.uid, (data) => {
+        setAssets(data)
+        onLoad()
+      }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -325,16 +410,20 @@ export const DividendsPage = () => {
 
   const byMonth = useMemo(() => {
     const map = Object.fromEntries(
-      last12Months.map((m) => [m, { total: 0, fii: 0, stock: 0, fixed: 0 } as MonthBreakdown]),
+      last12Months.map((m) => [m, { total: 0, fii: 0, stock: 0, fixed: 0, ext: 0 } as MonthBreakdown]),
     )
     for (const d of last12Dividends) {
       const key = d.paymentDate.slice(0, 7)
       if (!(key in map)) continue
-      const type = tickerType.get(d.ticker.toUpperCase())
       map[key].total += d.amount
-      if (type === 'fii' || type === 'etf') map[key].fii += d.amount
-      else if (type === 'fixed_income') map[key].fixed += d.amount
-      else map[key].stock += d.amount
+      if (d.type === 'dividendo_ext') {
+        map[key].ext += d.amount
+      } else {
+        const type = tickerType.get(d.ticker.toUpperCase())
+        if (type === 'fii' || type === 'etf') map[key].fii += d.amount
+        else if (type === 'fixed_income') map[key].fixed += d.amount
+        else map[key].stock += d.amount
+      }
     }
     return map
   }, [last12Dividends, last12Months, tickerType])
@@ -423,14 +512,22 @@ export const DividendsPage = () => {
               {yearDividends.map((d) => (
                 <div
                   key={d.id}
-                  className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0 hover:bg-muted/20 -mx-1 px-1 rounded transition-colors"
+                  className="group flex items-center justify-between py-2.5 border-b border-border/50 last:border-0 hover:bg-muted/20 -mx-1 px-1 rounded transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-sm text-foreground w-20">{d.ticker}</span>
                     <Badge
-                      variant={d.type === 'rendimento' ? 'default' : d.type === 'jcp' ? 'warning' : 'success'}
+                      variant={
+                        d.type === 'rendimento'
+                          ? 'default'
+                          : d.type === 'jcp'
+                            ? 'warning'
+                            : d.type === 'dividendo_ext'
+                              ? 'secondary'
+                              : 'success'
+                      }
                     >
-                      {d.type.toUpperCase()}
+                      {d.type === 'dividendo_ext' ? 'DIVIDENDO EXT' : d.type.toUpperCase()}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4">
@@ -445,6 +542,13 @@ export const DividendsPage = () => {
                     <span className="text-sm font-semibold text-success">
                       +{formatCurrency(d.amount)}
                     </span>
+                    <button
+                      onClick={() => user && deleteDividend(user.uid, d.id)}
+                      className="text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                      aria-label="Remover"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               ))}

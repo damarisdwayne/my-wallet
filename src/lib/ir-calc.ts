@@ -224,7 +224,10 @@ export const calcMonthlyRV = (gains: RealizedGain[], year: number): MonthlyRV[] 
 
 /** Rendimentos isentos for the year from dividends. */
 export const calcRendimentosIsentos = (dividends: Dividend[], year: number): RendimentoIsento[] => {
-  const filtered = dividends.filter((d) => d.paymentDate.startsWith(String(year)))
+  // dividendo_ext is NOT isento — handled separately in calcRendimentosExterior
+  const filtered = dividends.filter(
+    (d) => d.paymentDate.startsWith(String(year)) && d.type !== 'dividendo_ext',
+  )
 
   // dividendos de ações (isento - código 09)
   const divByTicker: Record<string, number> = {}
@@ -274,6 +277,41 @@ export const calcRendimentosTributaveis = (
       cnpj: '',
       type: 'Juros sobre Capital Próprio',
       code: '10',
+      gross,
+      ir,
+      net: gross - ir,
+    }))
+    .sort((a, b) => a.ticker.localeCompare(b.ticker))
+}
+
+export interface RendimentoExterior {
+  ticker: string
+  type: string
+  gross: number
+  ir: number
+  net: number
+}
+
+/** Rendimentos do exterior (dividendo_ext) — tributáveis à alíquota progressiva. */
+export const calcRendimentosExterior = (
+  dividends: Dividend[],
+  year: number,
+): RendimentoExterior[] => {
+  const filtered = dividends.filter(
+    (d) => d.paymentDate.startsWith(String(year)) && d.type === 'dividendo_ext',
+  )
+
+  const byTicker: Record<string, { gross: number; ir: number }> = {}
+  for (const d of filtered) {
+    if (!byTicker[d.ticker]) byTicker[d.ticker] = { gross: 0, ir: 0 }
+    byTicker[d.ticker].gross += d.amount
+    byTicker[d.ticker].ir += d.ir ?? 0
+  }
+
+  return Object.entries(byTicker)
+    .map(([ticker, { gross, ir }]) => ({
+      ticker,
+      type: 'Dividendos do Exterior',
       gross,
       ir,
       net: gross - ir,

@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/cvm-dados/:path*", "destination": "https://dados.cvm.gov.br/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

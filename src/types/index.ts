@@ -115,7 +115,7 @@ export interface Dividend {
   ticker: string
   amount: number
   paymentDate: string
-  type: 'dividendo' | 'jcp' | 'rendimento'
+  type: 'dividendo' | 'jcp' | 'rendimento' | 'dividendo_ext'
   ir?: number
 }
 

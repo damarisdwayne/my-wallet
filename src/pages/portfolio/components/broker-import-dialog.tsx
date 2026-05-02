@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronLeft, Upload } from 'lucide-react'
+import { ChevronLeft, FileText, Receipt, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
   parseB3Excel,
 } from '@/services/b3-import'
 import { parseInterPdf } from '@/services/inter-import'
+import { type ExtratoEntry, extratoToDividends, parseInterExtrato } from '@/services/inter-extrato'
 import type { Asset } from '@/types'
 import { typeLabel } from '../constants'
 
@@ -89,13 +90,19 @@ interface Props {
 }
 
 type ParsedRow = B3Asset & { action: 'new' | 'update' | 'sell' }
+type InterMode = 'trades' | 'extrato'
 
 export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [broker, setBroker] = useState<Broker | null>(null)
+  const [interMode, setInterMode] = useState<InterMode | null>(null)
   const [rows, setRows] = useState<ParsedRow[] | null>(null)
   const [pendingTrades, setPendingTrades] = useState<B3RawTrade[]>([])
   const [pendingDividends, setPendingDividends] = useState<B3ParseResult['dividends']>([])
+  const [extratoResult, setExtratoResult] = useState<{
+    entries: ExtratoEntry[]
+    usdRate: number
+  } | null>(null)
   const [filename, setFilename] = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
@@ -105,6 +112,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     setRows(null)
     setPendingTrades([])
     setPendingDividends([])
+    setExtratoResult(null)
     setFilename('')
     setParseError(null)
     setParsing(false)
@@ -113,6 +121,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
 
   const resetAll = () => {
     setBroker(null)
+    setInterMode(null)
     resetFile()
   }
 
@@ -140,35 +149,63 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     }
   }
 
-  const handleFile = (file: File, selectedBroker: Broker) => {
+  const processExtratoBuffer = async (buffer: ArrayBuffer) => {
+    setParsing(true)
+    try {
+      const result = await parseInterExtrato(buffer)
+      if (result.entries.length === 0) {
+        throw new Error(
+          'Nenhum dividendo encontrado. Verifique se é o Extrato de Movimentações da Inter.',
+        )
+      }
+      setExtratoResult(result)
+    } catch (err) {
+      setParseError(err instanceof Error ? err.message : 'Erro ao processar arquivo.')
+    } finally {
+      setParsing(false)
+    }
+  }
+
+  const handleFile = (file: File) => {
     resetFile()
     setFilename(file.name)
-    file
-      .arrayBuffer()
-      .then((buf) => processBuffer(buf, selectedBroker))
-      .catch(() => {
+    const read = file.arrayBuffer()
+    if (broker?.id === 'inter' && interMode === 'extrato') {
+      read.then(processExtratoBuffer).catch(() => {
         setParseError('Não foi possível ler o arquivo.')
         setParsing(false)
       })
+    } else if (broker) {
+      read
+        .then((buf) => processBuffer(buf, broker))
+        .catch(() => {
+          setParseError('Não foi possível ler o arquivo.')
+          setParsing(false)
+        })
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
-    if (file && broker) handleFile(file, broker)
+    if (file) handleFile(file)
   }
 
   const handleConfirm = async () => {
-    if (!rows) return
     setImporting(true)
     try {
-      await onImport(
-        rows,
-        pendingTrades,
-        pendingDividends,
-        filename,
-        (broker?.id ?? 'b3') as 'b3' | 'inter',
-      )
+      if (broker?.id === 'inter' && interMode === 'extrato' && extratoResult) {
+        const dividends = extratoToDividends(extratoResult.entries, extratoResult.usdRate)
+        await onImport([], [], dividends, filename, 'inter')
+      } else if (rows) {
+        await onImport(
+          rows,
+          pendingTrades,
+          pendingDividends,
+          filename,
+          (broker?.id ?? 'b3') as 'b3' | 'inter',
+        )
+      }
       onOpenChange(false)
       resetAll()
     } finally {
@@ -179,6 +216,13 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const newCount = rows?.filter((r) => r.action === 'new').length ?? 0
   const updateCount = rows?.filter((r) => r.action === 'update').length ?? 0
   const sellCount = rows?.filter((r) => r.action === 'sell').length ?? 0
+
+  const isExtratoMode = broker?.id === 'inter' && interMode === 'extrato'
+  const showModeSelector = broker?.id === 'inter' && interMode === null
+  const showFileZone = broker !== null && !showModeSelector && !rows && !extratoResult && !parsing
+  const canConfirm = rows !== null || extratoResult !== null
+  const unmappedFunds = extratoResult?.entries.filter((e) => e.ticker === null) ?? []
+  const mappedEntries = extratoResult?.entries.filter((e) => e.ticker !== null) ?? []
 
   return (
     <Dialog
@@ -191,11 +235,16 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {broker && (
+            {(broker || interMode) && (
               <button
                 onClick={() => {
-                  setBroker(null)
-                  resetFile()
+                  if (interMode) {
+                    setInterMode(null)
+                    resetFile()
+                  } else {
+                    setBroker(null)
+                    resetFile()
+                  }
                 }}
                 className="p-1 rounded hover:bg-muted transition-colors"
                 aria-label="Voltar"
@@ -203,10 +252,15 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                 <ChevronLeft size={16} />
               </button>
             )}
-            {broker ? `Importar — ${broker.label}` : 'Importar nota de corretagem'}
+            {broker
+              ? isExtratoMode
+                ? 'Importar extrato — Inter Co Securities'
+                : `Importar — ${broker.label}`
+              : 'Importar nota de corretagem'}
           </DialogTitle>
         </DialogHeader>
 
+        {/* broker selector */}
         {!broker && (
           <div className="space-y-2 py-2">
             <p className="text-sm text-muted-foreground">Selecione a corretora:</p>
@@ -225,9 +279,56 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
           </div>
         )}
 
-        {broker && !rows && !parsing && (
+        {/* Inter document type selector */}
+        {showModeSelector && (
+          <div className="space-y-2 py-2">
+            <p className="text-sm text-muted-foreground">Qual documento deseja importar?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setInterMode('trades')}
+                className="flex flex-col items-start gap-1 rounded-lg border border-border p-4 text-left hover:border-primary/60 hover:bg-muted/40 transition-colors"
+              >
+                <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                  <Receipt size={16} />
+                  Nota de corretagem
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Transaction Confirmation — importa compras e vendas
+                </span>
+              </button>
+              <button
+                onClick={() => setInterMode('extrato')}
+                className="flex flex-col items-start gap-1 rounded-lg border border-border p-4 text-left hover:border-primary/60 hover:bg-muted/40 transition-colors"
+              >
+                <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                  <FileText size={16} />
+                  Extrato de movimentações
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Importa dividendos recebidos em USD
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* file drop zone */}
+        {showFileZone && (
           <div className="space-y-3">
-            <div className="rounded-md bg-muted/50 px-4 py-3">{broker.instructions}</div>
+            {!isExtratoMode && broker && (
+              <div className="rounded-md bg-muted/50 px-4 py-3">{broker.instructions}</div>
+            )}
+            {isExtratoMode && (
+              <div className="rounded-md bg-muted/50 px-4 py-3">
+                <p className="text-sm text-muted-foreground">
+                  No app da Inter, acesse{' '}
+                  <span className="font-medium text-foreground">
+                    Invest → Global → Extrato → Exportar
+                  </span>{' '}
+                  e baixe o PDF do período desejado.
+                </p>
+              </div>
+            )}
             <label
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -238,15 +339,19 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                 Arraste o arquivo aqui ou{' '}
                 <span className="text-primary font-medium">clique para selecionar</span>
               </p>
-              <p className="text-xs text-muted-foreground">{broker.fileHint}</p>
+              <p className="text-xs text-muted-foreground">
+                {isExtratoMode
+                  ? 'PDF — Extrato de Movimentações da Inter Co Securities'
+                  : broker?.fileHint}
+              </p>
               <input
                 ref={inputRef}
                 type="file"
-                accept={broker.fileAccept}
+                accept=".pdf"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) handleFile(file, broker)
+                  if (file) handleFile(file)
                 }}
               />
             </label>
@@ -268,6 +373,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
           </div>
         )}
 
+        {/* trades preview */}
         {rows && (
           <>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -283,7 +389,6 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                 Trocar arquivo
               </button>
             </div>
-
             <div className="overflow-y-auto flex-1 rounded-md border border-border">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
@@ -330,10 +435,76 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                 </tbody>
               </table>
             </div>
-
             <p className="text-xs text-muted-foreground">
               PM calculado pela média ponderada das compras.
             </p>
+          </>
+        )}
+
+        {/* extrato / dividends preview */}
+        {extratoResult && (
+          <>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{mappedEntries.length} provento(s) encontrado(s)</span>
+              {unmappedFunds.length > 0 && (
+                <span className="text-warning font-medium">
+                  {unmappedFunds.length} fundo(s) sem ticker mapeado
+                </span>
+              )}
+              <span className="ml-auto text-muted-foreground">
+                Cotação: R$ {extratoResult.usdRate.toFixed(2)}/USD
+              </span>
+              <button onClick={resetFile} className="underline hover:text-foreground">
+                Trocar arquivo
+              </button>
+            </div>
+
+            {unmappedFunds.length > 0 && (
+              <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-warning">
+                Não importados (ticker desconhecido):{' '}
+                {unmappedFunds.map((e) => e.fundName).join(', ')}
+              </div>
+            )}
+
+            <div className="overflow-y-auto flex-1 rounded-md border border-border">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">Data</th>
+                    <th className="px-3 py-2 font-medium">Ticker</th>
+                    <th className="px-3 py-2 font-medium hidden sm:table-cell">Fundo</th>
+                    <th className="px-3 py-2 font-medium text-right">USD</th>
+                    <th className="px-3 py-2 font-medium text-right">IR (USD)</th>
+                    <th className="px-3 py-2 font-medium text-right">BRL est.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mappedEntries.map((e) => (
+                    <tr
+                      key={`${e.date}-${e.ticker ?? e.fundName}`}
+                      className="border-t border-border hover:bg-accent/20 transition-colors"
+                    >
+                      <td className="px-3 py-2 text-muted-foreground tabular-nums">
+                        {e.date.slice(8, 10)}/{e.date.slice(5, 7)}/{e.date.slice(0, 4)}
+                      </td>
+                      <td className="px-3 py-2 font-semibold text-foreground">{e.ticker}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs hidden sm:table-cell max-w-40 truncate">
+                        {e.fundName}
+                      </td>
+                      <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                        ${e.amountUsd.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">
+                        {e.irUsd > 0 ? `-$${e.irUsd.toFixed(2)}` : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right text-success font-medium tabular-nums">
+                        {formatCurrency(e.amountUsd * extratoResult.usdRate)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
@@ -344,7 +515,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
           >
             Cancelar
           </button>
-          {rows && (
+          {canConfirm && (
             <button
               onClick={handleConfirm}
               disabled={importing}

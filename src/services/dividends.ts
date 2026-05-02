@@ -1,9 +1,10 @@
-import { collection, doc, onSnapshot, orderBy, query, setDoc, where } from 'firebase/firestore'
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, setDoc, where } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Dividend } from '@/types'
 
-// Deterministic ID ensures reimporting the same file never creates duplicates
-const dividendId = (d: Omit<Dividend, 'id'>) => `${d.ticker}-${d.paymentDate}-${d.type}`
+// dividendo_ext maps to the same slot as dividendo so re-importing ext overwrites existing record
+const dividendId = (d: Omit<Dividend, 'id'>) =>
+  `${d.ticker}-${d.paymentDate}-${d.type === 'dividendo_ext' ? 'dividendo' : d.type}`
 
 export const addDividends = (userId: string, dividends: Omit<Dividend, 'id'>[]) =>
   Promise.all(
@@ -28,6 +29,9 @@ export const subscribeToMonthlyDividends = (
   )
   return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Dividend)))
 }
+
+export const deleteDividend = (userId: string, dividendId: string) =>
+  deleteDoc(doc(db, 'users', userId, 'dividends', dividendId))
 
 export const subscribeToAllDividends = (userId: string, cb: (dividends: Dividend[]) => void) =>
   onSnapshot(

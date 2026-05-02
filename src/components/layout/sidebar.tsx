@@ -23,6 +23,10 @@ const navItems = [
   { to: '/calculators', label: 'Calculadoras', icon: <Calculator size={20} /> },
 ]
 
+// Collapsed sidebar width is w-15 = 60px. Icon slot matches this so the
+// icon never shifts position when expanding/collapsing.
+const ICON_SLOT = 'w-15 shrink-0 flex items-center justify-center'
+
 export const Sidebar = () => {
   const [expanded, setExpanded] = useState(false)
 
@@ -33,19 +37,24 @@ export const Sidebar = () => {
         expanded ? 'w-56' : 'w-15',
       )}
     >
-      {/* Header — fixed height matches main header */}
-      <div className="h-16.25 flex items-center justify-center border-b border-border px-3 shrink-0">
-        <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
-          <TrendingUp size={15} className="text-primary-foreground" />
-        </div>
-        {expanded && (
-          <span className="font-semibold text-foreground text-sm tracking-wide flex-1 ml-2">
-            My Wallet
+      {/* Header */}
+      <div className="h-16.25 flex items-center border-b border-border shrink-0">
+        <span className={ICON_SLOT}>
+          <span className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+            <TrendingUp size={15} className="text-primary-foreground" />
           </span>
-        )}
+        </span>
+        <span
+          className={cn(
+            'font-semibold text-foreground text-sm tracking-wide overflow-hidden whitespace-nowrap transition-all duration-200',
+            expanded ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0',
+          )}
+        >
+          My Wallet
+        </span>
       </div>
 
-      <nav className="flex-1 px-2 py-4 space-y-1">
+      <nav className="flex-1 py-4 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -54,24 +63,33 @@ export const Sidebar = () => {
             title={expanded ? undefined : item.label}
             className={({ isActive }) =>
               cn(
-                'w-full flex flex-nowrap items-center rounded-md text-sm transition-colors py-2.5 ',
-                expanded ? 'gap-3 px-3' : 'justify-center px-2',
+                'w-full flex items-center rounded-md text-sm transition-colors py-2',
                 isActive
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )
             }
           >
-            {item.icon}
-            {expanded && item.label}
+            <span className={ICON_SLOT}>{item.icon}</span>
+            <span
+              className={cn(
+                'overflow-hidden whitespace-nowrap transition-all duration-200 pr-3',
+                expanded ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0',
+              )}
+            >
+              {item.label}
+            </span>
           </NavLink>
         ))}
       </nav>
 
-      <div className={cn('p-3 border-t border-border', expanded ? '' : 'flex justify-center')}>
+      <div className="border-t border-border">
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          className={cn(
+            ICON_SLOT,
+            'py-4 text-muted-foreground hover:text-foreground transition-colors',
+          )}
           aria-label={expanded ? 'Recolher menu' : 'Expandir menu'}
         >
           {expanded ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}

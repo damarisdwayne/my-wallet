@@ -1,5 +1,8 @@
 import type { AssetType } from '@/types'
 import { fetchTesouroPriceMap } from '@/services/tesouro'
+import type { TickerSets } from '@/lib/ir-calc'
+
+export type { TickerSets } from '@/lib/ir-calc'
 
 const CRYPTO_IDS: Record<string, string> = {
   BTC: 'bitcoin',
@@ -160,6 +163,69 @@ async function fetchTesouroPrices(tickers: string[]): Promise<Record<string, num
   } catch {
     return {}
   }
+}
+
+/* ── ticker sets (for type inference) ── */
+
+const TICKER_SETS_KEY = 'mw_ticker_sets_v1'
+const TICKER_SETS_TTL_MS = 24 * 60 * 60 * 1000
+
+const fetchTickerPage = async (type: 'fund' | 'stock' | 'bdr', page: number): Promise<string[]> => {
+  try {
+    const res = await fetch(`https://brapi.dev/api/quote/list?type=${type}&limit=500&page=${page}`)
+    if (!res.ok) return []
+    const data = (await res.json()) as { stocks: { stock: string }[] }
+    return data.stocks?.map((s) => s.stock.toUpperCase()) ?? []
+  } catch {
+    return []
+  }
+}
+
+const fetchAllOfType = async (type: 'fund' | 'stock' | 'bdr'): Promise<string[]> => {
+  try {
+    const res = await fetch(`https://brapi.dev/api/quote/list?type=${type}&limit=500&page=1`)
+    if (!res.ok) return []
+    const data = (await res.json()) as { stocks: { stock: string }[]; totalPages: number }
+    const first = data.stocks?.map((s) => s.stock.toUpperCase()) ?? []
+    const remaining = Array.from({ length: data.totalPages - 1 }, (_, i) =>
+      fetchTickerPage(type, i + 2),
+    )
+    const rest = await Promise.all(remaining)
+    return [...first, ...rest.flat()]
+  } catch {
+    return []
+  }
+}
+
+export const fetchTickerSets = async (): Promise<TickerSets> => {
+  try {
+    const raw = localStorage.getItem(TICKER_SETS_KEY)
+    if (raw) {
+      const { fii, stock, bdr, updatedAt } = JSON.parse(raw) as {
+        fii: string[]
+        stock: string[]
+        bdr: string[]
+        updatedAt: number
+      }
+      if (Date.now() - updatedAt < TICKER_SETS_TTL_MS)
+        return { fii: new Set(fii), stock: new Set(stock), bdr: new Set(bdr) }
+    }
+  } catch {}
+
+  const [fiiList, stockList, bdrList] = await Promise.all([
+    fetchAllOfType('fund'),
+    fetchAllOfType('stock'),
+    fetchAllOfType('bdr'),
+  ])
+
+  try {
+    localStorage.setItem(
+      TICKER_SETS_KEY,
+      JSON.stringify({ fii: fiiList, stock: stockList, bdr: bdrList, updatedAt: Date.now() }),
+    )
+  } catch {}
+
+  return { fii: new Set(fiiList), stock: new Set(stockList), bdr: new Set(bdrList) }
 }
 
 export async function fetchLivePrices(

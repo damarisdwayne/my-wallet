@@ -3,7 +3,8 @@ import { AlertCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToTrades } from '@/services/trades'
-import { fetchUsdBrlRate } from '@/services/quotes'
+import { fetchTickerSets, fetchUsdBrlRate } from '@/services/quotes'
+import type { TickerSets } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'
 import {
@@ -170,18 +171,20 @@ const BenesSection = ({
   year,
   trades,
   assets,
+  sets,
 }: {
   year: number
   trades: Trade[]
   assets: Asset[]
+  sets?: TickerSets
 }) => {
   const [filterType, setFilterType] = useState<string | null>(null)
 
   const currentDate = `${year}-12-31`
   const priorDate = `${year - 1}-12-31`
 
-  const current = buildPositions(trades, currentDate, assets)
-  const prior = buildPositions(trades, priorDate, assets)
+  const current = buildPositions(trades, currentDate, assets, sets)
+  const prior = buildPositions(trades, priorDate, assets, sets)
 
   const priorMap = Object.fromEntries(prior.map((p) => [p.ticker, p.totalCost]))
 
@@ -508,20 +511,33 @@ const RendimentosExteriorSection = ({
   )
 }
 
-/* ─── Renda Variável ── */
+/* ─── Renda Variável + DARF ── */
+
+const darfDeadline = (month: string) => {
+  const [y, m] = month.split('-').map(Number)
+  const next = new Date(y, m, 0)
+  next.setMonth(next.getMonth() + 1)
+  while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() - 1)
+  return next.toLocaleDateString('pt-BR')
+}
 
 const RendaVariavelSection = ({
   year,
   trades,
   assets,
+  sets,
 }: {
   year: number
   trades: Trade[]
   assets: Asset[]
+  sets?: TickerSets
 }) => {
   const [showDetails, setShowDetails] = useState(false)
   const [filterType, setFilterType] = useState<string | null>(null)
-  const gains = useMemo(() => calcRealizedGains(trades, year, assets), [trades, year, assets])
+  const gains = useMemo(
+    () => calcRealizedGains(trades, year, assets, sets),
+    [trades, year, assets, sets],
+  )
   const monthly = useMemo(() => calcMonthlyRV(gains, year), [gains, year])
   const availableGainTypes = useMemo(
     () => [...new Set(gains.map((g) => g.assetType))].sort(),
@@ -532,200 +548,376 @@ const RendaVariavelSection = ({
     [gains, filterType],
   )
 
-  const totalIr = monthly.reduce((s, m) => s + m.irDue, 0)
+  const totalDarf = monthly.reduce((s, m) => s + m.irDue, 0)
   const totalGain = monthly.reduce((s, m) => s + m.gain, 0)
   const activeMonths = monthly.filter((m) => m.sales > 0)
 
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const isCurrentYear = year === new Date().getFullYear()
+  const currentData = monthly.find((m) => m.month === currentMonth)
+  const pendingDarf = isCurrentYear
+    ? monthly.filter((m) => m.month <= currentMonth && m.irDue > 0).reduce((s, m) => s + m.irDue, 0)
+    : 0
+
   return (
-    <Section
-      title="Renda Variável — Mercado à Vista"
-      subtitle="Ganhos e perdas em operações de compra e venda de ações, FIIs e ETFs"
-      badge={
-        <div className="flex gap-2">
-          <AmountBadge
-            label="Ganho líquido"
-            value={totalGain}
-            variant={totalGain >= 0 ? 'success' : 'destructive'}
-          />
-          <AmountBadge
-            label="IR devido (DARF)"
-            value={totalIr}
-            variant={totalIr > 0 ? 'destructive' : 'default'}
-          />
+    <div className="space-y-4">
+      {/* summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Ganho líquido</p>
+          <p
+            className={`text-xl font-bold mt-1 ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}
+          >
+            {formatCurrency(totalGain)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {activeMonths.length} mês(es) com operações
+          </p>
         </div>
-      }
-    >
-      {/* monthly summary table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/30">
-              <Th>Mês</Th>
-              <Th right>Vendas</Th>
-              <Th right>Resultado</Th>
-              <Th right>Prejuízo acumulado</Th>
-              <Th right>Base de cálculo</Th>
-              <Th right>DARF (15%)</Th>
-              <Th>Status</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {monthly.map((m) => {
-              const hasOps = m.sales > 0
-              return (
-                <tr
-                  key={m.month}
-                  className={`border-t border-border/50 ${hasOps ? 'hover:bg-muted/20' : 'opacity-40'}`}
-                >
-                  <Td className="font-medium">{monthLabel(m.month)}</Td>
-                  <Td right>{hasOps ? formatCurrency(m.sales) : '—'}</Td>
-                  <Td right>
-                    {hasOps ? (
-                      <span className={m.gain >= 0 ? 'text-success' : 'text-destructive'}>
-                        {formatCurrency(m.gain)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </Td>
-                  <Td right className="text-muted-foreground">
-                    {m.lossCarryoverIn > 0 ? formatCurrency(-m.lossCarryoverIn) : '—'}
-                  </Td>
-                  <Td right>
-                    {hasOps && !m.isExempt && m.netTaxable > 0
-                      ? formatCurrency(m.netTaxable)
-                      : hasOps
-                        ? '—'
-                        : '—'}
-                  </Td>
-                  <Td right>
-                    {m.irDue > 0 ? (
-                      <span className="text-destructive font-semibold">
-                        {formatCurrency(m.irDue)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </Td>
-                  <Td>
-                    {!hasOps ? null : m.isExempt ? (
-                      <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
-                        Isento &lt; 20k
-                      </span>
-                    ) : m.gain < 0 ? (
-                      <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                        Prejuízo
-                      </span>
-                    ) : m.irDue > 0 ? (
-                      <span className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full">
-                        DARF
-                      </span>
-                    ) : (
-                      <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                        Zerado
-                      </span>
-                    )}
-                  </Td>
-                </tr>
-              )
-            })}
-            {totalIr > 0 && (
-              <tr className="border-t-2 border-border bg-muted/30">
-                <Td className="font-semibold" colSpan={5}>
-                  Total IR a recolher no ano
-                </Td>
-                <Td right className="font-semibold text-destructive">
-                  {formatCurrency(totalIr)}
-                </Td>
-                <Td>{null}</Td>
-              </tr>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Total DARF no ano</p>
+          <p
+            className={`text-xl font-bold mt-1 ${totalDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
+          >
+            {formatCurrency(totalDarf)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">Cód. 6015</p>
+        </div>
+        {isCurrentYear && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground">DARF pendente</p>
+            <p
+              className={`text-xl font-bold mt-1 ${pendingDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
+            >
+              {formatCurrency(pendingDarf)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {pendingDarf > 0 ? 'Verifique os meses abaixo' : 'Nada em aberto'}
+            </p>
+          </div>
+        )}
+        {isCurrentYear && currentData && currentData.sales > 0 && (
+          <div
+            className={`rounded-lg border p-4 ${
+              currentData.irDue > 0
+                ? 'border-yellow-500/40 bg-yellow-500/5'
+                : 'border-border bg-card'
+            }`}
+          >
+            <p className="text-xs text-muted-foreground">Mês atual — {monthLabel(currentMonth)}</p>
+            <p
+              className={`text-xl font-bold mt-1 ${
+                currentData.irDue > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-success'
+              }`}
+            >
+              {currentData.irDue > 0 ? formatCurrency(currentData.irDue) : 'Isento'}
+            </p>
+            {currentData.irDue > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Vence {darfDeadline(currentMonth)}
+              </p>
             )}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
-      {/* operations detail toggle */}
-      {activeMonths.length > 0 && (
-        <div className="mt-4">
-          <button
-            onClick={() => setShowDetails((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showDetails ? 'Ocultar' : 'Ver'} detalhamento por operação ({gains.length} vendas)
-          </button>
-
-          {showDetails && (
-            <div className="mt-3">
-              {availableGainTypes.length > 1 && (
-                <TypeFilterChips
-                  types={availableGainTypes}
-                  active={filterType}
-                  onChange={setFilterType}
-                />
+      {/* monthly table */}
+      <Section
+        title="Detalhamento mensal"
+        subtitle="Ações (15%, isento ≤ R$20k) · FII (20%, sem isenção)"
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/30">
+                <Th>Mês</Th>
+                <Th right>Vendas ações</Th>
+                <Th right>Vendas FII</Th>
+                <Th right>Resultado</Th>
+                <Th right>Prej. acumulado</Th>
+                <Th right>DARF ações</Th>
+                <Th right>DARF FII</Th>
+                <Th right>Total DARF</Th>
+                <Th>Status</Th>
+                <Th>Vencimento</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthly.map((m) => {
+                const hasOps = m.sales > 0
+                return (
+                  <tr
+                    key={m.month}
+                    className={`border-t border-border/50 ${hasOps ? 'hover:bg-muted/20' : 'opacity-40'}`}
+                  >
+                    <Td className="font-medium">{monthLabel(m.month)}</Td>
+                    <Td right>{m.stockSales > 0 ? formatCurrency(m.stockSales) : '—'}</Td>
+                    <Td right>{m.fiiSales > 0 ? formatCurrency(m.fiiSales) : '—'}</Td>
+                    <Td right>
+                      {hasOps ? (
+                        <span className={m.gain >= 0 ? 'text-success' : 'text-destructive'}>
+                          {formatCurrency(m.gain)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </Td>
+                    <Td right className="text-muted-foreground">
+                      {m.lossCarryoverIn > 0 ? formatCurrency(-m.lossCarryoverIn) : '—'}
+                    </Td>
+                    <Td right>
+                      {m.irDueStock > 0 ? (
+                        <span className="text-destructive font-medium">
+                          {formatCurrency(m.irDueStock)}
+                        </span>
+                      ) : m.stockSales > 0 && m.stockIsExempt ? (
+                        <span className="text-success text-xs">Isento</span>
+                      ) : (
+                        '—'
+                      )}
+                    </Td>
+                    <Td right>
+                      {m.irDueFii > 0 ? (
+                        <span className="text-destructive font-medium">
+                          {formatCurrency(m.irDueFii)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </Td>
+                    <Td right>
+                      {m.irDue > 0 ? (
+                        <span className="text-destructive font-bold">
+                          {formatCurrency(m.irDue)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </Td>
+                    <Td>
+                      {!hasOps ? null : m.irDue > 0 ? (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
+                          DARF
+                        </span>
+                      ) : m.stockIsExempt && m.fiiSales === 0 ? (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
+                          Isento
+                        </span>
+                      ) : m.gain < 0 ? (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                          Prejuízo
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          Zerado
+                        </span>
+                      )}
+                    </Td>
+                    <Td>
+                      {m.irDue > 0 ? (
+                        <span className="text-xs text-muted-foreground">
+                          {darfDeadline(m.month)}
+                        </span>
+                      ) : null}
+                    </Td>
+                  </tr>
+                )
+              })}
+              {totalDarf > 0 && (
+                <tr className="border-t-2 border-border bg-muted/30">
+                  <Td className="font-semibold" colSpan={7}>
+                    Total DARF no ano
+                  </Td>
+                  <Td right className="font-semibold text-destructive">
+                    {formatCurrency(totalDarf)}
+                  </Td>
+                  <Td colSpan={2} />
+                </tr>
               )}
-              <div className="overflow-x-auto border border-border rounded-md">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/30">
-                      <Th>Data</Th>
-                      <Th>Ticker</Th>
-                      <Th>Tipo</Th>
-                      <Th right>Qtd.</Th>
-                      <Th right>PM Custo</Th>
-                      <Th right>Preço Venda</Th>
-                      <Th right>Custo Total</Th>
-                      <Th right>Receita</Th>
-                      <Th right>Resultado</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredGains.map((g, i) => (
-                      <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
-                        <Td className="text-muted-foreground">{g.date}</Td>
-                        <Td className="font-semibold text-foreground">{g.ticker}</Td>
-                        <Td>
-                          <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                            {assetTypeLabel[g.assetType] ?? g.assetType}
-                          </span>
-                        </Td>
-                        <Td right>{g.quantity}</Td>
-                        <Td right className="text-muted-foreground">
-                          {formatCurrency(g.avgCost)}
-                        </Td>
-                        <Td right>{formatCurrency(g.sellPrice)}</Td>
-                        <Td right className="text-muted-foreground">
-                          {formatCurrency(g.costTotal)}
-                        </Td>
-                        <Td right>{formatCurrency(g.sellTotal)}</Td>
-                        <Td right>
-                          <span
-                            className={
-                              g.gain >= 0
-                                ? 'text-success font-medium'
-                                : 'text-destructive font-medium'
-                            }
-                          >
-                            {formatCurrency(g.gain)}
-                          </span>
-                        </Td>
+            </tbody>
+          </table>
+        </div>
+
+        {/* operations detail toggle */}
+        {activeMonths.length > 0 && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowDetails((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showDetails ? 'Ocultar' : 'Ver'} detalhamento por operação ({gains.length} vendas)
+            </button>
+            {showDetails && (
+              <div className="mt-3">
+                {availableGainTypes.length > 1 && (
+                  <TypeFilterChips
+                    types={availableGainTypes}
+                    active={filterType}
+                    onChange={setFilterType}
+                  />
+                )}
+                <div className="overflow-x-auto border border-border rounded-md">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/30">
+                        <Th>Data</Th>
+                        <Th>Ticker</Th>
+                        <Th>Tipo</Th>
+                        <Th right>Qtd.</Th>
+                        <Th right>PM Custo</Th>
+                        <Th right>Preço Venda</Th>
+                        <Th right>Custo Total</Th>
+                        <Th right>Receita</Th>
+                        <Th right>Resultado</Th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredGains.map((g, i) => (
+                        <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
+                          <Td className="text-muted-foreground">{g.date}</Td>
+                          <Td className="font-semibold text-foreground">{g.ticker}</Td>
+                          <Td>
+                            <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {assetTypeLabel[g.assetType] ?? g.assetType}
+                            </span>
+                          </Td>
+                          <Td right>{g.quantity}</Td>
+                          <Td right className="text-muted-foreground">
+                            {formatCurrency(g.avgCost)}
+                          </Td>
+                          <Td right>{formatCurrency(g.sellPrice)}</Td>
+                          <Td right className="text-muted-foreground">
+                            {formatCurrency(g.costTotal)}
+                          </Td>
+                          <Td right>{formatCurrency(g.sellTotal)}</Td>
+                          <Td right>
+                            <span
+                              className={
+                                g.gain >= 0
+                                  ? 'text-success font-medium'
+                                  : 'text-destructive font-medium'
+                              }
+                            >
+                              {formatCurrency(g.gain)}
+                            </span>
+                          </Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <p className="mt-4 text-xs text-muted-foreground flex items-start gap-1.5">
+          <AlertCircle size={13} className="mt-0.5 shrink-0" />
+          Cálculo pelo preço médio ponderado (PME). Day-trade e FII não possuem isenção. Prejuízo de
+          anos anteriores não é considerado automaticamente.
+        </p>
+      </Section>
+
+      {/* how to pay */}
+      <Section title="Como pagar o DARF">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            {(
+              [
+                {
+                  n: '1',
+                  title: 'Acesse o Sicalc Web',
+                  body: (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Site da Receita Federal para emissão de DARF.{' '}
+                      <a
+                        href="https://sicalc.receita.fazenda.gov.br/sicalc/rapido/contribuinte"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline underline-offset-2 hover:opacity-80"
+                      >
+                        Abrir Sicalc
+                      </a>
+                    </p>
+                  ),
+                },
+                {
+                  n: '2',
+                  title: 'Informe o código',
+                  body: (
+                    <div className="flex gap-2 mt-1">
+                      <span className="text-xs bg-muted px-2 py-1 rounded font-mono font-bold">
+                        6015
+                      </span>
+                      <span className="text-xs text-muted-foreground self-center">
+                        Ganhos líquidos em bolsa (ações, FII, ETF)
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  n: '3',
+                  title: 'Período de apuração',
+                  body: (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Mês em que ocorreu a venda (ex: 01/04/2026 para vendas de abril).
+                    </p>
+                  ),
+                },
+                {
+                  n: '4',
+                  title: 'Vencimento',
+                  body: (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Último dia útil do mês seguinte à venda. Atraso gera juros Selic + multa de
+                      0,33%/dia.
+                    </p>
+                  ),
+                },
+              ] as const
+            ).map(({ n, title, body }) => (
+              <div key={n} className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                  {n}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{title}</p>
+                  {body}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            <div className="rounded-md bg-muted/50 p-4 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Regras resumidas</p>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p>
+                  <span className="font-medium text-foreground">Ações BR: </span>
+                  15% sobre o lucro. Isento se vendas totais ≤ R$20.000 no mês.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">FII: </span>
+                  20% sobre o lucro. Sem isenção, independente do valor vendido.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">ETF BR: </span>
+                  15% sobre o lucro. Sem isenção de R$20k.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Prejuízo: </span>
+                  Pode ser compensado nos meses seguintes do mesmo ano.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Day trade: </span>
+                  20% e sem isenção — não calculado aqui.
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
-      )}
-
-      <p className="mt-4 text-xs text-muted-foreground flex items-start gap-1.5">
-        <AlertCircle size={13} className="mt-0.5 shrink-0" />
-        Cálculo pelo preço médio ponderado (PME). Isenção de IR para vendas de ações ≤ R$20.000/mês
-        (mercado à vista, swing trade). Day-trade e FII não possuem isenção. Prejuízo de anos
-        anteriores não é considerado automaticamente.
-      </p>
-    </Section>
+      </Section>
+    </div>
   )
 }
 
@@ -856,21 +1048,23 @@ const GuiaSection = () => (
           tag={<Tag color="destructive">DARF</Tag>}
         />
         <Row
-          label="Ações diretas EUA — ganho de capital"
-          value="15% a 22,5%"
-          tag={<Tag color="destructive">DARF</Tag>}
+          label="Ações/ETFs EUA — ganho de capital"
+          value="15% flat — declaração anual"
+          tag={<Tag color="destructive">Anual</Tag>}
         />
         <Row
           label="Dividendos do exterior"
-          value="Tabela progressiva (até 27,5%)"
-          tag={<Tag color="warning">Carnê-leão</Tag>}
+          value="15% flat — declaração anual"
+          tag={<Tag color="destructive">Anual</Tag>}
         />
         <p className="text-xs pt-1">
-          Dividendos recebidos do exterior{' '}
-          <span className="font-medium text-foreground">não são retidos na fonte</span> no Brasil.
-          Devem ser lançados no <span className="font-medium text-foreground">Carnê-leão</span>{' '}
-          mensalmente. O IR já retido no exterior (withholding tax) pode ser compensado na
-          declaração anual.
+          Desde a <span className="font-medium text-foreground">Lei 14.754/2023</span> (em vigor
+          desde 01/01/2024), dividendos e ganhos do exterior são tributados à alíquota{' '}
+          <span className="font-medium text-foreground">flat de 15%</span>, declarados{' '}
+          <span className="font-medium text-foreground">uma vez por ano</span> na DAA — sem mais
+          carnê-leão mensal. O IR retido no exterior (ex: 30% de withholding tax dos EUA) pode ser
+          compensado, e como 30% &gt; 15%, na prática quem investe em ações/ETFs americanos{' '}
+          <span className="font-medium text-foreground">não deve IR adicional ao Brasil</span>.
         </p>
       </InfoCard>
 
@@ -898,68 +1092,91 @@ const GuiaSection = () => (
           .
         </p>
       </InfoCard>
-    </div>
 
-    {/* Carnê-leão */}
-    <InfoCard title="Carnê-leão — o que é e quando usar">
-      <p>
-        Sistema da Receita Federal para recolher IR sobre rendimentos que{' '}
-        <span className="font-medium text-foreground">não têm retenção automática na fonte</span>. O
-        nome vem da ideia de que o Leão vai "comer" direto de você, sem intermediário.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 pt-1">
+      {/* Dividendos BR — Lei 15.270/2025 */}
+      <InfoCard title="Dividendos de Empresas BR — novidade 2026">
+        <p>
+          A <span className="font-medium text-foreground">Lei 15.270/2025</span> (vigente desde
+          01/01/2026) reintroduziu a tributação de dividendos pagos por empresas brasileiras.
+        </p>
         <Row
-          label="Dividendos do exterior"
-          value="Obrigatório"
-          tag={<Tag color="warning">Mensal</Tag>}
+          label="Dividendos ≤ R$50.000/mês"
+          value="Isento"
+          tag={<Tag color="success">Isento</Tag>}
         />
         <Row
-          label="Aluguéis recebidos"
-          value="Obrigatório"
-          tag={<Tag color="warning">Mensal</Tag>}
+          label="Dividendos > R$50.000/mês"
+          value="10% IRRF sobre o excedente"
+          tag={<Tag color="destructive">Fonte</Tag>}
         />
-        <Row
-          label="Freelancer (PF para PF)"
-          value="Obrigatório"
-          tag={<Tag color="warning">Mensal</Tag>}
-        />
-        <Row
-          label="Pensão alimentícia"
-          value="Obrigatório"
-          tag={<Tag color="warning">Mensal</Tag>}
-          className="sm:border-b! sm:border-border/50"
-        />
-      </div>
-      <div className="bg-muted/50 rounded-md p-3 mt-2 space-y-1">
-        <p className="text-xs font-medium text-foreground">Tabela progressiva 2024</p>
-        <div className="grid grid-cols-2 gap-x-6 text-xs">
-          <span>Até R$2.259/mês</span>
-          <span className="text-success font-medium">Isento</span>
-          <span>R$2.259 – R$2.826</span>
-          <span className="font-medium">7,5%</span>
-          <span>R$2.826 – R$3.751</span>
-          <span className="font-medium">15%</span>
-          <span>R$3.751 – R$4.664</span>
-          <span className="font-medium">22,5%</span>
-          <span>Acima de R$4.664</span>
-          <span className="font-medium">27,5%</span>
+        <p className="text-xs pt-1">
+          Para a maioria dos investidores pessoa física com carteira de ações e FIIs, o limite de
+          R$50k/mês é muito acima do recebido — na prática os dividendos continuam{' '}
+          <span className="font-medium text-foreground">isentos</span>. Lucros apurados até
+          31/12/2025 e formalizados até essa data seguem a regra antiga (isenção total) mesmo que
+          pagos após 2026.
+        </p>
+      </InfoCard>
+
+      {/* Carnê-leão */}
+      <InfoCard title="Carnê-leão — o que é e quando usar">
+        <p>
+          Sistema da Receita Federal para recolher IR sobre rendimentos que{' '}
+          <span className="font-medium text-foreground">não têm retenção automática na fonte</span>.
+          O nome vem da ideia de que o Leão vai "comer" direto de você, sem intermediário.{' '}
+          <span className="font-medium text-foreground">
+            Desde 2024, dividendos do exterior não usam mais o carnê-leão
+          </span>{' '}
+          — passaram para declaração anual pela Lei 14.754/2023.
+        </p>
+        <div className="pt-1">
+          <Row
+            label="Aluguéis recebidos"
+            value="Obrigatório"
+            tag={<Tag color="warning">Mensal</Tag>}
+          />
+          <Row
+            label="Freelancer (PF para PF)"
+            value="Obrigatório"
+            tag={<Tag color="warning">Mensal</Tag>}
+          />
+          <Row
+            label="Pensão alimentícia"
+            value="Obrigatório"
+            tag={<Tag color="warning">Mensal</Tag>}
+          />
         </div>
-      </div>
-      <p className="text-xs">
-        Acesse o{' '}
-        <a
-          href="https://www3.cav.receita.fazenda.gov.br/carneleao/demonstrativo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
-        >
-          Carnê-leão Web
-        </a>{' '}
-        no site da Receita, lance os rendimentos do mês, gere e pague o DARF até o último dia útil
-        do mês seguinte. No fim do ano, os lançamentos são importados automaticamente para a
-        declaração anual.
-      </p>
-    </InfoCard>
+        <div className="bg-muted/50 rounded-md p-3 mt-2 space-y-1">
+          <p className="text-xs font-medium text-foreground">Tabela progressiva 2025</p>
+          <div className="grid grid-cols-2 gap-x-6 text-xs">
+            <span>Até R$2.259/mês</span>
+            <span className="text-success font-medium">Isento</span>
+            <span>R$2.259 – R$2.826</span>
+            <span className="font-medium">7,5%</span>
+            <span>R$2.826 – R$3.751</span>
+            <span className="font-medium">15%</span>
+            <span>R$3.751 – R$4.664</span>
+            <span className="font-medium">22,5%</span>
+            <span>Acima de R$4.664</span>
+            <span className="font-medium">27,5%</span>
+          </div>
+        </div>
+        <p className="text-xs">
+          Acesse o{' '}
+          <a
+            href="https://www3.cav.receita.fazenda.gov.br/carneleao/demonstrativo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            Carnê-leão Web
+          </a>{' '}
+          no site da Receita, lance os rendimentos do mês, gere e pague o DARF até o último dia útil
+          do mês seguinte. No fim do ano, os lançamentos são importados automaticamente para a
+          declaração anual.
+        </p>
+      </InfoCard>
+    </div>
 
     {/* Não declarar */}
     <InfoCard title="O que acontece se não declarar?">
@@ -1007,11 +1224,15 @@ export const TaxPage = () => {
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [activeTab, setActiveTab] = useState<Tab>('bens')
   const [usdRate, setUsdRate] = useState(0)
+  const [tickerSets, setTickerSets] = useState<TickerSets | undefined>()
 
   useEffect(() => {
     fetchUsdBrlRate()
       .then(setUsdRate)
       .catch(() => setUsdRate(0))
+    fetchTickerSets()
+      .then(setTickerSets)
+      .catch(() => undefined)
   }, [])
 
   useEffect(() => {
@@ -1027,35 +1248,29 @@ export const TaxPage = () => {
   const years = useMemo(() => availableYears(trades, dividends), [trades, dividends])
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState<number>(currentYear)
-
-  // pick best default year once data loads
-  useEffect(() => {
-    if (years.length > 0 && !years.includes(selectedYear)) {
-      setSelectedYear(years[0])
-    }
-  }, [years, selectedYear])
+  const effectiveYear = years.includes(selectedYear) ? selectedYear : (years[0] ?? currentYear)
 
   const totalIrJcp = useMemo(
-    () => calcRendimentosTributaveis(dividends, selectedYear).reduce((s, i) => s + i.ir, 0),
-    [dividends, selectedYear],
+    () => calcRendimentosTributaveis(dividends, effectiveYear).reduce((s, i) => s + i.ir, 0),
+    [dividends, effectiveYear],
   )
 
   const totalIsento = useMemo(
-    () => calcRendimentosIsentos(dividends, selectedYear).reduce((s, i) => s + i.amount, 0),
-    [dividends, selectedYear],
+    () => calcRendimentosIsentos(dividends, effectiveYear).reduce((s, i) => s + i.amount, 0),
+    [dividends, effectiveYear],
   )
 
   const totalExterior = useMemo(
     () =>
-      calcRendimentosExterior(dividends, selectedYear, usdRate).reduce((s, i) => s + i.gross, 0),
-    [dividends, selectedYear, usdRate],
+      calcRendimentosExterior(dividends, effectiveYear, usdRate).reduce((s, i) => s + i.gross, 0),
+    [dividends, effectiveYear, usdRate],
   )
 
   const gains = useMemo(
-    () => calcRealizedGains(trades, selectedYear, assets),
-    [trades, selectedYear, assets],
+    () => calcRealizedGains(trades, effectiveYear, assets, tickerSets),
+    [trades, effectiveYear, assets, tickerSets],
   )
-  const monthlyRV = useMemo(() => calcMonthlyRV(gains, selectedYear), [gains, selectedYear])
+  const monthlyRV = useMemo(() => calcMonthlyRV(gains, effectiveYear), [gains, effectiveYear])
   const totalDARF = useMemo(() => monthlyRV.reduce((s, m) => s + m.irDue, 0), [monthlyRV])
 
   return (
@@ -1068,7 +1283,7 @@ export const TaxPage = () => {
             Imposto de Renda
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Informe para DIRPF · Ano-base {selectedYear}
+            Informe para DIRPF · Ano-base {effectiveYear}
           </p>
         </div>
 
@@ -1081,7 +1296,7 @@ export const TaxPage = () => {
                 key={y}
                 onClick={() => setSelectedYear(y)}
                 className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  selectedYear === y
+                  effectiveYear === y
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
@@ -1141,18 +1356,25 @@ export const TaxPage = () => {
       </div>
 
       {/* tab content */}
-      {activeTab === 'bens' && <BenesSection year={selectedYear} trades={trades} assets={assets} />}
+      {activeTab === 'bens' && (
+        <BenesSection year={effectiveYear} trades={trades} assets={assets} sets={tickerSets} />
+      )}
       {activeTab === 'isentos' && (
-        <RendimentosIsentosSection year={selectedYear} dividends={dividends} />
+        <RendimentosIsentosSection year={effectiveYear} dividends={dividends} />
       )}
       {activeTab === 'tributavel' && (
-        <TributacaoExclusivaSection year={selectedYear} dividends={dividends} />
+        <TributacaoExclusivaSection year={effectiveYear} dividends={dividends} />
       )}
       {activeTab === 'exterior' && (
-        <RendimentosExteriorSection year={selectedYear} dividends={dividends} usdRate={usdRate} />
+        <RendimentosExteriorSection year={effectiveYear} dividends={dividends} usdRate={usdRate} />
       )}
       {activeTab === 'rv' && (
-        <RendaVariavelSection year={selectedYear} trades={trades} assets={assets} />
+        <RendaVariavelSection
+          year={effectiveYear}
+          trades={trades}
+          assets={assets}
+          sets={tickerSets}
+        />
       )}
       {activeTab === 'guia' && <GuiaSection />}
 

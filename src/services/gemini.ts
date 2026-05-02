@@ -3,7 +3,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY ?? '')
 
 const FII_PROMPT = `Você é um analista especializado em Fundos de Investimento Imobiliário (FIIs) brasileiros.
-Analise o relatório gerencial a seguir e forneça uma análise estruturada com os seguintes tópicos:
+Analise o relatório gerencial a seguir e forneça uma análise estruturada.
+
+Comece SEMPRE com esta linha (extraia do documento; use MM/AAAA):
+**Data do Relatório:** MM/AAAA
+
+Depois responda os tópicos:
 
 **1. Resumo Executivo**
 3 a 5 pontos principais do período.
@@ -26,12 +31,17 @@ Se for FII de Papel (CRI, CRA, recebíveis), priorize: Qualidade do Crédito, Ti
 Acrescente outros indicadores relevantes que encontrar no relatório, independentemente do tipo.
 
 **5. Avaliação Geral**
-Bullish / Neutro / Bearish — com justificativa em 2 linhas.
+Otimista / Neutro / Pessimista — com justificativa em 2 linhas.
 
 Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
 
 const RI_PROMPT = `Você é um analista fundamentalista especializado em ações brasileiras.
-Analise o relatório de RI (Relações com Investidores) a seguir e forneça uma análise estruturada com os seguintes tópicos:
+Analise o relatório de RI (Relações com Investidores) a seguir e forneça uma análise estruturada.
+
+Comece SEMPRE com esta linha (extraia do documento; use MM/AAAA ou TT/AAAA para trimestre):
+**Data do Relatório:** MM/AAAA
+
+Depois responda os tópicos:
 
 **1. Resumo Executivo**
 3 a 5 pontos principais do período.
@@ -55,7 +65,7 @@ Crescimento: Crescimento de Receita (%), Crescimento de Lucro (%).
 Outros relevantes encontrados no relatório (guidance, receita absoluta, lucro líquido, EBITDA absoluto, etc.).
 
 **5. Avaliação Geral**
-Bullish / Neutro / Bearish — com justificativa em 2 linhas.
+Otimista / Neutro / Pessimista — com justificativa em 2 linhas.
 
 Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
 

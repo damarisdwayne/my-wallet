@@ -328,3 +328,12 @@ export interface SaleItem {
   sellPrice?: number
   soldAt?: string // set when sold; undefined = still in stock
 }
+
+export interface AiAnalysis {
+  id: string
+  ticker: string
+  type: 'fii' | 'stock'
+  text: string
+  reportDate: string | null // MM/AAAA extracted from document
+  analyzedAt: string // ISO
+}

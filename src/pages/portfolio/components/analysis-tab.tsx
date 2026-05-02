@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
+  BookmarkCheck,
   ChevronRight,
   Clock,
   FileText,
@@ -13,6 +14,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { analyzeDocument } from '@/services/gemini'
+import { extractReportDate, saveAiAnalysis, subscribeToAiAnalyses } from '@/services/ai-analyses'
+import { useAuth } from '@/store/auth'
 import { Card } from '@/components/ui/card'
 import {
   Dialog,
@@ -23,7 +26,14 @@ import {
 } from '@/components/ui/dialog'
 import { formatCurrency } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, StockInfo } from '@/types'
+import type {
+  AiAnalysis,
+  Asset,
+  FiiInfo,
+  FundamentalRecord,
+  FundamentalSnapshot,
+  StockInfo,
+} from '@/types'
 
 /* ─── Shared ────────────────────────────────────────────────────── */
 
@@ -1224,6 +1234,7 @@ const FiiInfoDialog = ({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(
         existing
           ? {
@@ -1425,6 +1436,7 @@ const StockInfoDialog = ({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(existing ? fromExisting(existing) : empty)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1664,6 +1676,118 @@ const AiMarkdown = ({ text }: { text: string }) => {
   )
 }
 
+/* ─── AI history section ────────────────────────────────────────── */
+
+const verdictFromText = (text: string): { label: string; className: string } | null => {
+  const lower = text.toLowerCase()
+  if (lower.includes('otimista'))
+    return { label: 'Otimista', className: 'bg-success/10 text-success border-success/20' }
+  if (lower.includes('pessimista'))
+    return {
+      label: 'Pessimista',
+      className: 'bg-destructive/10 text-destructive border-destructive/20',
+    }
+  if (lower.includes('neutro'))
+    return { label: 'Neutro', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' }
+  return null
+}
+
+const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
+  const [modalItem, setModalItem] = useState<AiAnalysis | null>(null)
+  const years = [...new Set(history.map((h) => new Date(h.analyzedAt).getFullYear()))].sort(
+    (a, b) => b - a,
+  )
+  const [selectedYear, setSelectedYear] = useState<number>(years[0])
+  const filtered = history.filter((h) => new Date(h.analyzedAt).getFullYear() === selectedYear)
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Histórico de análises
+        </p>
+        {years.length > 1 && (
+          <div className="flex gap-1">
+            {years.map((y) => (
+              <button
+                key={y}
+                onClick={() => setSelectedYear(y)}
+                className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                  selectedYear === y
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        {filtered.map((item) => {
+          const verdict = verdictFromText(item.text)
+          const savedAt = new Date(item.analyzedAt).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+          })
+          return (
+            <button
+              key={item.id}
+              onClick={() => setModalItem(item)}
+              className="rounded-lg border border-border p-3 text-left hover:border-primary/40 hover:bg-muted/20 transition-colors"
+            >
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
+                Relatório
+              </p>
+              <p className="text-sm font-bold text-foreground">{item.reportDate ?? savedAt}</p>
+              <div className="flex items-center justify-between mt-2">
+                {verdict ? (
+                  <span
+                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${verdict.className}`}
+                  >
+                    {verdict.label}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                  <Clock size={10} />
+                  {savedAt}
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      <Dialog
+        open={!!modalItem}
+        onOpenChange={(v) => {
+          if (!v) setModalItem(null)
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles size={15} className="text-primary/70" />
+              Análise —{' '}
+              {modalItem?.reportDate ??
+                new Date(modalItem?.analyzedAt ?? '').toLocaleDateString('pt-BR', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+            </DialogTitle>
+          </DialogHeader>
+          {modalItem && <AiMarkdown text={modalItem.text} />}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 /* ─── Asset detail view (inline) ───────────────────────────────── */
 
 const AssetDetailView = ({
@@ -1687,13 +1811,30 @@ const AssetDetailView = ({
   onSaveFiiInfo: (data: FiiInfo) => Promise<void>
   onSaveStockInfo: (data: StockInfo) => Promise<void>
 }) => {
+  const { user } = useAuth()
   const [registerOpen, setRegisterOpen] = useState(false)
   const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
   const [stockInfoOpen, setStockInfoOpen] = useState(false)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
+  const [aiSaving, setAiSaving] = useState(false)
+  const [aiHistory, setAiHistory] = useState<AiAnalysis[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!user) return
+    return subscribeToAiAnalyses(user.uid, asset.ticker, setAiHistory)
+  }, [user, asset.ticker])
+
+  const handleSaveAnalysis = async () => {
+    if (!user || !aiAnalysis) return
+    setAiSaving(true)
+    const reportDate = extractReportDate(aiAnalysis)
+    await saveAiAnalysis(user.uid, asset.ticker, isFii ? 'fii' : 'stock', aiAnalysis, reportDate)
+    setAiSaving(false)
+    setAiAnalysis(null)
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -1824,8 +1965,12 @@ const AssetDetailView = ({
             </div>
           )}
         </div>
+
+        {/* AI analysis history */}
+        {aiHistory.length > 0 && <AiHistorySection history={aiHistory} />}
+
         {/* AI analysis */}
-        <div>
+        <div className="space-y-3">
           <input
             ref={fileInputRef}
             type="file"
@@ -1833,7 +1978,7 @@ const AssetDetailView = ({
             className="hidden"
             onChange={handleFileUpload}
           />
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-primary/70" />
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -1875,8 +2020,18 @@ const AssetDetailView = ({
           )}
 
           {aiAnalysis && !aiLoading && (
-            <div className="rounded-lg border border-border p-5">
+            <div className="rounded-lg border border-border p-5 space-y-4">
               <AiMarkdown text={aiAnalysis} />
+              <div className="pt-2 border-t border-border flex justify-end">
+                <button
+                  onClick={handleSaveAnalysis}
+                  disabled={aiSaving}
+                  className="flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-40"
+                >
+                  <BookmarkCheck size={13} />
+                  {aiSaving ? 'Salvando...' : 'Salvar análise'}
+                </button>
+              </div>
             </div>
           )}
 

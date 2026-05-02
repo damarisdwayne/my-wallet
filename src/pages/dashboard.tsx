@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BarChart2, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
 import { MarketIndicators } from '@/components/market-indicators'
@@ -64,6 +65,8 @@ const AllocationBar = ({
   allocation: AllocationSlice[]
   loading: boolean
 }) => {
+  const [hovered, setHovered] = useState<AllocationSlice | null>(null)
+
   if (loading) {
     return (
       <Card>
@@ -94,14 +97,25 @@ const AllocationBar = ({
       </CardHeader>
       <CardContent className="space-y-3">
         {/* stacked bar */}
-        <div className="flex h-3 rounded-full overflow-hidden gap-px">
-          {allocation.map((s) => (
-            <div
-              key={s.type}
-              title={`${s.label}: ${s.pct.toFixed(1)}%`}
-              style={{ width: `${s.pct}%`, backgroundColor: s.color }}
-            />
-          ))}
+        <div className="relative">
+          <div className="flex h-4 rounded-full overflow-hidden gap-px" onMouseLeave={() => setHovered(null)}>
+            {allocation.map((s) => (
+              <div
+                key={s.type}
+                style={{ width: `${s.pct}%`, backgroundColor: s.color }}
+                className="transition-opacity"
+                onMouseEnter={() => setHovered(s)}
+              />
+            ))}
+          </div>
+          {hovered && (
+            <div className="absolute left-1/2 -translate-x-1/2 -top-10 bg-popover border border-border rounded-lg shadow-lg px-3 py-1.5 text-xs pointer-events-none z-10 whitespace-nowrap flex items-center gap-2">
+              <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: hovered.color }} />
+              <span className="font-medium text-foreground">{hovered.label}</span>
+              <span className="text-muted-foreground">{hovered.pct.toFixed(1)}%</span>
+              <span className="font-semibold text-foreground">{formatCurrency(hovered.value)}</span>
+            </div>
+          )}
         </div>
 
         {/* legend */}
@@ -135,6 +149,7 @@ export const DashboardPage = () => {
     monthlySalary,
     monthlyDividends,
     yearDividends,
+    last12Dividends,
     monthlyExpenses,
     patrimonyHistory,
     allocation,
@@ -175,11 +190,11 @@ export const DashboardPage = () => {
         />
         <StatCard
           loading={loading}
-          title={`Proventos (${monthLabelShort})`}
-          value={formatCurrency(monthlyDividends)}
-          sub={monthlyDividends > 0 ? `+${formatCurrency(monthlyDividends)}` : undefined}
+          title="Proventos (12M)"
+          value={formatCurrency(last12Dividends)}
+          sub={monthlyDividends > 0 ? `${monthLabelShort}: +${formatCurrency(monthlyDividends)}` : undefined}
           subPositive
-          note={`Acumulado no ano: ${formatCurrency(yearDividends)}`}
+          note={`No ano: ${formatCurrency(yearDividends)}`}
           icon={<TrendingUp size={16} />}
         />
         <StatCard

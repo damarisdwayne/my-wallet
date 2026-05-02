@@ -103,6 +103,15 @@ export const useDashboard = () => {
     [dividends],
   )
 
+  const last12Dividends = useMemo(() => {
+    const now = new Date()
+    const cutoff = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+    const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}`
+    return dividends
+      .filter((d) => d.paymentDate.slice(0, 7) >= cutoffStr)
+      .reduce((s, d) => s + d.amount, 0)
+  }, [dividends])
+
   /* ── allocation by type ── */
   const allocation = useMemo<AllocationSlice[]>(() => {
     const byType: Partial<Record<AssetType, number>> = {}
@@ -131,6 +140,7 @@ export const useDashboard = () => {
     monthlySalary,
     monthlyDividends,
     yearDividends,
+    last12Dividends,
     monthlyExpenses,
     patrimonyHistory,
     allocation,

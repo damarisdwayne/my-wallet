@@ -3,6 +3,7 @@ import { AlertCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToTrades } from '@/services/trades'
+import { fetchUsdBrlRate } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'
 import {
@@ -429,11 +430,13 @@ const TributacaoExclusivaSection = ({
 const RendimentosExteriorSection = ({
   year,
   dividends,
+  usdRate,
 }: {
   year: number
   dividends: Dividend[]
+  usdRate: number
 }) => {
-  const items = calcRendimentosExterior(dividends, year)
+  const items = calcRendimentosExterior(dividends, year, usdRate)
   const totalGross = items.reduce((s, i) => s + i.gross, 0)
   const totalIr = items.reduce((s, i) => s + i.ir, 0)
 
@@ -742,6 +745,11 @@ export const TaxPage = () => {
   const [trades, setTrades] = useState<Trade[]>([])
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [activeTab, setActiveTab] = useState<Tab>('bens')
+  const [usdRate, setUsdRate] = useState(0)
+
+  useEffect(() => {
+    fetchUsdBrlRate().then(setUsdRate).catch(() => setUsdRate(0))
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -775,8 +783,8 @@ export const TaxPage = () => {
   )
 
   const totalExterior = useMemo(
-    () => calcRendimentosExterior(dividends, selectedYear).reduce((s, i) => s + i.gross, 0),
-    [dividends, selectedYear],
+    () => calcRendimentosExterior(dividends, selectedYear, usdRate).reduce((s, i) => s + i.gross, 0),
+    [dividends, selectedYear, usdRate],
   )
 
   const gains = useMemo(
@@ -877,7 +885,7 @@ export const TaxPage = () => {
         <TributacaoExclusivaSection year={selectedYear} dividends={dividends} />
       )}
       {activeTab === 'exterior' && (
-        <RendimentosExteriorSection year={selectedYear} dividends={dividends} />
+        <RendimentosExteriorSection year={selectedYear} dividends={dividends} usdRate={usdRate} />
       )}
       {activeTab === 'rv' && (
         <RendaVariavelSection year={selectedYear} trades={trades} assets={assets} />

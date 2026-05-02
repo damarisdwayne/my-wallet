@@ -17,6 +17,18 @@ export function formatPercent(value: number, decimals = 2): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`
 }
 
+/** Returns the dividend amount in BRL. USD dividends use amountUsd × current rate. */
+export const getDividendBrl = (
+  d: { amount: number; currency?: 'USD'; amountUsd?: number },
+  usdRate: number,
+) => (d.currency === 'USD' ? (d.amountUsd ?? 0) * usdRate : d.amount)
+
+/** Returns the IR amount in BRL for a dividend. */
+export const getDividendIrBrl = (
+  d: { ir?: number; currency?: 'USD'; irUsd?: number },
+  usdRate: number,
+) => (d.currency === 'USD' ? (d.irUsd ?? 0) * usdRate : (d.ir ?? 0))
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',

@@ -174,13 +174,15 @@ export const parseInterExtrato = async (
   return { entries, usdRate }
 }
 
-export const extratoToDividends = (entries: ExtratoEntry[], usdRate: number): B3Dividend[] =>
+export const extratoToDividends = (entries: ExtratoEntry[]): B3Dividend[] =>
   entries
     .filter((e) => e.ticker !== null)
     .map((e) => ({
       ticker: e.ticker!,
-      amount: Math.round(e.amountUsd * usdRate * 100) / 100,
+      amount: 0,
+      amountUsd: e.amountUsd,
       paymentDate: e.date,
       type: 'dividendo_ext' as const,
-      ...(e.irUsd > 0 ? { ir: Math.round(e.irUsd * usdRate * 100) / 100 } : {}),
+      currency: 'USD' as const,
+      ...(e.irUsd > 0 ? { irUsd: e.irUsd } : {}),
     }))

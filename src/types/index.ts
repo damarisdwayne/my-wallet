@@ -113,10 +113,13 @@ export interface Asset {
 export interface Dividend {
   id: string
   ticker: string
-  amount: number
+  amount: number // BRL for domestic; 0 for USD dividends
   paymentDate: string
   type: 'dividendo' | 'jcp' | 'rendimento' | 'dividendo_ext'
-  ir?: number
+  ir?: number // BRL for domestic; 0 for USD dividends
+  currency?: 'USD' // undefined = BRL
+  amountUsd?: number // source of truth for USD dividends
+  irUsd?: number // withholding tax in USD
 }
 
 export interface MonthlyResult {

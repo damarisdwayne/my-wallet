@@ -195,7 +195,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     setImporting(true)
     try {
       if (broker?.id === 'inter' && interMode === 'extrato' && extratoResult) {
-        const dividends = extratoToDividends(extratoResult.entries, extratoResult.usdRate)
+        const dividends = extratoToDividends(extratoResult.entries)
         await onImport([], [], dividends, filename, 'inter')
       } else if (rows) {
         await onImport(

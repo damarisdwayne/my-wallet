@@ -296,6 +296,7 @@ export interface RendimentoExterior {
 export const calcRendimentosExterior = (
   dividends: Dividend[],
   year: number,
+  usdRate: number,
 ): RendimentoExterior[] => {
   const filtered = dividends.filter(
     (d) => d.paymentDate.startsWith(String(year)) && d.type === 'dividendo_ext',
@@ -304,8 +305,10 @@ export const calcRendimentosExterior = (
   const byTicker: Record<string, { gross: number; ir: number }> = {}
   for (const d of filtered) {
     if (!byTicker[d.ticker]) byTicker[d.ticker] = { gross: 0, ir: 0 }
-    byTicker[d.ticker].gross += d.amount
-    byTicker[d.ticker].ir += d.ir ?? 0
+    const gross = d.currency === 'USD' ? (d.amountUsd ?? 0) * usdRate : d.amount
+    const ir = d.currency === 'USD' ? (d.irUsd ?? 0) * usdRate : (d.ir ?? 0)
+    byTicker[d.ticker].gross += gross
+    byTicker[d.ticker].ir += ir
   }
 
   return Object.entries(byTicker)

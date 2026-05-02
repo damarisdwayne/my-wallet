@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/component
 import { Skeleton } from '@/components/ui/skeleton'
 import { deleteDividend, subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
+import { fetchUsdBrlRate } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getDividendBrl, getDividendIrBrl } from '@/lib/utils'
 import type { Asset, Dividend } from '@/types'
 
 /* ─── constants ─── */
@@ -372,6 +373,11 @@ export const DividendsPage = () => {
   const [assets, setAssets] = useState<Asset[]>([])
   const [selectedYear, setSelectedYear] = useState(THIS_YEAR)
   const [loading, setLoading] = useState(true)
+  const [usdRate, setUsdRate] = useState(0)
+
+  useEffect(() => {
+    fetchUsdBrlRate().then(setUsdRate).catch(() => setUsdRate(0))
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -415,20 +421,21 @@ export const DividendsPage = () => {
     for (const d of last12Dividends) {
       const key = d.paymentDate.slice(0, 7)
       if (!(key in map)) continue
-      map[key].total += d.amount
+      const brl = getDividendBrl(d, usdRate)
+      map[key].total += brl
       if (d.type === 'dividendo_ext') {
-        map[key].ext += d.amount
+        map[key].ext += brl
       } else {
         const type = tickerType.get(d.ticker.toUpperCase())
-        if (type === 'fii' || type === 'etf') map[key].fii += d.amount
-        else if (type === 'fixed_income') map[key].fixed += d.amount
-        else map[key].stock += d.amount
+        if (type === 'fii' || type === 'etf') map[key].fii += brl
+        else if (type === 'fixed_income') map[key].fixed += brl
+        else map[key].stock += brl
       }
     }
     return map
   }, [last12Dividends, last12Months, tickerType])
 
-  const total12 = last12Dividends.reduce((s, d) => s + d.amount, 0)
+  const total12 = last12Dividends.reduce((s, d) => s + getDividendBrl(d, usdRate), 0)
   const avg12 = total12 / 12
   const totalCurrentMonth = byMonth[CURRENT_MONTH]?.total ?? 0
 
@@ -443,7 +450,7 @@ export const DividendsPage = () => {
     [dividends, selectedYear],
   )
 
-  const yearTotal = yearDividends.reduce((s, d) => s + d.amount, 0)
+  const yearTotal = yearDividends.reduce((s, d) => s + getDividendBrl(d, usdRate), 0)
 
   if (loading) return <DividendsSkeleton />
 
@@ -534,13 +541,13 @@ export const DividendsPage = () => {
                     <span className="text-xs text-muted-foreground hidden sm:block">
                       {formatDate(d.paymentDate)}
                     </span>
-                    {d.ir ? (
+                    {getDividendIrBrl(d, usdRate) > 0 ? (
                       <span className="text-xs text-muted-foreground">
-                        IR: {formatCurrency(d.ir)}
+                        IR: {formatCurrency(getDividendIrBrl(d, usdRate))}
                       </span>
                     ) : null}
                     <span className="text-sm font-semibold text-success">
-                      +{formatCurrency(d.amount)}
+                      +{formatCurrency(getDividendBrl(d, usdRate))}
                     </span>
                     <button
                       onClick={() => user && deleteDividend(user.uid, d.id)}

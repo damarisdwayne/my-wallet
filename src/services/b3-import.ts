@@ -18,6 +18,9 @@ export interface B3Dividend {
   paymentDate: string
   type: 'dividendo' | 'jcp' | 'rendimento' | 'dividendo_ext'
   ir?: number
+  currency?: 'USD'
+  amountUsd?: number
+  irUsd?: number
 }
 
 const UNIT_TICKERS = new Set([

@@ -53,7 +53,7 @@ type Results = {
 }
 
 export const TesouroDiretoCalc = () => {
-  const { assets } = usePortfolio()
+  const { assets, loading: portfolioLoading } = usePortfolio()
   const portfolioTesouro = assets.filter(
     (a) => a.type === 'fixed_income' && a.ticker.toUpperCase().startsWith('TESOURO'),
   )
@@ -209,22 +209,27 @@ export const TesouroDiretoCalc = () => {
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Portfolio picker */}
-          {portfolioTesouro.length > 0 && (
-            <Field label="Meus títulos no portfólio">
-              <select
-                value={selectedPortfolioId}
-                onChange={(e) => onPortfolioSelect(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">— selecione para preencher automaticamente —</option>
-                {portfolioTesouro.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.ticker}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          )}
+          <Field label="Meus títulos no portfólio">
+            <select
+              value={selectedPortfolioId}
+              onChange={(e) => onPortfolioSelect(e.target.value)}
+              disabled={portfolioLoading || portfolioTesouro.length === 0}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            >
+              {!portfolioLoading && portfolioTesouro.length === 0 ? (
+                <option value="">Nenhum título Tesouro Direto encontrado no portfólio</option>
+              ) : (
+                <>
+                  <option value="">— selecione para preencher automaticamente —</option>
+                  {portfolioTesouro.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.ticker}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+          </Field>
 
           {/* Bond picker */}
           <Field label="Selecionar título">
@@ -526,15 +531,31 @@ export const TesouroDiretoCalc = () => {
         <CardContent className="pt-4 pb-4">
           <p className="text-sm font-semibold text-foreground mb-2">Quando vale a pena vender?</p>
           <p className="text-sm text-muted-foreground mb-3">
-            O preço sobe quando a taxa cai. Quanto mais tempo resta até o vencimento, maior o impacto
-            de cada ponto percentual (pp) de queda.
+            O preço sobe quando a taxa cai. Quanto mais tempo resta até o vencimento, maior o
+            impacto de cada ponto percentual (pp) de queda.
           </p>
           <div className="space-y-2">
             {[
-              { range: 'Taxa subiu', action: 'Não vende — você realizaria prejuízo', color: 'text-destructive' },
-              { range: 'Caiu < 0,5 pp', action: 'Não vale — IR come o ganho', color: 'text-destructive' },
-              { range: 'Caiu 0,5–1 pp', action: 'Talvez — compare as rentabilidades acima', color: 'text-warning' },
-              { range: 'Caiu > 1 pp', action: 'Provavelmente sim, principalmente com vencimento longo', color: 'text-success' },
+              {
+                range: 'Taxa subiu',
+                action: 'Não vende — você realizaria prejuízo',
+                color: 'text-destructive',
+              },
+              {
+                range: 'Caiu < 0,5 pp',
+                action: 'Não vale — IR come o ganho',
+                color: 'text-destructive',
+              },
+              {
+                range: 'Caiu 0,5–1 pp',
+                action: 'Talvez — compare as rentabilidades acima',
+                color: 'text-warning',
+              },
+              {
+                range: 'Caiu > 1 pp',
+                action: 'Provavelmente sim, principalmente com vencimento longo',
+                color: 'text-success',
+              },
             ].map((row) => (
               <div key={row.range} className="flex items-start gap-3 text-sm">
                 <span className="text-muted-foreground w-28 shrink-0">{row.range}</span>

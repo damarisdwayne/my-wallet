@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardValue } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { useAuth } from '@/store/auth'
@@ -40,17 +41,72 @@ interface MonthBreakdown {
   fixed: number
 }
 
+const DividendsSkeleton = () => (
+  <div className="p-6 space-y-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {(['a', 'b', 'c'] as const).map((k) => (
+        <Card key={k}>
+          <CardHeader>
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-7 w-36 mt-1" />
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-4 w-40" />
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-1 h-28">
+          {([55, 80, 40, 95, 70, 50, 85, 60, 45, 75, 90, 65] as const).map((h) => (
+            <div key={h} className="flex-1 flex flex-col items-center gap-1">
+              <Skeleton className="w-full rounded-t" style={{ height: `${h}px` }} />
+              <Skeleton className="h-2 w-6" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-4 w-24" />
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2 mb-4">
+          {(['a', 'b', 'c'] as const).map((k) => (
+            <Skeleton key={k} className="h-7 w-14 rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((k) => (
+            <div key={k} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20 ml-auto" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+)
+
 export const DividendsPage = () => {
   const { user } = useAuth()
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
   const [selectedYear, setSelectedYear] = useState(THIS_YEAR)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
+    let resolved = 0
+    const onLoad = () => { if (++resolved === 2) setLoading(false) }
     const unsubs = [
-      subscribeToAllDividends(user.uid, setDividends),
-      subscribeToAssets(user.uid, setAssets),
+      subscribeToAllDividends(user.uid, (data) => { setDividends(data); onLoad() }),
+      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
@@ -105,6 +161,8 @@ export const DividendsPage = () => {
     () => dividends.filter((d) => d.paymentDate.startsWith(selectedYear)),
     [dividends, selectedYear],
   )
+
+  if (loading) return <DividendsSkeleton />
 
   return (
     <div className="p-6 space-y-6">

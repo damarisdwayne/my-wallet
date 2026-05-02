@@ -80,7 +80,10 @@ const DividendsSkeleton = () => (
         </div>
         <div className="space-y-2">
           {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((k) => (
-            <div key={k} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+            <div
+              key={k}
+              className="flex items-center gap-3 py-2 border-b border-border last:border-0"
+            >
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-20 ml-auto" />
@@ -103,10 +106,18 @@ export const DividendsPage = () => {
   useEffect(() => {
     if (!user) return
     let resolved = 0
-    const onLoad = () => { if (++resolved === 2) setLoading(false) }
+    const onLoad = () => {
+      if (++resolved === 2) setLoading(false)
+    }
     const unsubs = [
-      subscribeToAllDividends(user.uid, (data) => { setDividends(data); onLoad() }),
-      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
+      subscribeToAllDividends(user.uid, (data) => {
+        setDividends(data)
+        onLoad()
+      }),
+      subscribeToAssets(user.uid, (data) => {
+        setAssets(data)
+        onLoad()
+      }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])

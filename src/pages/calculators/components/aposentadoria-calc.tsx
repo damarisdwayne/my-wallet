@@ -106,8 +106,7 @@ const SimuladorIF = () => {
     const rm = Math.pow(1 + rAnnual, 1 / 12) - 1
 
     const fv =
-      pv * Math.pow(1 + rm, n) +
-      (rm > 0 ? pmt * ((Math.pow(1 + rm, n) - 1) / rm) : pmt * n)
+      pv * Math.pow(1 + rm, n) + (rm > 0 ? pmt * ((Math.pow(1 + rm, n) - 1) / rm) : pmt * n)
 
     const passiveIncome = fv * rm
 
@@ -380,7 +379,9 @@ const CompoundCalc = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Patrimônio final</CardTitle>
-                  <p className="text-2xl font-bold text-foreground">{fmtBRL(results.finalAmount)}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {fmtBRL(results.finalAmount)}
+                  </p>
                   <p className="text-xs text-muted-foreground">após {results.periodLabel}</p>
                 </CardHeader>
               </Card>
@@ -391,7 +392,8 @@ const CompoundCalc = () => {
                     {fmtBRL(results.totalInvested)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {((results.totalInvested / results.finalAmount) * 100).toFixed(2)}% do patrimônio
+                    {((results.totalInvested / results.finalAmount) * 100).toFixed(2)}% do
+                    patrimônio
                   </p>
                 </CardHeader>
               </Card>

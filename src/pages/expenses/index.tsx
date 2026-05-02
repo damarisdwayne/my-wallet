@@ -15,7 +15,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useExpenses } from '@/hooks/use-expenses'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { DisplayExpense, ExpenseCategory, FixedExpense } from '@/types'
-import { addMonthStr, categoryColors, categoryLabel, emptyForm, formatMonthLabel, todayMonth } from './utils'
+import {
+  addMonthStr,
+  categoryColors,
+  categoryLabel,
+  emptyForm,
+  formatMonthLabel,
+  todayMonth,
+} from './utils'
 
 const ExpensesSkeleton = () => (
   <div className="p-6 space-y-6">

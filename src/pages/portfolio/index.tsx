@@ -52,7 +52,10 @@ const PortfolioSkeleton = () => (
               ))}
             </div>
             {(['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const).map((k) => (
-              <div key={k} className="flex items-center gap-4 py-2 border-b border-border last:border-0">
+              <div
+                key={k}
+                className="flex items-center gap-4 py-2 border-b border-border last:border-0"
+              >
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-14 ml-auto" />

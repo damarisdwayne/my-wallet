@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
   ChevronRight,
   Clock,
+  FileText,
   HelpCircle,
   Pencil,
   Plus,
+  Sparkles,
   TrendingDown,
   TrendingUp,
+  Upload,
 } from 'lucide-react'
+import { analyzeDocument } from '@/services/gemini'
 import { Card } from '@/components/ui/card'
 import {
   Dialog,
@@ -1546,6 +1550,120 @@ const StockInfoSection = ({
   )
 }
 
+/* ─── Markdown renderer for AI output ──────────────────────────── */
+
+const renderInline = (text: string) => {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={i} className="font-semibold text-foreground">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  )
+}
+
+const VERDICT_MAP: Record<string, { label: string; className: string }> = {
+  bullish: {
+    label: 'Otimista',
+    className: 'bg-success/10 text-success border-success/20',
+  },
+  neutro: {
+    label: 'Neutro',
+    className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  },
+  bearish: {
+    label: 'Pessimista',
+    className: 'bg-destructive/10 text-destructive border-destructive/20',
+  },
+}
+
+const AiMarkdown = ({ text }: { text: string }) => {
+  type Block =
+    | { kind: 'heading'; text: string }
+    | { kind: 'bullets'; items: string[] }
+    | { kind: 'paragraph'; text: string }
+
+  const blocks: Block[] = []
+  const lines = text.split('\n')
+  let bullets: string[] = []
+
+  const flushBullets = () => {
+    if (bullets.length) {
+      blocks.push({ kind: 'bullets', items: [...bullets] })
+      bullets = []
+    }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      flushBullets()
+      continue
+    }
+    if (/^\*\*[^*]+\*\*\s*$/.test(line) || /^\*\*\d+\.\s/.test(line)) {
+      flushBullets()
+      blocks.push({ kind: 'heading', text: line.replace(/\*\*/g, '') })
+    } else if (/^[*-]\s+/.test(line)) {
+      bullets.push(line.replace(/^[*-]\s+/, ''))
+    } else {
+      flushBullets()
+      blocks.push({ kind: 'paragraph', text: line })
+    }
+  }
+  flushBullets()
+
+  const lowerText = text.toLowerCase()
+  const verdict = Object.keys(VERDICT_MAP).find((k) => lowerText.includes(k))
+
+  return (
+    <div className="space-y-4">
+      {verdict && (
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${VERDICT_MAP[verdict].className}`}
+          >
+            {VERDICT_MAP[verdict].label}
+          </span>
+        </div>
+      )}
+      {blocks.map((block, i) => {
+        if (block.kind === 'heading') {
+          return (
+            <div key={i} className="pt-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 pb-1.5 border-b border-border">
+                {block.text}
+              </p>
+            </div>
+          )
+        }
+        if (block.kind === 'bullets') {
+          return (
+            <ul key={i} className="space-y-1.5 pl-1">
+              {block.items.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2 text-sm text-foreground leading-relaxed"
+                >
+                  <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/60 shrink-0" />
+                  <span>{renderInline(item)}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        return (
+          <p key={i} className="text-sm text-foreground leading-relaxed">
+            {renderInline(block.text)}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ─── Asset detail view (inline) ───────────────────────────────── */
 
 const AssetDetailView = ({
@@ -1572,6 +1690,42 @@ const AssetDetailView = ({
   const [registerOpen, setRegisterOpen] = useState(false)
   const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
   const [stockInfoOpen, setStockInfoOpen] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') {
+      setAiError('Envie um arquivo PDF.')
+      return
+    }
+    setAiLoading(true)
+    setAiError(null)
+    setAiAnalysis(null)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const result = await analyzeDocument(base64, isFii ? 'fii' : 'stock')
+      setAiAnalysis(result)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setAiError(
+        msg.includes('429')
+          ? 'Cota da API excedida. Aguarde alguns segundos e tente novamente.'
+          : `Erro: ${msg}`,
+      )
+    } finally {
+      setAiLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
@@ -1668,6 +1822,80 @@ const AssetDetailView = ({
                 snapshots={snapshots}
               />
             </div>
+          )}
+        </div>
+        {/* AI analysis */}
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-primary/70" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Análise por IA
+              </p>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={aiLoading}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+            >
+              <Upload size={12} />
+              {aiLoading
+                ? 'Analisando...'
+                : aiAnalysis
+                  ? 'Novo relatório'
+                  : isFii
+                    ? 'Enviar relatório gerencial'
+                    : 'Enviar relatório de RI'}
+            </button>
+          </div>
+
+          {aiLoading && (
+            <div className="rounded-lg border border-border p-5 space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-3 w-3 rounded-full bg-primary/30 animate-pulse" />
+                <div className="h-3 w-28 rounded bg-muted animate-pulse" />
+              </div>
+              {['w-[55%]', 'w-[80%]', 'w-[65%]', 'w-[90%]', 'w-[70%]', 'w-[50%]'].map((w) => (
+                <div key={w} className={`h-2.5 rounded bg-muted animate-pulse ${w}`} />
+              ))}
+            </div>
+          )}
+
+          {aiError && !aiLoading && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-xs text-destructive leading-relaxed">{aiError}</p>
+            </div>
+          )}
+
+          {aiAnalysis && !aiLoading && (
+            <div className="rounded-lg border border-border p-5">
+              <AiMarkdown text={aiAnalysis} />
+            </div>
+          )}
+
+          {!aiAnalysis && !aiLoading && !aiError && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full rounded-lg border border-dashed border-border p-6 text-center hover:border-primary/40 hover:bg-muted/30 transition-colors group"
+            >
+              <FileText
+                size={20}
+                className="mx-auto mb-2 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors"
+              />
+              <p className="text-xs text-muted-foreground">
+                {isFii
+                  ? 'Clique para enviar o PDF do relatório gerencial'
+                  : 'Clique para enviar o PDF do relatório de RI'}
+              </p>
+              <p className="text-[11px] text-muted-foreground/50 mt-1">Powered by Gemini</p>
+            </button>
           )}
         </div>
       </div>

@@ -124,7 +124,10 @@ const SalesSkeleton = () => (
       <CardContent>
         <div className="space-y-2">
           {(['a', 'b', 'c'] as const).map((k) => (
-            <div key={k} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+            <div
+              key={k}
+              className="flex items-center justify-between py-2 border-b border-border last:border-0"
+            >
               <div className="flex items-center gap-3">
                 <Skeleton className="h-5 w-16 rounded-full" />
                 <Skeleton className="h-4 w-32" />

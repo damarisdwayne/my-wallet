@@ -1,65 +1,143 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { subscribeToAssets } from '@/services/assets'
-import { subscribeToMonthlyDividends } from '@/services/dividends'
-import { subscribeToMonthlyExpenses } from '@/services/expenses'
+import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToPatrimonyHistory, type PatrimonyPoint } from '@/services/patrimony'
+import { useExpenses } from '@/hooks/use-expenses'
 import { useAuth } from '@/store/auth'
-import type { Asset, Dividend, Expense } from '@/types'
+import type { Asset, AssetType, Dividend } from '@/types'
 
-const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+export const CURRENT_MONTH = new Date().toISOString().slice(0, 7)
+const CURRENT_YEAR = new Date().getFullYear().toString()
+
+export interface AllocationSlice {
+  type: AssetType
+  label: string
+  value: number
+  pct: number
+  color: string
+}
+
+const TYPE_META: Record<AssetType, { label: string; color: string }> = {
+  stock:        { label: 'Ações BR',  color: 'hsl(217 91% 60%)' },
+  fii:          { label: 'FII',       color: 'hsl(142 71% 45%)' },
+  etf:          { label: 'ETF',       color: 'hsl(262 83% 58%)' },
+  bdr:          { label: 'BDR',       color: 'hsl(32 98% 56%)' },
+  fixed_income: { label: 'Renda Fixa',color: 'hsl(48 96% 53%)' },
+  crypto:       { label: 'Cripto',    color: 'hsl(0 84% 60%)' },
+  stock_us:     { label: 'Ações EUA', color: 'hsl(199 89% 48%)' },
+  other:        { label: 'Outros',    color: 'hsl(220 9% 46%)' },
+}
 
 export const useDashboard = () => {
   const { user } = useAuth()
   const [assets, setAssets] = useState<Asset[]>([])
   const [dividends, setDividends] = useState<Dividend[]>([])
-  const [expenses, setExpenses] = useState<Expense[]>([])
   const [patrimonyHistory, setPatrimonyHistory] = useState<PatrimonyPoint[]>([])
-  const [loading, setLoading] = useState(true)
+  const [assetsLoading, setAssetsLoading] = useState(true)
+  const [dividendsLoading, setDividendsLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(true)
+
+  // useExpenses already handles fixed + installment subscriptions
+  const {
+    expenses,
+    salaryByMonth,
+    getRecurringForMonth,
+    loading: expensesLoading,
+  } = useExpenses()
 
   useEffect(() => {
     if (!user) return
-
-    let resolved = 0
-    const onLoad = () => {
-      resolved++
-      if (resolved === 4) setLoading(false)
-    }
-
     const unsubs = [
       subscribeToAssets(user.uid, (data) => {
         setAssets(data)
-        onLoad()
+        setAssetsLoading(false)
       }),
-      subscribeToMonthlyDividends(user.uid, currentMonth, (data) => {
+      subscribeToAllDividends(user.uid, (data) => {
         setDividends(data)
-        onLoad()
-      }),
-      subscribeToMonthlyExpenses(user.uid, currentMonth, (data) => {
-        setExpenses(data)
-        onLoad()
+        setDividendsLoading(false)
       }),
       subscribeToPatrimonyHistory(user.uid, (data) => {
         setPatrimonyHistory(data)
-        onLoad()
+        setHistoryLoading(false)
       }),
     ]
-
-    return () => unsubs.forEach((unsub) => unsub())
+    return () => unsubs.forEach((u) => u())
   }, [user])
 
+  const loading = assetsLoading || dividendsLoading || historyLoading || expensesLoading
+
+  /* ── portfolio numbers ── */
   const totalPatrimony = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
   const totalCost = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
   const totalReturn = totalCost > 0 ? ((totalPatrimony - totalCost) / totalCost) * 100 : 0
-  const monthlyDividends = dividends.reduce((s, d) => s + d.amount, 0)
-  const monthlyExpenses = expenses.reduce((s, e) => s + e.amount, 0)
+  const totalGain = totalPatrimony - totalCost
+
+  /* ── salary for current month (fallback to last recorded) ── */
+  const monthlySalary = useMemo(() => {
+    if (salaryByMonth[CURRENT_MONTH] !== undefined) return salaryByMonth[CURRENT_MONTH]
+    const last = Object.keys(salaryByMonth)
+      .filter((m) => m <= CURRENT_MONTH)
+      .sort()
+      .at(-1)
+    return last !== undefined ? salaryByMonth[last] : 0
+  }, [salaryByMonth])
+
+  /* ── monthly expenses (manual + fixed + installment) ── */
+  const monthlyExpenses = useMemo(() => {
+    const manual = expenses
+      .filter((e) => e.date.startsWith(CURRENT_MONTH))
+      .reduce((s, e) => s + e.amount, 0)
+    const recurring = getRecurringForMonth(CURRENT_MONTH).reduce((s, e) => s + e.amount, 0)
+    return manual + recurring
+  }, [expenses, getRecurringForMonth])
+
+  /* ── dividends ── */
+  const monthlyDividends = useMemo(
+    () =>
+      dividends
+        .filter((d) => d.paymentDate.startsWith(CURRENT_MONTH))
+        .reduce((s, d) => s + d.amount, 0),
+    [dividends],
+  )
+
+  const yearDividends = useMemo(
+    () =>
+      dividends
+        .filter((d) => d.paymentDate.startsWith(CURRENT_YEAR))
+        .reduce((s, d) => s + d.amount, 0),
+    [dividends],
+  )
+
+  /* ── allocation by type ── */
+  const allocation = useMemo<AllocationSlice[]>(() => {
+    const byType: Partial<Record<AssetType, number>> = {}
+    for (const a of assets) {
+      const v = a.currentPrice * a.quantity
+      byType[a.type] = (byType[a.type] ?? 0) + v
+    }
+    return (Object.entries(byType) as [AssetType, number][])
+      .filter(([, v]) => v > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([type, value]) => ({
+        type,
+        label: TYPE_META[type].label,
+        value,
+        pct: totalPatrimony > 0 ? (value / totalPatrimony) * 100 : 0,
+        color: TYPE_META[type].color,
+      }))
+  }, [assets, totalPatrimony])
 
   return {
     loading,
     totalPatrimony,
     totalCost,
     totalReturn,
+    totalGain,
+    monthlySalary,
     monthlyDividends,
+    yearDividends,
     monthlyExpenses,
     patrimonyHistory,
+    allocation,
   }
 }

@@ -8,21 +8,11 @@ import { useAuth } from '@/store/auth'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Asset, Dividend } from '@/types'
 
-const MONTH_SHORT = [
-  'Jan',
-  'Fev',
-  'Mar',
-  'Abr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Set',
-  'Out',
-  'Nov',
-  'Dez',
-]
+/* ─── constants ─── */
+
+const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const THIS_YEAR = new Date().getFullYear().toString()
+const CURRENT_MONTH = new Date().toISOString().slice(0, 7)
 
 const buildLast12Months = (): string[] => {
   const now = new Date()
@@ -32,7 +22,24 @@ const buildLast12Months = (): string[] => {
   })
 }
 
-const monthLabel = (key: string) => `${MONTH_SHORT[Number(key.slice(5)) - 1]} ${key.slice(2, 4)}`
+const fmtMonth = (key: string) => `${MONTH_SHORT[Number(key.slice(5)) - 1]}/${key.slice(2, 4)}`
+
+const fmtCompact = (v: number) => {
+  if (v >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000) return `R$${(v / 1_000).toFixed(0)}k`
+  return `R$${v.toFixed(0)}`
+}
+
+/* ─── chart geometry ─── */
+
+const W = 800
+const H = 280
+const PAD = { top: 24, right: 20, bottom: 44, left: 72 }
+const CW = W - PAD.left - PAD.right
+const CH = H - PAD.top - PAD.bottom
+const Y_TICKS = 5
+
+/* ─── types ─── */
 
 interface MonthBreakdown {
   total: number
@@ -41,10 +48,226 @@ interface MonthBreakdown {
   fixed: number
 }
 
+/* ─── SVG bar chart ─── */
+
+const MonthlyChart = ({
+  byMonth,
+  avg12,
+}: {
+  byMonth: Record<string, MonthBreakdown>
+  avg12: number
+}) => {
+  const [hovIdx, setHovIdx] = useState<number | null>(null)
+
+  const entries = Object.entries(byMonth)
+  const n = entries.length
+  const maxVal = Math.max(...entries.map(([, b]) => b.total), 1)
+  const yMax = maxVal * 1.18
+
+  const barSpacing = CW / n
+  const barW = barSpacing * 0.55
+
+  const toY = (v: number) => PAD.top + CH - (v / yMax) * CH
+
+  const yTicks = Array.from({ length: Y_TICKS }, (_, i) => ({
+    v: (i / (Y_TICKS - 1)) * yMax,
+    y: toY((i / (Y_TICKS - 1)) * yMax),
+  }))
+
+  const avgY = toY(avg12)
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const rawX = ((e.clientX - rect.left) / rect.width) * W - PAD.left
+    setHovIdx(Math.max(0, Math.min(n - 1, Math.floor(rawX / barSpacing))))
+  }
+
+  const FII_COLOR = 'hsl(142 71% 45%)'
+  const STOCK_COLOR = 'hsl(217 91% 60%)'
+  const FIXED_COLOR = 'hsl(48 96% 53%)'
+
+  return (
+    <div className="relative select-none">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height: 'auto' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHovIdx(null)}
+      >
+        {/* y-axis gridlines + labels */}
+        {yTicks.map(({ v, y }, i) => (
+          <g key={i}>
+            <line
+              x1={PAD.left} y1={y} x2={PAD.left + CW} y2={y}
+              stroke="currentColor" strokeOpacity="0.07" strokeWidth="1"
+            />
+            <text
+              x={PAD.left - 8} y={y}
+              textAnchor="end" dominantBaseline="middle"
+              fontSize="11" fill="currentColor" opacity="0.45"
+            >
+              {fmtCompact(v)}
+            </text>
+          </g>
+        ))}
+
+        {/* average dashed line */}
+        {avg12 > 0 && (
+          <g>
+            <line
+              x1={PAD.left} y1={avgY} x2={PAD.left + CW} y2={avgY}
+              stroke="hsl(var(--primary))" strokeOpacity="0.5"
+              strokeWidth="1.5" strokeDasharray="6 4"
+            />
+            <text
+              x={PAD.left + CW + 4} y={avgY}
+              dominantBaseline="middle" fontSize="10"
+              fill="hsl(var(--primary))" opacity="0.7"
+            >
+              méd
+            </text>
+          </g>
+        )}
+
+        {/* bars */}
+        {entries.map(([key, b], i) => {
+          const barLeft = PAD.left + i * barSpacing + (barSpacing - barW) / 2
+          const isHov = hovIdx === i
+          const isCurrent = key === CURRENT_MONTH
+
+          // stack from bottom: fii → stock → fixed
+          const segments: { v: number; color: string }[] = [
+            { v: b.fii, color: FII_COLOR },
+            { v: b.stock, color: STOCK_COLOR },
+            { v: b.fixed, color: FIXED_COLOR },
+          ].filter((s) => s.v > 0)
+
+          let stackTop = PAD.top + CH
+          const rects = segments.map((s, si) => {
+            const h = Math.max((s.v / yMax) * CH, 1)
+            const y = stackTop - h
+            stackTop -= h
+            const isTop = si === segments.length - 1
+            return { y, h, color: s.color, isTop }
+          })
+
+          return (
+            <g key={key}>
+              {isHov && (
+                <rect
+                  x={barLeft - 3} y={PAD.top}
+                  width={barW + 6} height={CH}
+                  fill="currentColor" fillOpacity="0.06" rx="3"
+                />
+              )}
+              {rects.map((r, ri) => (
+                <rect
+                  key={ri}
+                  x={barLeft} y={r.y}
+                  width={barW} height={r.h}
+                  fill={r.color}
+                  fillOpacity={isHov ? 1 : 0.72}
+                  rx={r.isTop ? 2 : 0}
+                />
+              ))}
+              {isCurrent && (
+                <rect
+                  x={barLeft} y={PAD.top + CH + 6}
+                  width={barW} height={3}
+                  fill="hsl(var(--primary))" rx="1.5"
+                />
+              )}
+              <text
+                x={barLeft + barW / 2} y={PAD.top + CH + 20}
+                textAnchor="middle" fontSize="11"
+                fill="currentColor"
+                opacity={isCurrent ? 1 : 0.45}
+                fontWeight={isCurrent ? '600' : 'normal'}
+              >
+                {fmtMonth(key)}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+
+      {/* floating tooltip */}
+      {hovIdx !== null && (() => {
+        const [key, b] = entries[hovIdx]
+        if (b.total === 0) return null
+        const barCenterX = PAD.left + hovIdx * barSpacing + barSpacing / 2
+        const leftPct = (barCenterX / W) * 100
+
+        return (
+          <div
+            className="pointer-events-none absolute z-10 top-0 rounded-md border border-border bg-popover px-3 py-2 shadow-md text-xs space-y-1"
+            style={{
+              left: `${leftPct}%`,
+              transform: leftPct > 65 ? 'translate(-110%, 32px)' : 'translate(8px, 32px)',
+            }}
+          >
+            <p className="font-semibold text-foreground text-sm border-b border-border pb-1 mb-1">
+              {fmtMonth(key)}
+            </p>
+            {b.fii > 0 && (
+              <p className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FII_COLOR }} />
+                <span className="text-muted-foreground">FII/ETF</span>
+                <span className="ml-auto font-medium">{formatCurrency(b.fii)}</span>
+              </p>
+            )}
+            {b.stock > 0 && (
+              <p className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: STOCK_COLOR }} />
+                <span className="text-muted-foreground">Ações</span>
+                <span className="ml-auto font-medium">{formatCurrency(b.stock)}</span>
+              </p>
+            )}
+            {b.fixed > 0 && (
+              <p className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FIXED_COLOR }} />
+                <span className="text-muted-foreground">Renda Fixa</span>
+                <span className="ml-auto font-medium">{formatCurrency(b.fixed)}</span>
+              </p>
+            )}
+            <p className="flex items-center gap-2 border-t border-border pt-1 mt-1">
+              <span className="text-muted-foreground">Total</span>
+              <span className="ml-auto font-bold text-success">{formatCurrency(b.total)}</span>
+            </p>
+          </div>
+        )
+      })()}
+
+      {/* legend */}
+      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: FII_COLOR }} />
+          FII / ETF
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: STOCK_COLOR }} />
+          Ações
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: FIXED_COLOR }} />
+          Renda Fixa
+        </span>
+        <span className="flex items-center gap-1.5 ml-auto">
+          <span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'hsl(var(--primary))' }} />
+          Média
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ─── skeleton ─── */
+
 const DividendsSkeleton = () => (
   <div className="p-6 space-y-6">
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {(['a', 'b', 'c'] as const).map((k) => (
+      {[0, 1, 2].map((k) => (
         <Card key={k}>
           <CardHeader>
             <Skeleton className="h-4 w-28" />
@@ -54,47 +277,17 @@ const DividendsSkeleton = () => (
       ))}
     </div>
     <Card>
-      <CardHeader>
-        <Skeleton className="h-4 w-40" />
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-end gap-1 h-28">
-          {([55, 80, 40, 95, 70, 50, 85, 60, 45, 75, 90, 65] as const).map((h) => (
-            <div key={h} className="flex-1 flex flex-col items-center gap-1">
-              <Skeleton className="w-full rounded-t" style={{ height: `${h}px` }} />
-              <Skeleton className="h-2 w-6" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
+      <CardHeader><Skeleton className="h-4 w-48" /></CardHeader>
+      <CardContent><Skeleton className="h-64 w-full" /></CardContent>
     </Card>
     <Card>
-      <CardHeader>
-        <Skeleton className="h-4 w-24" />
-      </CardHeader>
-      <CardContent>
-        <div className="flex gap-2 mb-4">
-          {(['a', 'b', 'c'] as const).map((k) => (
-            <Skeleton key={k} className="h-7 w-14 rounded-md" />
-          ))}
-        </div>
-        <div className="space-y-2">
-          {(['a', 'b', 'c', 'd', 'e', 'f'] as const).map((k) => (
-            <div
-              key={k}
-              className="flex items-center gap-3 py-2 border-b border-border last:border-0"
-            >
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20 ml-auto" />
-              <Skeleton className="h-5 w-12 rounded-full" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
+      <CardHeader><Skeleton className="h-4 w-24" /></CardHeader>
+      <CardContent><Skeleton className="h-48 w-full" /></CardContent>
     </Card>
   </div>
 )
+
+/* ─── page ─── */
 
 export const DividendsPage = () => {
   const { user } = useAuth()
@@ -106,23 +299,14 @@ export const DividendsPage = () => {
   useEffect(() => {
     if (!user) return
     let resolved = 0
-    const onLoad = () => {
-      if (++resolved === 2) setLoading(false)
-    }
+    const onLoad = () => { if (++resolved === 2) setLoading(false) }
     const unsubs = [
-      subscribeToAllDividends(user.uid, (data) => {
-        setDividends(data)
-        onLoad()
-      }),
-      subscribeToAssets(user.uid, (data) => {
-        setAssets(data)
-        onLoad()
-      }),
+      subscribeToAllDividends(user.uid, (data) => { setDividends(data); onLoad() }),
+      subscribeToAssets(user.uid, (data) => { setAssets(data); onLoad() }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
 
-  // ticker → asset type map (only for tickers present in the portfolio)
   const tickerType = useMemo(
     () => new Map(assets.map((a) => [a.ticker.toUpperCase(), a.type])),
     [assets],
@@ -157,10 +341,7 @@ export const DividendsPage = () => {
 
   const total12 = last12Dividends.reduce((s, d) => s + d.amount, 0)
   const avg12 = total12 / 12
-  const maxMonth = Math.max(...Object.values(byMonth).map((b) => b.total), 1)
-
-  const currentMonthKey = new Date().toISOString().slice(0, 7)
-  const totalCurrentMonth = byMonth[currentMonthKey]?.total ?? 0
+  const totalCurrentMonth = byMonth[CURRENT_MONTH]?.total ?? 0
 
   const years = useMemo(() => {
     const set = new Set(dividends.map((d) => d.paymentDate.slice(0, 4)))
@@ -172,6 +353,8 @@ export const DividendsPage = () => {
     () => dividends.filter((d) => d.paymentDate.startsWith(selectedYear)),
     [dividends, selectedYear],
   )
+
+  const yearTotal = yearDividends.reduce((s, d) => s + d.amount, 0)
 
   if (loading) return <DividendsSkeleton />
 
@@ -200,100 +383,58 @@ export const DividendsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Por mês — últimos 12 meses</CardTitle>
+          <CardTitle>Evolução — últimos 12 meses</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-end gap-1">
-            {Object.entries(byMonth).map(([key, b]) => {
-              const barHeight = Math.max(2, (b.total / maxMonth) * 100)
-              const tooltipLines =
-                b.total > 0
-                  ? ([
-                      b.fii > 0 && `FII: ${formatCurrency(b.fii)}`,
-                      b.stock > 0 && `Ações: ${formatCurrency(b.stock)}`,
-                      b.fixed > 0 && `Renda Fixa: ${formatCurrency(b.fixed)}`,
-                      `Total: ${formatCurrency(b.total)}`,
-                    ].filter(Boolean) as string[])
-                  : null
-              return (
-                <div key={key} className="group relative flex-1 flex flex-col items-center gap-1">
-                  {tooltipLines && (
-                    <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-10 hidden group-hover:flex flex-col gap-0.5 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1.5 shadow-md text-xs text-popover-foreground">
-                      {tooltipLines.map((line) => (
-                        <span key={line}>{line}</span>
-                      ))}
-                    </div>
-                  )}
-                  {b.total > 0 && (
-                    <span
-                      className="text-[9px] text-muted-foreground font-medium origin-bottom"
-                      style={{
-                        transform: 'rotate(-50deg) translate(20px,-4px)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {formatCurrency(b.total)}
-                    </span>
-                  )}
-                  <div
-                    className={`w-full rounded-t transition-colors cursor-default bg-success/60 hover:bg-success`}
-                    style={{ height: `${barHeight}px` }}
-                  />
-                  <span className="text-[10px] text-muted-foreground">{monthLabel(key)}</span>
-                </div>
-              )
-            })}
-          </div>
+          <MonthlyChart byMonth={byMonth} avg12={avg12} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Histórico</CardTitle>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <CardTitle>Histórico</CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              {years.map((y) => (
+                <button
+                  key={y}
+                  onClick={() => setSelectedYear(y)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${selectedYear === y ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+          {yearDividends.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Total em {selectedYear}:{' '}
+              <span className="font-semibold text-foreground">{formatCurrency(yearTotal)}</span>
+            </p>
+          )}
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            {years.map((y) => (
-              <button
-                key={y}
-                onClick={() => setSelectedYear(y)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  selectedYear === y
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
           {yearDividends.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
               Nenhum provento em {selectedYear}.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div>
               {yearDividends.map((d) => (
                 <div
                   key={d.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0 hover:bg-muted/20 -mx-1 px-1 rounded transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-sm text-foreground w-20">{d.ticker}</span>
                     <Badge
-                      variant={
-                        d.type === 'rendimento'
-                          ? 'default'
-                          : d.type === 'jcp'
-                            ? 'warning'
-                            : 'success'
-                      }
+                      variant={d.type === 'rendimento' ? 'default' : d.type === 'jcp' ? 'warning' : 'success'}
                     >
                       {d.type.toUpperCase()}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground hidden sm:block">
                       {formatDate(d.paymentDate)}
                     </span>
                     {d.ir ? (
@@ -302,7 +443,7 @@ export const DividendsPage = () => {
                       </span>
                     ) : null}
                     <span className="text-sm font-semibold text-success">
-                      + {formatCurrency(d.amount)}
+                      +{formatCurrency(d.amount)}
                     </span>
                   </div>
                 </div>

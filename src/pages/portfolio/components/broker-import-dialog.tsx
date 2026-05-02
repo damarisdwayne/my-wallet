@@ -453,10 +453,17 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
                       <div className="flex items-center gap-3">
                         <span className="font-semibold text-foreground w-16">{d.ticker}</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {d.type === 'dividendo' ? 'Dividendo' : d.type === 'jcp' ? 'JCP' : d.type === 'rendimento' ? 'Rendimento' : 'Div. Ext.'}
+                          {d.type === 'dividendo'
+                            ? 'Dividendo'
+                            : d.type === 'jcp'
+                              ? 'JCP'
+                              : d.type === 'rendimento'
+                                ? 'Rendimento'
+                                : 'Div. Ext.'}
                         </Badge>
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {d.paymentDate.slice(8, 10)}/{d.paymentDate.slice(5, 7)}/{d.paymentDate.slice(0, 4)}
+                          {d.paymentDate.slice(8, 10)}/{d.paymentDate.slice(5, 7)}/
+                          {d.paymentDate.slice(0, 4)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs tabular-nums">

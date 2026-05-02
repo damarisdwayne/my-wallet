@@ -98,7 +98,10 @@ const AllocationBar = ({
       <CardContent className="space-y-3">
         {/* stacked bar */}
         <div className="relative">
-          <div className="flex h-4 rounded-full overflow-hidden gap-px" onMouseLeave={() => setHovered(null)}>
+          <div
+            className="flex h-4 rounded-full overflow-hidden gap-px"
+            onMouseLeave={() => setHovered(null)}
+          >
             {allocation.map((s) => (
               <div
                 key={s.type}
@@ -110,7 +113,10 @@ const AllocationBar = ({
           </div>
           {hovered && (
             <div className="absolute left-1/2 -translate-x-1/2 -top-10 bg-popover border border-border rounded-lg shadow-lg px-3 py-1.5 text-xs pointer-events-none z-10 whitespace-nowrap flex items-center gap-2">
-              <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: hovered.color }} />
+              <span
+                className="w-2 h-2 rounded-sm shrink-0"
+                style={{ backgroundColor: hovered.color }}
+              />
               <span className="font-medium text-foreground">{hovered.label}</span>
               <span className="text-muted-foreground">{hovered.pct.toFixed(1)}%</span>
               <span className="font-semibold text-foreground">{formatCurrency(hovered.value)}</span>
@@ -192,7 +198,11 @@ export const DashboardPage = () => {
           loading={loading}
           title="Proventos (12M)"
           value={formatCurrency(last12Dividends)}
-          sub={monthlyDividends > 0 ? `${monthLabelShort}: +${formatCurrency(monthlyDividends)}` : undefined}
+          sub={
+            monthlyDividends > 0
+              ? `${monthLabelShort}: +${formatCurrency(monthlyDividends)}`
+              : undefined
+          }
           subPositive
           note={`No ano: ${formatCurrency(yearDividends)}`}
           icon={<TrendingUp size={16} />}

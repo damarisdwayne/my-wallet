@@ -1,5 +1,4 @@
 export * from './use-assets'
-export * from './use-cvm-alerts'
 export * from './use-dashboard'
 export * from './use-expenses'
 export * from './use-fundamentals'

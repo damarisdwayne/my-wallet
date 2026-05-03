@@ -1,5 +1,9 @@
 import { memo, useState } from 'react'
-import { formatCurrency, formatCompact as fmtCompact, formatMonthYear as fmtMonth } from '@/lib/utils'
+import {
+  formatCurrency,
+  formatCompact as fmtCompact,
+  formatMonthYear as fmtMonth,
+} from '@/lib/utils'
 import type { PatrimonyPoint } from '@/services/patrimony'
 
 /* ─── chart geometry ─── */

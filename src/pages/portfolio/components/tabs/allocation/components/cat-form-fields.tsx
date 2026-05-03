@@ -6,7 +6,11 @@ import { inputClass, emptyForm } from '../constants'
 const TRACKING_OPTIONS: { value: CategoryTracking; label: string; desc: string }[] = [
   { value: 'both', label: 'Meta + Diagrama', desc: 'Define % alvo e usa diagrama de qualificação' },
   { value: 'goal_only', label: 'Só Meta', desc: 'Apenas meta de alocação percentual' },
-  { value: 'diagram_only', label: 'Só Diagrama', desc: 'Meta + qualificação por diagrama, sem % manual' },
+  {
+    value: 'diagram_only',
+    label: 'Só Diagrama',
+    desc: 'Meta + qualificação por diagrama, sem % manual',
+  },
   { value: 'none', label: 'Nenhum', desc: 'Apenas agrupa ativos por categoria' },
 ]
 
@@ -99,10 +103,7 @@ export const CatFormFields = ({
       {/* Target % — hidden only for 'none' (no tracking) */}
       {form.tracking !== 'none' && (
         <div>
-          <label
-            htmlFor={`${prefix}-target`}
-            className="text-xs text-muted-foreground mb-1 block"
-          >
+          <label htmlFor={`${prefix}-target`} className="text-xs text-muted-foreground mb-1 block">
             Meta de alocação (%)
           </label>
           <input

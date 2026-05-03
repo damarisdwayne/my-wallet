@@ -170,7 +170,10 @@ const DiagramAssetRow = ({
         <p className="text-sm font-semibold text-foreground">{a.ticker}</p>
       </div>
       <div className="flex-1 bg-muted rounded-full h-1.5">
-        <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${scorePct}%` }} />
+        <div
+          className="h-1.5 rounded-full bg-primary transition-all"
+          style={{ width: `${scorePct}%` }}
+        />
       </div>
       <span className={cn('shrink-0 text-xs font-bold w-10 text-right tabular-nums', scoreColor)}>
         {yes}/{total}
@@ -349,7 +352,9 @@ export const CategoryCard = memo(
                   {showModeToggle && (
                     <div className="flex items-center gap-1 rounded-full bg-muted p-0.5 text-xs">
                       <button
-                        onClick={() => { if (inManualMode) onExitManual() }}
+                        onClick={() => {
+                          if (inManualMode) onExitManual()
+                        }}
                         className={cn(
                           'px-2.5 py-1 rounded-full transition-colors',
                           inManualMode
@@ -360,7 +365,9 @@ export const CategoryCard = memo(
                         Diagrama
                       </button>
                       <button
-                        onClick={() => { if (!inManualMode) onEnterManual() }}
+                        onClick={() => {
+                          if (!inManualMode) onEnterManual()
+                        }}
                         className={cn(
                           'px-2.5 py-1 rounded-full transition-colors',
                           inManualMode

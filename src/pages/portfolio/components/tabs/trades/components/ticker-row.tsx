@@ -91,7 +91,9 @@ export const TickerRow = ({
                       {tradeLabel(t)}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-xs">{formatQuantity(t.quantity)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-xs">
+                    {formatQuantity(t.quantity)}
+                  </td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
                     {t.price > 0 ? formatCurrency(t.price) : '—'}
                   </td>

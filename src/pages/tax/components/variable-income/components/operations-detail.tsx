@@ -60,7 +60,10 @@ export const OperationsDetail = ({
                 <EmptyRow cols={9} message="Nenhuma operação encontrada." />
               ) : (
                 filteredGains.map((g, i) => (
-                  <tr key={`${g.ticker}-${g.date}-${i}`} className="border-t border-border/50 hover:bg-muted/20">
+                  <tr
+                    key={`${g.ticker}-${g.date}-${i}`}
+                    className="border-t border-border/50 hover:bg-muted/20"
+                  >
                     <Td className="text-muted-foreground">
                       {g.date ? new Date(g.date + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                     </Td>

@@ -83,9 +83,7 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
                       {assetTypeLabel[r.assetType] ?? r.assetType}
                     </span>
                   </Td>
-                  <Td right>
-                    {r.quantity > 0 ? formatQuantity(r.quantity) : '—'}
-                  </Td>
+                  <Td right>{r.quantity > 0 ? formatQuantity(r.quantity) : '—'}</Td>
                   <Td right className="text-muted-foreground">
                     {r.avgCost > 0 ? formatCurrency(r.avgCost) : '—'}
                   </Td>

@@ -271,7 +271,13 @@ export const calcRealizedGains = (
 type MonthBucket = { stockSales: number; stockGain: number; fiiSales: number; fiiGain: number }
 
 // Types exempt from DARF RV (taxed at source or via annual declaration)
-export const RV_EXEMPT_TYPES = new Set<AssetType>(['tesouro', 'fixed_income', 'crypto', 'stock_us', 'etf_us'])
+export const RV_EXEMPT_TYPES = new Set<AssetType>([
+  'tesouro',
+  'fixed_income',
+  'crypto',
+  'stock_us',
+  'etf_us',
+])
 
 const aggregateByMonth = (gains: RealizedGain[]): Record<string, MonthBucket> => {
   const byMonth: Record<string, MonthBucket> = {}

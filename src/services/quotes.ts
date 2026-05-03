@@ -74,7 +74,9 @@ export const fetchUsdBrlRateForDate = async (date: string): Promise<number> => {
       if (Array.isArray(data) && data.length > 0) {
         const rate = Number.parseFloat(data[0].bid)
         if (rate > 0) {
-          try { localStorage.setItem(key, String(rate)) } catch {}
+          try {
+            localStorage.setItem(key, String(rate))
+          } catch {}
           return rate
         }
       }

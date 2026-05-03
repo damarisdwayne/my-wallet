@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { inputClass } from '../constants'
 import type { Diagram, PortfolioCategory } from '@/types'
 import { EditQuestionsDialog } from './edit-questions-dialog'
@@ -33,8 +28,7 @@ export const DiagramsSheet = ({
   const [creating, setCreating] = useState(false)
   const [linkingId, setLinkingId] = useState<string | null>(null)
 
-  const catName = (catId: string) =>
-    categories.find((c) => c.id === catId)?.name ?? '—'
+  const catName = (catId: string) => categories.find((c) => c.id === catId)?.name ?? '—'
 
   const handleCreate = async () => {
     const name = newName.trim()
@@ -56,7 +50,12 @@ export const DiagramsSheet = ({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose()
+        }}
+      >
         <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
           <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
             <SheetTitle>Diagramas</SheetTitle>
@@ -77,7 +76,10 @@ export const DiagramsSheet = ({
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {d.questions.length} pergunta{d.questions.length === 1 ? '' : 's'}
                       {d.categoryId && (
-                        <> · <span className="text-foreground">{catName(d.categoryId)}</span></>
+                        <>
+                          {' '}
+                          · <span className="text-foreground">{catName(d.categoryId)}</span>
+                        </>
                       )}
                     </p>
                   </div>
@@ -127,7 +129,9 @@ export const DiagramsSheet = ({
                   >
                     <option value="">Sem categoria</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 ) : (
@@ -150,7 +154,9 @@ export const DiagramsSheet = ({
                     placeholder="Nome do diagrama"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreate()
+                    }}
                     autoFocus
                   />
                   <button
@@ -161,7 +167,10 @@ export const DiagramsSheet = ({
                     Criar
                   </button>
                   <button
-                    onClick={() => { setCreating(false); setNewName('') }}
+                    onClick={() => {
+                      setCreating(false)
+                      setNewName('')
+                    }}
                     className="px-3 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   >
                     Cancelar
@@ -185,7 +194,9 @@ export const DiagramsSheet = ({
         <EditQuestionsDialog
           open
           diagram={editQDiagram}
-          onOpenChange={(v) => { if (!v) setEditQDiagram(null) }}
+          onOpenChange={(v) => {
+            if (!v) setEditQDiagram(null)
+          }}
           onSaveDiagram={async (d) => {
             await saveDiagram(d)
             setEditQDiagram(d)

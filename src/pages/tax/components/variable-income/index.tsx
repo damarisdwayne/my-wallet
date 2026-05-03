@@ -12,7 +12,10 @@ export const VariableIncomeSection = ({ year, trades, assets, sets }: Props) => 
   const [filterType, setFilterType] = useState<string | null>(null)
 
   const gains = useMemo(
-    () => calcRealizedGains(trades, year, assets, sets).filter((g) => !RV_EXEMPT_TYPES.has(g.assetType)),
+    () =>
+      calcRealizedGains(trades, year, assets, sets).filter(
+        (g) => !RV_EXEMPT_TYPES.has(g.assetType),
+      ),
     [trades, year, assets, sets],
   )
   const monthly = useMemo(() => calcMonthlyRV(gains, year), [gains, year])

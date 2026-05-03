@@ -52,7 +52,7 @@ export const AssetsTable = memo(
           className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors cursor-pointer"
           onClick={() => fixedIncomeCatId && onSetFilterCatId(fixedIncomeCatId)}
         >
-          <td className="py-3">
+          <td className="py-3 pl-3">
             <p className="font-semibold text-foreground">{row.label}</p>
             <p className="text-xs text-muted-foreground">{row.subtitle}</p>
           </td>
@@ -100,10 +100,10 @@ export const AssetsTable = memo(
                   { col: 'ret', label: 'Resultado', align: 'right' },
                   { col: 'pct', label: filterCatId === ALL ? '% Cart.' : '% Cat.', align: 'right' },
                 ] as const
-              ).map(({ col, label, align }) => (
+              ).map(({ col, label, align }, idx) => (
                 <th
                   key={label}
-                  className={`pb-2 font-medium ${align === 'right' ? 'text-right' : ''} ${col ? 'cursor-pointer select-none hover:text-foreground transition-colors' : ''}`}
+                  className={`pb-2 font-medium ${idx === 0 ? 'pl-3' : ''} ${align === 'right' ? 'text-right' : ''} ${col ? 'cursor-pointer select-none hover:text-foreground transition-colors' : ''}`}
                   onClick={col ? () => onToggleSort(col) : undefined}
                 >
                   <span
@@ -145,9 +145,9 @@ export const AssetsTable = memo(
               return (
                 <tr
                   key={a.id}
-                  className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors"
+                  className={`border-b border-border last:border-0 transition-colors ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'}`}
                 >
-                  <td className="py-3">
+                  <td className="py-3 pl-3">
                     <p className="font-semibold text-foreground">{a.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {isFlatFixedIncome(a) ? (a.institution ?? a.ticker) : a.ticker}

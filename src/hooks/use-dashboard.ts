@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToAllDividends } from '@/services/dividends'
-import { subscribeToPatrimonyHistory, type PatrimonyPoint } from '@/services/patrimony'
+import { subscribeToPatrimonyHistory, savePatrimonySnapshot, type PatrimonyPoint } from '@/services/patrimony'
 import { useExpenses } from '@/hooks/use-expenses'
 import { useAuth } from '@/store/auth'
 import type { Asset, AssetType, Dividend } from '@/types'
@@ -65,6 +65,12 @@ export const useDashboard = () => {
 
   /* ── portfolio numbers ── */
   const totalPatrimony = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+
+  // Salva snapshot do mês atual — sobrescreve o mesmo doc, nunca cria duplicatas
+  useEffect(() => {
+    if (loading || totalPatrimony === 0 || !user) return
+    savePatrimonySnapshot(user.uid, CURRENT_MONTH, totalPatrimony)
+  }, [loading, totalPatrimony, user])
   const totalCost = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
   const totalReturn = totalCost > 0 ? ((totalPatrimony - totalCost) / totalCost) * 100 : 0
   const totalGain = totalPatrimony - totalCost
@@ -74,9 +80,9 @@ export const useDashboard = () => {
     if (salaryByMonth[CURRENT_MONTH] !== undefined) return salaryByMonth[CURRENT_MONTH]
     const last = Object.keys(salaryByMonth)
       .filter((m) => m <= CURRENT_MONTH)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .at(-1)
-    return last !== undefined ? salaryByMonth[last] : 0
+    return last === undefined ? 0 : salaryByMonth[last]
   }, [salaryByMonth])
 
   /* ── monthly expenses (manual + fixed + installment) ── */

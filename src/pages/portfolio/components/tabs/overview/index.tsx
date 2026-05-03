@@ -129,6 +129,49 @@ export const OverviewTab = ({
     sortDir,
   ])
 
+  const handleExportCsv = useCallback(() => {
+    const header = [
+      'Ativo',
+      'Ticker',
+      'Categoria',
+      'Qtd',
+      'PM',
+      'Total Investido',
+      'Preço Atual',
+      'Total Atual',
+      'Resultado %',
+      '% Cart.',
+    ]
+    const baseValue = filterCatId === ALL ? totalValue : filteredTotal
+    const dataRows = filteredAssets.map((a) => {
+      const totalAtual = a.currentPrice * a.quantity
+      const cost = a.avgPrice * a.quantity
+      const ret = cost > 0 ? ((totalAtual - cost) / cost) * 100 : 0
+      const pct = baseValue > 0 ? (totalAtual / baseValue) * 100 : 0
+      const cat = categories.find((c) => c.id === a.categoryId)
+      return [
+        a.name,
+        a.ticker,
+        cat?.name ?? a.type,
+        String(a.quantity),
+        a.avgPrice.toFixed(2),
+        cost.toFixed(2),
+        a.currentPrice.toFixed(2),
+        totalAtual.toFixed(2),
+        `${ret.toFixed(2)}%`,
+        `${pct.toFixed(2)}%`,
+      ]
+    })
+    const csv = [header, ...dataRows].map((r) => r.map((v) => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `carteira-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }, [filteredAssets, categories, filterCatId, totalValue, filteredTotal])
+
   return (
     <div className="space-y-5">
       <CategoryFilter
@@ -154,6 +197,7 @@ export const OverviewTab = ({
         onRefreshPrices={refreshPrices}
         onOpenBrokerImport={() => setBrokerImportOpen(true)}
         onOpenAddAsset={() => setAddAssetOpen(true)}
+        onExportCsv={handleExportCsv}
       />
 
       <AssetsTable

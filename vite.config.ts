@@ -24,6 +24,17 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/cvm-dados/, ''),
         },
+        '/api/bcb': {
+          target: 'https://api.bcb.gov.br',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/bcb/, ''),
+        },
+        '/api/yahoo': {
+          target: 'https://query1.finance.yahoo.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+        },
         '/api/tesouro': {
           target: 'https://www.tesourotransparente.gov.br',
           changeOrigin: true,

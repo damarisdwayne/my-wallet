@@ -2,6 +2,8 @@
   "devCommand": "vite",
   "rewrites": [
     { "source": "/cvm-dados/:path*", "destination": "https://dados.cvm.gov.br/:path*" },
+    { "source": "/api/bcb/:path*", "destination": "https://api.bcb.gov.br/:path*" },
+    { "source": "/api/yahoo/:path*", "destination": "https://query1.finance.yahoo.com/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

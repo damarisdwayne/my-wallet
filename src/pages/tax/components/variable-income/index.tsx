@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AlertCircle } from 'lucide-react'
-import { calcMonthlyRV, calcRealizedGains } from '@/lib/ir-calc'
+import { calcMonthlyRV, calcRealizedGains, RV_EXEMPT_TYPES } from '@/lib/ir-calc'
 import type { TickerSets } from '@/services/quotes'
 import type { Asset, Trade } from '@/types'
 import { SummaryCards, MonthlyTable, OperationsDetail, DarfGuide } from './components'
@@ -12,7 +12,7 @@ export const VariableIncomeSection = ({ year, trades, assets, sets }: Props) => 
   const [filterType, setFilterType] = useState<string | null>(null)
 
   const gains = useMemo(
-    () => calcRealizedGains(trades, year, assets, sets),
+    () => calcRealizedGains(trades, year, assets, sets).filter((g) => !RV_EXEMPT_TYPES.has(g.assetType)),
     [trades, year, assets, sets],
   )
   const monthly = useMemo(() => calcMonthlyRV(gains, year), [gains, year])

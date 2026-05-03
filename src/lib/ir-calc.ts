@@ -95,17 +95,17 @@ export interface TickerSets {
 // Fixed income products from B3 are identified by their product name prefix
 const FIXED_INCOME_PREFIXES = [
   'TESOURO',
-  'CDB ',
-  'LCI ',
-  'LCA ',
-  'CRI ',
-  'CRA ',
+  'CDB',
+  'LCI',
+  'LCA',
+  'CRI',
+  'CRA',
   'LF ',
   'LFT',
   'NTN',
   'DEBENTURE',
   'DEBÊNTURE',
-  'DEB ',
+  'DEB',
 ]
 
 export const isFixedIncomeTicker = (ticker: string): boolean => {
@@ -156,6 +156,11 @@ const applyTrade = (map: PositionMap, trade: Trade) => {
 /* ── public functions ── */
 
 /** Position per ticker at endDate (inclusive). */
+// Fixed income / Tesouro are manually maintained in the portfolio — use asset records
+// directly instead of aggregating by ticker from trade history (which merges distinct
+// products that share a generic ticker like "CDB-INTER").
+const FLAT_INCOME_TYPES = new Set<AssetType>(['fixed_income', 'tesouro'])
+
 export const buildPositions = (
   trades: Trade[],
   endDate: string,
@@ -165,12 +170,17 @@ export const buildPositions = (
   const assetMap = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
   const map: PositionMap = {}
 
+  // Exclude fixed income tickers from trade accumulation — handled separately below
+  const flatIncomeTickers = new Set(
+    assets.filter((a) => FLAT_INCOME_TYPES.has(a.type)).map((a) => a.ticker.toUpperCase()),
+  )
+
   trades
-    .filter((t) => t.date <= endDate)
+    .filter((t) => t.date <= endDate && !flatIncomeTickers.has(t.ticker.toUpperCase()))
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach((t) => applyTrade(map, t))
 
-  return Object.entries(map)
+  const tradePositions: IrPosition[] = Object.entries(map)
     .filter(([, p]) => p.quantity > 0.0001)
     .map(([ticker, p]) => {
       const asset = assetMap[ticker]
@@ -186,7 +196,24 @@ export const buildPositions = (
         dirpfCode: DIRPF[type].code,
       }
     })
-    .sort((a, b) => a.ticker.localeCompare(b.ticker))
+
+  // One entry per portfolio asset for fixed income / tesouro (preserves distinct products)
+  const flatIncomePositions: IrPosition[] = assets
+    .filter((a) => FLAT_INCOME_TYPES.has(a.type) && a.quantity > 0)
+    .map((a) => ({
+      ticker: a.name, // use name as display key so distinct products show separately
+      assetName: a.name,
+      assetType: a.type,
+      quantity: a.quantity,
+      avgCost: a.currentPrice,
+      totalCost: a.currentPrice * a.quantity,
+      dirpfGroup: DIRPF[a.type].group,
+      dirpfCode: DIRPF[a.type].code,
+    }))
+
+  return [...tradePositions, ...flatIncomePositions].sort((a, b) =>
+    a.ticker.localeCompare(b.ticker),
+  )
 }
 
 /** Realized gains for sells occurring in the given year. */
@@ -244,7 +271,7 @@ export const calcRealizedGains = (
 type MonthBucket = { stockSales: number; stockGain: number; fiiSales: number; fiiGain: number }
 
 // Types exempt from DARF RV (taxed at source or via annual declaration)
-const RV_EXEMPT_TYPES = new Set<AssetType>(['tesouro', 'fixed_income', 'crypto', 'stock_us', 'etf_us'])
+export const RV_EXEMPT_TYPES = new Set<AssetType>(['tesouro', 'fixed_income', 'crypto', 'stock_us', 'etf_us'])
 
 const aggregateByMonth = (gains: RealizedGain[]): Record<string, MonthBucket> => {
   const byMonth: Record<string, MonthBucket> = {}

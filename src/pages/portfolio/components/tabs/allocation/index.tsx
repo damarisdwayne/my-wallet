@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { GitBranch, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Asset, Diagram, PortfolioCategory } from '@/types'
 import { computeAssetTargets } from '../../../compute-targets'
@@ -9,7 +9,7 @@ import {
   AssetAnswersDialog,
   CategoryCard,
   CategoryFormDialog,
-  DiagramsSection,
+  DiagramsSheet,
   EditQuestionsDialog,
 } from './components'
 
@@ -35,8 +35,10 @@ export const AllocationTab = ({
   const [editForm, setEditForm] = useState(emptyForm())
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
+  const [diagramsOpen, setDiagramsOpen] = useState(false)
   const [expandedCatId, setExpandedCatId] = useState<string | null>(null)
   const [manualDrafts, setManualDrafts] = useState<Record<string, Record<string, string>>>({})
+  const [diagramViewCats, setDiagramViewCats] = useState<Set<string>>(new Set())
   const [savingManual, setSavingManual] = useState<string | null>(null)
   const [answeringAsset, setAnsweringAsset] = useState<Asset | null>(null)
   const [editQCatId, setEditQCatId] = useState<string | null>(null)
@@ -143,6 +145,7 @@ export const AllocationTab = ({
 
   const enterManual = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
     const share = (100 / catAssets.length).toFixed(1)
+    setDiagramViewCats((prev) => { const s = new Set(prev); s.delete(catId); return s })
     setManualDrafts((prev) => ({
       ...prev,
       [catId]: Object.fromEntries(
@@ -156,15 +159,13 @@ export const AllocationTab = ({
     }))
   }
 
-  const exitManual = async (catId: string, catAssets: Asset[]) => {
-    setSavingManual(catId)
-    await Promise.all(catAssets.map((a) => editAsset(a.id, { targetPercent: 0 })))
+  const exitManual = (catId: string) => {
+    setDiagramViewCats((prev) => new Set([...prev, catId]))
     setManualDrafts((prev) => {
       const n = { ...prev }
       delete n[catId]
       return n
     })
-    setSavingManual(null)
   }
 
   const updateDraft = (catId: string, assetId: string, value: string) => {
@@ -219,13 +220,23 @@ export const AllocationTab = ({
           </span>{' '}
           de 100%
         </p>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={14} />
-          Nova categoria
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDiagramsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
+          >
+            <GitBranch size={14} />
+            Diagramas
+            {diagrams.length > 0 && <span className="text-xs opacity-60">({diagrams.length})</span>}
+          </button>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
+          >
+            <Plus size={14} />
+            Nova categoria
+          </button>
+        </div>
       </div>
 
       {categories.length === 0 && (
@@ -243,7 +254,7 @@ export const AllocationTab = ({
         const expanded = expandedCatId === cat.id
         const manual = isManualCat(cat.id)
         const draftActive = !!manualDrafts[cat.id]
-        const inManualMode = manual || draftActive
+        const inManualMode = (manual || draftActive) && !diagramViewCats.has(cat.id)
         const diagram = getDiagram(cat)
         const isSaving = savingManual === cat.id
 
@@ -269,7 +280,7 @@ export const AllocationTab = ({
             onConfirmDelete={() => setConfirmDeleteId(cat.id)}
             onCancelDelete={() => setConfirmDeleteId(null)}
             onDelete={() => handleDelete(cat.id)}
-            onExitManual={() => exitManual(cat.id, catAssets)}
+            onExitManual={() => exitManual(cat.id)}
             onEnterManual={() => enterManual(cat.id, catAssets, cat)}
             onUpdateDraft={(assetId, value) => updateDraft(cat.id, assetId, value)}
             onSaveManual={() => saveManual(cat.id, catAssets)}
@@ -283,11 +294,13 @@ export const AllocationTab = ({
         )
       })}
 
-      <DiagramsSection
+      <DiagramsSheet
+        open={diagramsOpen}
         diagrams={diagrams}
         categories={categories}
         saveDiagram={saveDiagram}
         deleteDiagram={deleteDiagram}
+        onClose={() => setDiagramsOpen(false)}
       />
 
       <CategoryFormDialog

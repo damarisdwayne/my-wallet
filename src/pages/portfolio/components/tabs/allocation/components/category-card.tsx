@@ -252,7 +252,6 @@ export const CategoryCard = memo(
     onCreateDiagram,
   }: CategoryCardProps) => {
     const { tracking } = cat
-    const showGoal = tracking === 'both' || tracking === 'goal_only'
     const showDiagramSection = tracking === 'both' || tracking === 'diagram_only'
     const showModeToggle = tracking === 'both'
     const effectiveInManual =
@@ -274,7 +273,7 @@ export const CategoryCard = memo(
               <CardTitle className="text-foreground text-sm font-semibold">{cat.name}</CardTitle>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              {showGoal && (
+              {true && (
                 <span className="hidden sm:inline text-xs text-muted-foreground">
                   Meta: {cat.targetPercent}% · {formatCurrency(catTargetValue)}
                 </span>
@@ -282,7 +281,7 @@ export const CategoryCard = memo(
               <span className="hidden sm:inline text-xs font-medium text-foreground">
                 Atual: {actualPct.toFixed(1)}% · {formatCurrency(catValue)}
               </span>
-              {showGoal && (
+              {true && (
                 <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
                   {diff >= 0 ? '+' : ''}
                   {diff.toFixed(1)}%
@@ -320,7 +319,7 @@ export const CategoryCard = memo(
               )}
             </div>
           </div>
-          {showGoal && (
+          {true && (
             <div className="w-full bg-muted rounded-full h-2 mt-2">
               <div
                 className="h-2 rounded-full transition-all"
@@ -417,7 +416,7 @@ export const CategoryCard = memo(
                   return (
                     <div key={a.id} className="text-xs p-2 rounded bg-muted space-y-0.5">
                       <p className="font-semibold text-foreground">{a.ticker}</p>
-                      {showGoal && (
+                      {true && (
                         <p className="text-muted-foreground">
                           Meta {metaPct}% · {formatCurrency(metaValue)}
                         </p>

@@ -7,12 +7,7 @@ type Props = {
   onSelectYear: (year: number) => void
 }
 
-export const PageHeader = ({
-  effectiveYear,
-  years,
-  currentYear,
-  onSelectYear,
-}: Props) => (
+export const PageHeader = ({ effectiveYear, years, currentYear, onSelectYear }: Props) => (
   <div className="flex items-center justify-between gap-4 flex-wrap">
     <div>
       <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">

@@ -4,6 +4,7 @@ import { formatCurrency } from '@/lib/utils'
 import type { Asset, FundamentalRecord, FundamentalSnapshot } from '@/types'
 import { FII_COMMON, STOCK_INDICATORS } from '../constants'
 import type { FiiNumericDef } from '../types'
+import { ValuationBadge } from './valuation-section'
 
 export const AssetCompactCard = ({
   asset,
@@ -70,6 +71,8 @@ export const AssetCompactCard = ({
         {snapshots.length === 0 && (
           <p className="text-xs text-muted-foreground/50 italic">Sem indicadores</p>
         )}
+
+        <ValuationBadge currentPrice={asset.currentPrice} snapshot={current} isFii={isFii} />
       </div>
     </Card>
   )

@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToAllDividends } from '@/services/dividends'
-import { subscribeToPatrimonyHistory, savePatrimonySnapshot, type PatrimonyPoint } from '@/services/patrimony'
+import {
+  subscribeToPatrimonyHistory,
+  savePatrimonySnapshot,
+  type PatrimonyPoint,
+} from '@/services/patrimony'
 import { useExpenses } from '@/hooks/use-expenses'
 import { useAuth } from '@/store/auth'
 import type { Asset, AssetType, Dividend } from '@/types'

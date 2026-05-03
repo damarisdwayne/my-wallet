@@ -19,6 +19,7 @@ import { IndicatorCard } from './indicator-card'
 import { ManualSnapshotDialog } from './snapshot-form'
 import { StockInfoDialog, StockInfoSection } from './stock-info'
 import { TextIndicatorCard } from './text-indicator-card'
+import { FiiValuation, StockValuation } from './valuation-section'
 
 export const AssetDetailView = ({
   asset,
@@ -137,6 +138,13 @@ export const AssetDetailView = ({
             <span className="text-xs text-muted-foreground/70">{current.industry}</span>
           )}
         </div>
+
+        {/* Valuation */}
+        {isFii ? (
+          <FiiValuation currentPrice={asset.currentPrice} snapshot={snapshots.at(-1) ?? null} />
+        ) : (
+          <StockValuation currentPrice={asset.currentPrice} snapshot={snapshots.at(-1) ?? null} />
+        )}
 
         {/* FII fund info */}
         {isFii && <FiiInfoSection info={fiiInfoData} onEdit={() => setFiiInfoOpen(true)} />}

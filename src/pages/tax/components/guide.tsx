@@ -249,6 +249,205 @@ export const GuideSection = () => (
       </InfoCard>
     </div>
 
+    <InfoCard title="Como preencher o DIRPF — passo a passo por tipo de ativo">
+      <p className="text-xs text-muted-foreground/70 italic">
+        Referência para o programa IRPF da Receita Federal (declaração anual).
+      </p>
+
+      {/* Bens e Direitos */}
+      <div className="space-y-1.5 pt-1">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Bens e Direitos
+        </p>
+        <p className="text-xs">
+          Informe todos os ativos em carteira na data de 31/12 de cada ano. Use o{' '}
+          <span className="font-medium text-foreground">custo de aquisição</span> (preço médio ×
+          quantidade) — nunca o preço de mercado.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse mt-2">
+            <thead>
+              <tr className="text-muted-foreground/70">
+                <th className="text-left pb-1.5 pr-4 font-medium">Ativo</th>
+                <th className="text-left pb-1.5 pr-4 font-medium">Grupo</th>
+                <th className="text-left pb-1.5 font-medium">Código</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {[
+                ['Ações BR', '03', '01 — Ações'],
+                ['FIIs', '07', '03 — Fundos de Investimento Imobiliário'],
+                ['ETFs BR', '07', '09 — Demais fundos (ex. ETF)'],
+                ['BDRs', '04', '04 — BDR'],
+                ['Ações / ETFs EUA', '04', '01 — Ações / 02 — ETF exterior'],
+                ['Tesouro Direto', '04', '04 — Ativos emitidos por entidades'],
+                ['CDB / LCI / LCA', '04', '03 — Títulos privados'],
+              ].map(([ativo, grupo, codigo]) => (
+                <tr key={ativo}>
+                  <td className="py-1.5 pr-4 text-foreground font-medium">{ativo}</td>
+                  <td className="py-1.5 pr-4">{grupo}</td>
+                  <td className="py-1.5">{codigo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs pt-1">
+          No campo <span className="font-medium text-foreground">Discriminação</span> informe:
+          ticker, corretora e quantidade. Ex: "100 cotas de MXRF11 custodiadas na XP Investimentos".
+        </p>
+      </div>
+
+      {/* Rendimentos Isentos */}
+      <div className="space-y-1.5 pt-2 border-t border-border/40">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Rendimentos Isentos e Não Tributáveis
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse mt-1">
+            <thead>
+              <tr className="text-muted-foreground/70">
+                <th className="text-left pb-1.5 pr-4 font-medium">Tipo de rendimento</th>
+                <th className="text-left pb-1.5 font-medium">Linha no DIRPF</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {[
+                ['Rendimentos de FIIs (pessoa física)', '26 — Outros (distribuição de lucros)'],
+                ['Dividendos de ações BR ≤ R$50k/mês', '09 — Lucros e dividendos'],
+                ['LCI / LCA (resgate)', '12 — Rendimentos de LCI/LCA'],
+                ['Ações com ganho isento (vendas ≤ R$20k/mês)', '20 — Ganhos líquidos isentos'],
+                ['BDRs com ganho isento (vendas ≤ R$20k/mês)', '20 — Ganhos líquidos isentos'],
+              ].map(([tipo, linha]) => (
+                <tr key={tipo}>
+                  <td className="py-1.5 pr-4 text-foreground font-medium">{tipo}</td>
+                  <td className="py-1.5">{linha}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Tributação Exclusiva */}
+      <div className="space-y-1.5 pt-2 border-t border-border/40">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Rendimentos Sujeitos à Tributação Exclusiva/Definitiva
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse mt-1">
+            <thead>
+              <tr className="text-muted-foreground/70">
+                <th className="text-left pb-1.5 pr-4 font-medium">Tipo</th>
+                <th className="text-left pb-1.5 font-medium">Linha</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {[
+                ['JCP (Juros sobre Capital Próprio)', '10 — Juros sobre capital próprio'],
+                [
+                  'CDB / Tesouro Direto (IR retido na fonte)',
+                  '06 — Rendimentos de aplicações financeiras',
+                ],
+              ].map(([tipo, linha]) => (
+                <tr key={tipo}>
+                  <td className="py-1.5 pr-4 text-foreground font-medium">{tipo}</td>
+                  <td className="py-1.5">{linha}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Renda Variável */}
+      <div className="space-y-1.5 pt-2 border-t border-border/40">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Renda Variável — Operações em Bolsa
+        </p>
+        <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
+          <li>
+            Acesse a ficha{' '}
+            <span className="font-medium text-foreground">
+              Renda Variável → Operações Comuns/Day-Trade
+            </span>
+            .
+          </li>
+          <li>
+            Para cada mês com venda, informe: mercado (Ações, FIIs, ETF), resultado (lucro ou
+            prejuízo) e IR retido na fonte.
+          </li>
+          <li>
+            O programa calcula automaticamente o imposto devido após compensar prejuízos acumulados.
+          </li>
+          <li>
+            Vendas de ações <span className="font-medium text-foreground">≤ R$20k no mês</span>:
+            marque como "Operação Isenta" — sem imposto, mas ainda declare o resultado.
+          </li>
+          <li>
+            FIIs: sempre tributados a 20%, independente do volume vendido — sem isenção de R$20k.
+          </li>
+          <li>IR já pago via DARF durante o ano é deduzido nesta mesma ficha.</li>
+        </ol>
+      </div>
+
+      {/* Exterior */}
+      <div className="space-y-1.5 pt-2 border-t border-border/40">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Rendimentos do Exterior (Lei 14.754/2023)
+        </p>
+        <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
+          <li>
+            Acesse a ficha{' '}
+            <span className="font-medium text-foreground">
+              Rendimentos de Aplicações Financeiras no Exterior
+            </span>
+            .
+          </li>
+          <li>
+            Informe ganhos realizados (venda de ações/ETFs) e dividendos recebidos de fontes
+            estrangeiras, convertendo em R$ pelo PTAX de cada data.
+          </li>
+          <li>
+            A alíquota é de <span className="font-medium text-foreground">15% flat</span> sobre o
+            rendimento líquido em R$.
+          </li>
+          <li>
+            IR retido no exterior (ex: withholding tax dos EUA) pode ser{' '}
+            <span className="font-medium text-foreground">compensado</span> — informe na coluna
+            "Imposto pago no exterior".
+          </li>
+          <li>
+            Como o withholding dos EUA é 30% e a alíquota BR é 15%, quem investe em ações/ETFs
+            americanos geralmente{' '}
+            <span className="font-medium text-foreground">não deve IR adicional</span>.
+          </li>
+        </ol>
+      </div>
+
+      {/* Custo médio */}
+      <div className="space-y-1.5 pt-2 border-t border-border/40">
+        <p className="font-semibold text-foreground text-xs uppercase tracking-wide">
+          Custo Médio — como calcular
+        </p>
+        <p className="text-sm">
+          O custo médio (preço médio de aquisição) determina seu lucro tributável em cada venda.
+          Sempre inclua corretagem e emolumentos no custo.
+        </p>
+        <div className="bg-muted/50 rounded-md p-3 text-xs space-y-1 font-mono">
+          <p>Compra 1: 100 cotas × R$ 10,00 = R$ 1.000</p>
+          <p>Compra 2: 50 cotas × R$ 12,00 = R$ 600</p>
+          <p className="border-t border-border/40 pt-1">
+            PM = (1.000 + 600) ÷ 150 = <span className="font-bold text-foreground">R$ 10,67</span>
+          </p>
+          <p>
+            Venda de 80 cotas × R$ 14,00 → lucro = 80 × (14 − 10,67) ={' '}
+            <span className="font-bold text-foreground">R$ 266,40</span>
+          </p>
+        </div>
+      </div>
+    </InfoCard>
+
     <InfoCard title="O que acontece se não declarar?">
       <div className="flex items-start gap-3 p-3 rounded-md bg-destructive/10 border border-destructive/20">
         <AlertCircle size={16} className="text-destructive mt-0.5 shrink-0" />

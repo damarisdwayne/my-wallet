@@ -7,6 +7,7 @@ import {
   AporteTab,
   ImportsTab,
   OverviewTab,
+  RebalanceTab,
   TradesTab,
 } from './components'
 
@@ -14,6 +15,7 @@ const tabs = [
   'Visão Geral',
   'Alocação',
   'Simular Aporte',
+  'Rebalancear',
   'Movimentações',
   'Importações',
   'Análises',
@@ -123,6 +125,15 @@ export const PortfolioPage = () => {
         />
       )}
       {activeTab === 3 && (
+        <RebalanceTab
+          assets={assets}
+          categories={categories}
+          diagrams={diagrams}
+          answers={answers}
+          totalValue={totalValue}
+        />
+      )}
+      {activeTab === 4 && (
         <TradesTab
           trades={trades}
           assets={assets}
@@ -131,8 +142,8 @@ export const PortfolioPage = () => {
           onSyncMissingTrades={syncMissingTrades}
         />
       )}
-      {activeTab === 4 && <ImportsTab records={importRecords} onRevert={revertImport} />}
-      {activeTab === 5 && (
+      {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
+      {activeTab === 6 && (
         <AnalysisTab
           assets={assets}
           fundamentals={fundamentals}

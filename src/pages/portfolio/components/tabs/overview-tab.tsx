@@ -12,10 +12,9 @@ import {
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 import type { B3Asset } from '@/services/b3-import'
 import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
-import { ALL, typeLabel } from '../constants'
-import { computeAssetTargets } from '../compute-targets'
-import { AddAssetDialog } from './add-asset-dialog'
-import { BrokerImportDialog } from './broker-import-dialog'
+import { ALL, typeLabel } from '../../constants'
+import { computeAssetTargets } from '../../compute-targets'
+import { AddAssetDialog, BrokerImportDialog } from '../dialog'
 
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'

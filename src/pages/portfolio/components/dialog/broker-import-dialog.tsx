@@ -18,7 +18,7 @@ import {
 import { parseInterPdf } from '@/services/inter-import'
 import { type ExtratoEntry, extratoToDividends, parseInterExtrato } from '@/services/inter-extrato'
 import type { Asset } from '@/types'
-import { typeLabel } from '../constants'
+import { typeLabel } from '../../constants'
 
 interface Broker {
   id: string

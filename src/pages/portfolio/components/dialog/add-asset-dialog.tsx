@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { Asset, AssetType, FixedIncomeType, PortfolioCategory, RateType, Trade } from '@/types'
-import { typeLabel } from '../constants'
+import { typeLabel } from '../../constants'
 
 /* ─── Constants ─────────────────────────────────────────────────── */
 

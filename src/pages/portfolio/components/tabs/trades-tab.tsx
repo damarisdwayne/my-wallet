@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, Trash2 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Asset, PortfolioCategory, Trade } from '@/types'
-import { ALL } from '../constants'
+import { ALL } from '../../constants'
 
 interface Props {
   trades: Trade[]

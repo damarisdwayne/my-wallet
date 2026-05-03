@@ -1,0 +1,7 @@
+export * from './allocation-tab'
+export * from './analysis-tab'
+export * from './aporte-tab'
+export * from './diagram-tab'
+export * from './imports-tab'
+export * from './overview-tab'
+export * from './trades-tab'

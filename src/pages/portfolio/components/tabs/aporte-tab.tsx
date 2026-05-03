@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
-import { computeAssetTargets } from '../compute-targets'
+import { computeAssetTargets } from '../../compute-targets'
 
 interface AssetAllocation {
   asset: Asset

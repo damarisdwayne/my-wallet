@@ -10,9 +10,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn, formatCurrency } from '@/lib/utils'
-import { type B3Asset, parseB3Excel } from '@/services/b3-import'
+import type { B3Asset } from '@/services/b3-import'
+import { parseInterPdf } from '@/services/inter-import'
 import type { Asset } from '@/types'
-import { typeLabel } from '../constants'
+import { typeLabel } from '../../constants'
 
 interface Props {
   open: boolean
@@ -21,38 +22,37 @@ interface Props {
   onImport: (assets: B3Asset[], filename: string) => Promise<void>
 }
 
-type ParsedRow = B3Asset & { action: 'new' | 'update' | 'sell' }
+type ParsedRow = B3Asset & { action: 'new' | 'update' }
 
-export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
+export const InterImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<ParsedRow[] | null>(null)
   const [filename, setFilename] = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
+  const [parsing, setParsing] = useState(false)
 
   const reset = () => {
     setRows(null)
     setFilename('')
     setParseError(null)
+    setParsing(false)
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const processBuffer = (buffer: ArrayBuffer) => {
+  const processBuffer = async (buffer: ArrayBuffer) => {
+    setParsing(true)
     try {
-      const parsed = parseB3Excel(buffer)
-      const withAction: ParsedRow[] = parsed.assets
-        .filter((a) => {
-          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
-          return a.quantity > 0 || exists // skip pure sells with no existing position
-        })
-        .map((a) => {
-          const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
-          const action = a.quantity < 0 ? 'sell' : exists ? 'update' : 'new'
-          return { ...a, action } as ParsedRow
-        })
+      const parsed = await parseInterPdf(buffer)
+      const withAction: ParsedRow[] = parsed.assets.map((a) => ({
+        ...a,
+        action: existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker) ? 'update' : 'new',
+      }))
       setRows(withAction)
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Erro ao processar arquivo.')
+    } finally {
+      setParsing(false)
     }
   }
 
@@ -64,6 +64,7 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
       .then(processBuffer)
       .catch(() => {
         setParseError('Não foi possível ler o arquivo.')
+        setParsing(false)
       })
   }
 
@@ -87,7 +88,6 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
 
   const newCount = rows?.filter((r) => r.action === 'new').length ?? 0
   const updateCount = rows?.filter((r) => r.action === 'update').length ?? 0
-  const sellCount = rows?.filter((r) => r.action === 'sell').length ?? 0
 
   return (
     <Dialog
@@ -99,14 +99,18 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
     >
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Importar negociações da B3</DialogTitle>
+          <DialogTitle>Importar nota da Inter Co Securities</DialogTitle>
           <DialogDescription>
-            Em <span className="font-medium text-foreground">investidor.b3.com.br</span> → Extratos
-            → Negociação → Baixar → Excel. O app calculará sua posição atual e preço médio.
+            No app da Inter, acesse{' '}
+            <span className="font-medium text-foreground">
+              Investimentos → Notas de corretagem Ações EUA
+            </span>{' '}
+            e exporte a nota de corretagem em PDF. Quantidades e PM serão calculados
+            automaticamente.
           </DialogDescription>
         </DialogHeader>
 
-        {!rows && (
+        {!rows && !parsing && (
           <label
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
@@ -118,12 +122,12 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
               <span className="text-primary font-medium">clique para selecionar</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              Formato: Excel (.xlsx) — Extrato de Negociação da B3
+              Formato: PDF — Transaction Confirmation da Inter Co Securities
             </p>
             <input
               ref={inputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".pdf"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]
@@ -131,6 +135,13 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
               }}
             />
           </label>
+        )}
+
+        {parsing && (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+            <span className="animate-spin text-primary">⏳</span>
+            Lendo PDF…
+          </div>
         )}
 
         {parseError && (
@@ -150,9 +161,6 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
               {updateCount > 0 && (
                 <span className="text-foreground font-medium">{updateCount} a atualizar</span>
               )}
-              {sellCount > 0 && (
-                <span className="text-destructive font-medium">-{sellCount} vendas</span>
-              )}
               <button onClick={reset} className="ml-auto underline hover:text-foreground">
                 Trocar arquivo
               </button>
@@ -165,7 +173,7 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
                     <th className="px-3 py-2 font-medium">Ativo</th>
                     <th className="px-3 py-2 font-medium">Tipo</th>
                     <th className="px-3 py-2 font-medium text-right">Qtd</th>
-                    <th className="px-3 py-2 font-medium text-right">PM calc.</th>
+                    <th className="px-3 py-2 font-medium text-right">PM (USD)</th>
                     <th className="px-3 py-2 font-medium text-center">Ação</th>
                   </tr>
                 </thead>
@@ -181,13 +189,8 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
                       <td className="px-3 py-2">
                         <Badge variant="secondary">{typeLabel[row.type]}</Badge>
                       </td>
-                      <td
-                        className={cn(
-                          'px-3 py-2 text-right',
-                          row.action === 'sell' ? 'text-destructive' : 'text-foreground',
-                        )}
-                      >
-                        {row.quantity}
+                      <td className="px-3 py-2 text-right text-foreground">
+                        {row.quantity % 1 === 0 ? row.quantity : row.quantity.toFixed(6)}
                       </td>
                       <td className="px-3 py-2 text-right text-muted-foreground">
                         {row.avgPrice > 0 ? formatCurrency(row.avgPrice) : '—'}
@@ -198,16 +201,10 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
                             'text-xs font-medium px-2 py-0.5 rounded-full',
                             row.action === 'new'
                               ? 'bg-success/15 text-success'
-                              : row.action === 'sell'
-                                ? 'bg-destructive/15 text-destructive'
-                                : 'bg-muted text-muted-foreground',
+                              : 'bg-muted text-muted-foreground',
                           )}
                         >
-                          {row.action === 'new'
-                            ? 'Novo'
-                            : row.action === 'sell'
-                              ? 'Venda'
-                              : 'Atualizar'}
+                          {row.action === 'new' ? 'Novo' : 'Atualizar'}
                         </span>
                       </td>
                     </tr>
@@ -217,8 +214,7 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
             </div>
 
             <p className="text-xs text-muted-foreground">
-              PM calculado pela média ponderada das compras. Ativos existentes terão qtd e PM
-              atualizados.
+              Preços em USD. PM calculado pela média ponderada das compras na nota.
             </p>
           </>
         )}

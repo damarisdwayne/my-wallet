@@ -10,6 +10,7 @@ import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { clearTesouroBondsCache } from '@/services/tesouro'
 import type { Asset } from '@/types'
+import { toast } from 'sonner'
 
 const deleteExpiredAssets = async (uid: string, assets: Asset[]) => {
   await Promise.all(assets.map((a) => deleteAssetService(uid, a.id)))
@@ -34,13 +35,32 @@ export const useAssets = (uid: string | null) => {
     })
   }, [uid])
 
-  const addAsset = (asset: Asset) => (uid ? addAssetService(uid, asset) : Promise.resolve())
+  const addAsset = async (asset: Asset) => {
+    if (!uid) return
+    try {
+      await addAssetService(uid, asset)
+    } catch {
+      toast.error('Erro ao adicionar ativo')
+    }
+  }
 
-  const editAsset = (assetId: string, data: Partial<Asset>) =>
-    uid ? updateAssetService(uid, assetId, data) : Promise.resolve()
+  const editAsset = async (assetId: string, data: Partial<Asset>) => {
+    if (!uid) return
+    try {
+      await updateAssetService(uid, assetId, data)
+    } catch {
+      toast.error('Erro ao editar ativo')
+    }
+  }
 
-  const deleteAsset = (assetId: string) =>
-    uid ? deleteAssetService(uid, assetId) : Promise.resolve()
+  const deleteAsset = async (assetId: string) => {
+    if (!uid) return
+    try {
+      await deleteAssetService(uid, assetId)
+    } catch {
+      toast.error('Erro ao excluir ativo')
+    }
+  }
 
   const refreshPrices = async () => {
     if (!uid || assets.length === 0) return
@@ -86,8 +106,10 @@ export const useAssets = (uid: string | null) => {
             }
           }),
       )
+      toast.success('Preços atualizados')
     } catch (err) {
       setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar preços')
     } finally {
       setRefreshingPrices(false)
     }

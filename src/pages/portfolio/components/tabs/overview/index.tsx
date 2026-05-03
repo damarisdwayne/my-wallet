@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ALL } from '../../../constants'
 import { computeAssetTargets } from '../../../compute-targets'
 import { AddAssetDialog, BrokerImportDialog } from '../../dialog'
@@ -30,13 +30,16 @@ export const OverviewTab = ({
   const [sortCol, setSortCol] = useState<import('./constants').SortCol>('total')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-  const toggleSort = (col: typeof sortCol) => {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else {
-      setSortCol(col)
-      setSortDir(col === 'ticker' || col === 'tipo' ? 'asc' : 'desc')
-    }
-  }
+  const toggleSort = useCallback(
+    (col: typeof sortCol) => {
+      if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      else {
+        setSortCol(col)
+        setSortDir(col === 'ticker' || col === 'tipo' ? 'asc' : 'desc')
+      }
+    },
+    [sortCol],
+  )
 
   const activeCategories = useMemo(
     () => categories.filter((c) => assets.some((a) => a.categoryId === c.id)),

@@ -31,11 +31,35 @@ import { toast } from 'sonner'
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
 const makeDefaultCategories = (): PortfolioCategory[] => [
-  { id: mkId(), name: 'Fundos Imobiliários', type: 'fii', targetPercent: 30, color: '#f97316' },
-  { id: mkId(), name: 'Renda Fixa', type: 'fixed_income', targetPercent: 30, color: '#3b82f6' },
-  { id: mkId(), name: 'Bolsa BR', type: 'stock', targetPercent: 20, color: '#22c55e' },
-  { id: mkId(), name: 'Exterior', type: 'stock_us', targetPercent: 17, color: '#8b5cf6' },
-  { id: mkId(), name: 'Cripto', type: 'crypto', targetPercent: 3, color: '#eab308' },
+  {
+    id: mkId(),
+    name: 'Fundos Imobiliários',
+    assetTypes: ['fii'],
+    targetPercent: 30,
+    color: '#f97316',
+  },
+  {
+    id: mkId(),
+    name: 'Renda Fixa',
+    assetTypes: ['fixed_income', 'tesouro'],
+    targetPercent: 30,
+    color: '#3b82f6',
+  },
+  {
+    id: mkId(),
+    name: 'Bolsa BR',
+    assetTypes: ['stock', 'bdr', 'etf'],
+    targetPercent: 20,
+    color: '#22c55e',
+  },
+  {
+    id: mkId(),
+    name: 'Exterior',
+    assetTypes: ['stock_us', 'etf_us'],
+    targetPercent: 17,
+    color: '#8b5cf6',
+  },
+  { id: mkId(), name: 'Cripto', assetTypes: ['crypto'], targetPercent: 3, color: '#eab308' },
 ]
 
 export const usePortfolio = () => {
@@ -124,7 +148,7 @@ export const usePortfolio = () => {
     rawTrades: B3RawTrade[],
     dividends: B3Dividend[],
     filename: string,
-    source?: 'b3' | 'inter',
+    _source?: 'b3' | 'inter',
   ) => {
     if (!uid) return
     try {
@@ -164,9 +188,7 @@ export const usePortfolio = () => {
               wasCreated: false,
             })
           } else if (b3.quantity > 0) {
-            // Inter imports: ETFs are US-listed → use the Exterior (stock_us) category
-            const catType = source === 'inter' && b3.type === 'etf' ? 'stock_us' : b3.type
-            const autoCatId = categories.find((c) => c.type === catType)?.id ?? ''
+            const autoCatId = categories.find((c) => c.assetTypes.includes(b3.type))?.id ?? ''
             const firstBuyDate =
               b3.operationDate ??
               rawTrades

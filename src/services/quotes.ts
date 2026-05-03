@@ -152,10 +152,8 @@ async function fetchCryptoPrices(tickers: string[]): Promise<Record<string, numb
   }
 }
 
-const BR_STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr'])
-// ETFs with digits in the ticker are Brazilian (BOVA11, IVVB11…); letter-only are US (VOO, SPY…)
-const isUsTicker = (ticker: string, type: AssetType) =>
-  type === 'stock_us' || (type === 'etf' && !/\d/.test(ticker))
+const BR_STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr', 'etf'])
+const isUsType = (type: AssetType) => type === 'stock_us' || type === 'etf_us'
 
 async function fetchTesouroPrices(tickers: string[]): Promise<Record<string, number>> {
   try {
@@ -236,12 +234,10 @@ export async function fetchLivePrices(
   if (cached) return cached
 
   const typeOf = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.type]))
-  const brTickers = tickers.filter(
-    (t) => BR_STOCK_TYPES.has(typeOf[t]) || (typeOf[t] === 'etf' && !isUsTicker(t, typeOf[t])),
-  )
-  const usTickers = tickers.filter((t) => isUsTicker(t, typeOf[t]))
+  const brTickers = tickers.filter((t) => BR_STOCK_TYPES.has(typeOf[t]))
+  const usTickers = tickers.filter((t) => isUsType(typeOf[t]))
   const cryptoTickers = tickers.filter((t) => typeOf[t] === 'crypto')
-  const tesouroTickers = tickers.filter((t) => t.startsWith('TESOURO'))
+  const tesouroTickers = tickers.filter((t) => typeOf[t] === 'tesouro')
 
   const [stockPrices, usPrices, cryptoPrices, tesouroPrices] = await Promise.all([
     brTickers.length > 0 ? fetchStockPrices(brTickers) : {},

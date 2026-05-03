@@ -56,9 +56,8 @@ const US_ETF_TICKERS = new Set([
   'ISTB',
 ])
 
-function inferUsType(ticker: string): AssetType {
-  return US_ETF_TICKERS.has(ticker.toUpperCase()) ? 'etf' : 'stock_us'
-}
+const inferUsType = (ticker: string): AssetType =>
+  US_ETF_TICKERS.has(ticker.toUpperCase()) ? 'etf_us' : 'stock_us'
 
 interface TradeRow {
   ticker: string

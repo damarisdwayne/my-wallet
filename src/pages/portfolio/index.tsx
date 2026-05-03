@@ -5,12 +5,13 @@ import {
   AllocationTab,
   AnalysisTab,
   AporteTab,
+  CategoriesTab,
   ImportsTab,
   OverviewTab,
   TradesTab,
 } from './components'
 
-const tabs = ['Visão Geral', 'Metas', 'Aporte', 'Movimentações', 'Importações', 'Análises']
+const tabs = ['Visão Geral', 'Metas', 'Aporte', 'Movimentações', 'Importações', 'Análises', 'Categorias']
 
 export const PortfolioPage = () => {
   const {
@@ -132,6 +133,14 @@ export const PortfolioPage = () => {
           saveFiiInfo={saveFiiInfo}
           stockInfo={stockInfo}
           saveStockInfo={saveStockInfo}
+        />
+      )}
+      {activeTab === 6 && (
+        <CategoriesTab
+          assets={assets}
+          categories={categories}
+          totalValue={totalValue}
+          editAsset={editAsset}
         />
       )}
     </div>

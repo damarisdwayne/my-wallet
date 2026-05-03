@@ -74,9 +74,11 @@ const DIRPF: Record<AssetType, { group: string; code: string }> = {
   fii: { group: '07', code: '03' },
   etf: { group: '07', code: '09' },
   bdr: { group: '03', code: '04' },
+  tesouro: { group: '04', code: '02' },
   fixed_income: { group: '04', code: '01' },
   crypto: { group: '08', code: '01' },
   stock_us: { group: '03', code: '04' },
+  etf_us: { group: '07', code: '09' },
   other: { group: '99', code: '99' },
 }
 
@@ -113,7 +115,9 @@ export const isFixedIncomeTicker = (ticker: string): boolean => {
 
 export const inferAssetType = (ticker: string, sets?: TickerSets): AssetType => {
   const t = ticker.toUpperCase()
-  // fixed income check first — these have long descriptive names, not stock codes
+  // Tesouro Direto — separate type from flat fixed income
+  if (t.startsWith('TESOURO')) return 'tesouro'
+  // flat fixed income check — these have long descriptive names, not stock codes
   if (isFixedIncomeTicker(t)) return 'fixed_income'
   if (sets) {
     if (sets.stock.has(t)) return 'stock'
@@ -125,7 +129,7 @@ export const inferAssetType = (ticker: string, sets?: TickerSets): AssetType => 
   if (t.endsWith('11')) return 'fii'
   if (/[3-8]$/.test(t)) return 'stock'
   // letter-only tickers (e.g. AAPL, VOO, BRK.B) → US stock/ETF
-  if (/^[A-Z]{1,6}(\.?[A-Z])?$/.test(t)) return 'stock_us'
+  if (/^[A-Z]{1,6}(\.?[A-Z])?$/.test(t)) return 'stock_us' // etf_us inference requires ticker sets
   return 'other'
 }
 
@@ -240,7 +244,7 @@ export const calcRealizedGains = (
 type MonthBucket = { stockSales: number; stockGain: number; fiiSales: number; fiiGain: number }
 
 // Types exempt from DARF RV (taxed at source or via annual declaration)
-const RV_EXEMPT_TYPES = new Set<AssetType>(['fixed_income', 'crypto', 'stock_us'])
+const RV_EXEMPT_TYPES = new Set<AssetType>(['tesouro', 'fixed_income', 'crypto', 'stock_us', 'etf_us'])
 
 const aggregateByMonth = (gains: RealizedGain[]): Record<string, MonthBucket> => {
   const byMonth: Record<string, MonthBucket> = {}

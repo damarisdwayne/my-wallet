@@ -3,9 +3,17 @@ import { db } from '@/lib/firestore'
 import type { Asset } from '@/types'
 
 export const subscribeToAssets = (userId: string, cb: (assets: Asset[]) => void) =>
-  onSnapshot(collection(db, 'users', userId, 'assets'), (snap) =>
-    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Asset)),
-  )
+  onSnapshot(collection(db, 'users', userId, 'assets'), (snap) => {
+    const assets = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Asset)
+    // Migrate legacy Tesouro Direto assets stored as fixed_income
+    assets.forEach((a) => {
+      if (a.type === 'fixed_income' && a.ticker.toUpperCase().startsWith('TESOURO')) {
+        void updateDoc(doc(db, 'users', userId, 'assets', a.id), { type: 'tesouro' })
+        a.type = 'tesouro'
+      }
+    })
+    cb(assets)
+  })
 
 const stripUndefined = <T extends object>(obj: T): T =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T

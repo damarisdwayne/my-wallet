@@ -19,7 +19,7 @@ export const CategoryRow = ({ allocation, isOpen, onToggle }: CategoryRowProps) 
     catPercentAfter,
     assetAllocations,
   } = allocation
-  const isFixedIncome = cat.type === 'fixed_income'
+  const isFixedIncome = cat.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro')
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">

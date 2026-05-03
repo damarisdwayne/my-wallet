@@ -27,7 +27,10 @@ export const useAssets = (uid: string | null) => {
     return subscribeToAssets(uid, (data) => {
       const today = new Date().toISOString().slice(0, 10)
       const expired = data.filter(
-        (a) => a.type === 'fixed_income' && a.maturityDate && a.maturityDate < today,
+        (a) =>
+          (a.type === 'fixed_income' || a.type === 'tesouro') &&
+          a.maturityDate &&
+          a.maturityDate < today,
       )
       if (expired.length > 0) void deleteExpiredAssets(uid, expired)
       setAssets(data.filter((a) => !expired.some((e) => e.id === a.id)))
@@ -69,12 +72,8 @@ export const useAssets = (uid: string | null) => {
     clearQuoteCache()
     clearTesouroBondsCache()
     try {
-      // Stocks, FIIs, ETFs, BDRs, crypto + Tesouro Direto
-      const priceable = assets.filter(
-        (a) =>
-          (a.type !== 'fixed_income' && a.type !== 'other') ||
-          a.ticker.toUpperCase().startsWith('TESOURO'),
-      )
+      // Stocks, FIIs, ETFs, BDRs, crypto, Tesouro Direto, US assets
+      const priceable = assets.filter((a) => a.type !== 'fixed_income' && a.type !== 'other')
       const prices = await fetchLivePrices(
         priceable.map((a) => ({ ticker: a.ticker, type: a.type })),
       )
@@ -85,9 +84,7 @@ export const useAssets = (uid: string | null) => {
       )
 
       // Flat fixed income (CDB, LCI, LCA…) — calculate via BCB rates API
-      const flatFI = assets.filter(
-        (a) => a.type === 'fixed_income' && !a.ticker.toUpperCase().startsWith('TESOURO'),
-      )
+      const flatFI = assets.filter((a) => a.type === 'fixed_income')
       await Promise.all(
         flatFI
           .filter((a) => a.operationDate && a.rateType)

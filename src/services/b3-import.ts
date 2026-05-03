@@ -1,5 +1,7 @@
 import * as XLSX from 'xlsx'
 import type { AssetType } from '@/types'
+import type { TickerSets } from '@/lib/ir-calc'
+import { fetchTickerSets } from '@/services/quotes'
 
 export interface B3Asset {
   ticker: string
@@ -74,8 +76,11 @@ const ETF_TICKERS = new Set([
   'XBOV11',
 ])
 
-const inferType = (ticker: string): AssetType => {
-  if (ticker.startsWith('TESOURO')) return 'fixed_income'
+const inferType = (ticker: string, sets?: TickerSets): AssetType => {
+  if (ticker.startsWith('TESOURO')) return 'tesouro'
+  // Fixed income product names (long descriptive names, not exchange codes)
+  if (/^(CDB|LCI|LCA|LCE|CRI|CRA|LF |LFT|NTN|DEB)/i.test(ticker)) return 'fixed_income'
+  // BDR — ends in 34/32/33/35
   if (
     ticker.endsWith('34') ||
     ticker.endsWith('32') ||
@@ -83,6 +88,15 @@ const inferType = (ticker: string): AssetType => {
     ticker.endsWith('35')
   )
     return 'bdr'
+  // Use BrAPI sets when available for accurate stock/fii/bdr classification
+  if (sets) {
+    if (sets.bdr.has(ticker)) return 'bdr'
+    if (sets.stock.has(ticker)) return 'stock' // includes units (TAEE11, SANB11…)
+    if (sets.fii.has(ticker)) {
+      return ETF_TICKERS.has(ticker) ? 'etf' : 'fii'
+    }
+  }
+  // Fallback heuristics when sets are unavailable
   if (ticker.endsWith('11')) {
     if (ETF_TICKERS.has(ticker)) return 'etf'
     if (UNIT_TICKERS.has(ticker)) return 'stock'
@@ -363,7 +377,7 @@ const cleanQty = (n: number): number => {
   return Math.abs(r) < 1e-9 ? 0 : r
 }
 
-const positionsToAssets = (positions: Map<string, Accumulator>): B3Asset[] => {
+const positionsToAssets = (positions: Map<string, Accumulator>, sets?: TickerSets): B3Asset[] => {
   const result: B3Asset[] = []
   for (const [ticker, { netQty, buysQty, totalBuyCost }] of positions) {
     const qty = cleanQty(netQty)
@@ -372,7 +386,7 @@ const positionsToAssets = (positions: Map<string, Accumulator>): B3Asset[] => {
     result.push({
       ticker,
       name: ticker,
-      type: inferType(ticker),
+      type: inferType(ticker, sets),
       quantity: qty,
       avgPrice,
       currentPrice: avgPrice,
@@ -382,7 +396,8 @@ const positionsToAssets = (positions: Map<string, Accumulator>): B3Asset[] => {
   return result
 }
 
-export const parseB3Excel = (buffer: ArrayBuffer): B3ParseResult => {
+export const parseB3Excel = async (buffer: ArrayBuffer): Promise<B3ParseResult> => {
+  const sets = await fetchTickerSets().catch(() => undefined)
   const workbook = XLSX.read(buffer, { type: 'array' })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
@@ -450,7 +465,7 @@ export const parseB3Excel = (buffer: ArrayBuffer): B3ParseResult => {
     applyRow(row, cols, date, state)
   }
 
-  const assets = positionsToAssets(state.positions)
+  const assets = positionsToAssets(state.positions, sets)
   if (assets.length === 0 && state.trades.length === 0 && state.dividends.length === 0) {
     throw new Error('Nenhuma posição encontrada. Verifique se o arquivo contém movimentações.')
   }

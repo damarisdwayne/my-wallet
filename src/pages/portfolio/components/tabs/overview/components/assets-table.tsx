@@ -189,7 +189,7 @@ export const AssetsTable = memo(
                     {formatCurrency(totalAtual)}
                   </td>
                   <td className="py-3 text-right">
-                    {a.type === 'fixed_income' ? (
+                    {a.type === 'fixed_income' || a.type === 'tesouro' ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <>

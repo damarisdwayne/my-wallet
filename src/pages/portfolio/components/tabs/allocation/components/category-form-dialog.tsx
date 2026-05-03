@@ -14,8 +14,13 @@ interface CategoryFormDialogProps {
   description: string
   submitLabel: string
   disabled?: boolean
-  form: { name: string; type: import('@/types').AssetType; targetPercent: string; color: string }
-  onSet: (k: string, v: string) => void
+  form: {
+    name: string
+    assetTypes: import('@/types').AssetType[]
+    targetPercent: string
+    color: string
+  }
+  onSet: (k: string, v: string | import('@/types').AssetType[]) => void
   onClose: () => void
   onSubmit: () => void
 }

@@ -46,17 +46,19 @@ export const AllocationTab = ({
   const [createDiagCatId, setCreateDiagCatId] = useState<string | null>(null)
   const [newDiagName, setNewDiagName] = useState('')
 
-  const setAdd = (k: string, v: string) => setAddForm((p) => ({ ...p, [k]: v }))
-  const setEdit = (k: string, v: string) => setEditForm((p) => ({ ...p, [k]: v }))
+  const setAdd = (k: string, v: string | import('@/types').AssetType[]) =>
+    setAddForm((p) => ({ ...p, [k]: v }))
+  const setEdit = (k: string, v: string | import('@/types').AssetType[]) =>
+    setEditForm((p) => ({ ...p, [k]: v }))
 
   const handleAdd = async () => {
     const name = addForm.name.trim()
-    if (!name) return
+    if (!name || addForm.assetTypes.length === 0) return
     const target = Number.parseFloat(addForm.targetPercent)
     await saveCategory({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name,
-      type: addForm.type,
+      assetTypes: addForm.assetTypes,
       targetPercent: Number.isNaN(target) ? 0 : Math.round(target * 10) / 10,
       color: addForm.color,
     })
@@ -68,7 +70,7 @@ export const AllocationTab = ({
     setEditingCat(cat)
     setEditForm({
       name: cat.name,
-      type: cat.type,
+      assetTypes: cat.assetTypes,
       targetPercent: String(cat.targetPercent),
       color: cat.color,
     })
@@ -81,7 +83,7 @@ export const AllocationTab = ({
     await saveCategory({
       ...editingCat,
       name: editForm.name.trim() || editingCat.name,
-      type: editForm.type,
+      assetTypes: editForm.assetTypes.length > 0 ? editForm.assetTypes : editingCat.assetTypes,
       targetPercent: Number.isNaN(target) ? editingCat.targetPercent : Math.round(target * 10) / 10,
       color: editForm.color,
     })

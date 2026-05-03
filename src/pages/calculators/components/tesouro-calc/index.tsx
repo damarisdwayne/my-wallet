@@ -8,9 +8,7 @@ import { BondForm, GuidanceCard, ResultsSection } from './components'
 
 export const TesouroDiretoCalc = () => {
   const { assets, loading: portfolioLoading } = usePortfolio()
-  const portfolioTesouro = assets.filter(
-    (a) => a.type === 'fixed_income' && a.ticker.toUpperCase().startsWith('TESOURO'),
-  )
+  const portfolioTesouro = assets.filter((a) => a.type === 'tesouro')
 
   const [bonds, setBonds] = useState<TesouroBond[]>([])
   const [bondsLoading, setBondsLoading] = useState(true)

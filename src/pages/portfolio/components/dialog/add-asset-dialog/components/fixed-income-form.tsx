@@ -10,7 +10,10 @@ export const FixedIncomeForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
-  const fiCatId = categories.find((c) => c.type === 'fixed_income')?.id ?? ''
+  const fiCatId =
+    categories.find(
+      (c) => c.assetTypes.includes('fixed_income') || c.assetTypes.includes('tesouro'),
+    )?.id ?? ''
   const [form, setForm] = useState({
     fixedIncomeType: 'CDB' as FixedIncomeType,
     institution: '',
@@ -225,11 +228,13 @@ export const FixedIncomeForm = ({
             const year = form.maturityYear.trim()
             const yearSuffix = year ? ` ${year}` : ''
             const ticker = `${form.fixedIncomeType.toUpperCase()}${yearSuffix}`
+            const tesouroCatId =
+              categories.find((c) => c.assetTypes.includes('tesouro'))?.id ?? fiCatId
             onSave({
               ticker,
               name: ticker,
-              type: 'fixed_income',
-              categoryId: form.categoryId,
+              type: 'tesouro',
+              categoryId: tesouroCatId,
               quantity: qty,
               avgPrice: pu,
               currentPrice: pu,

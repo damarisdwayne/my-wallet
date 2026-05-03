@@ -26,8 +26,7 @@ export const StandardForm = ({
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
-  const catType = type === 'etf' || type === 'bdr' ? 'stock' : type
-  const autoCatId = categories.find((c) => c.type === catType)?.id ?? ''
+  const autoCatId = categories.find((c) => c.assetTypes.includes(type))?.id ?? ''
   const resolvedCatId = form.autoCategory ? autoCatId : form.categoryId
   const resolvedCatName = form.autoCategory
     ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma encontrada')

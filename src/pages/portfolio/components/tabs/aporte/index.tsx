@@ -76,7 +76,9 @@ export const AporteTab = ({
       {aporte > 0 && distribution && distribution.length > 0 && (
         <div className="space-y-2">
           {distribution.map((allocation) => {
-            const isFixedIncome = allocation.cat.type === 'fixed_income'
+            const isFixedIncome = allocation.cat.assetTypes.some(
+              (t) => t === 'fixed_income' || t === 'tesouro',
+            )
             const isOpen = !isFixedIncome && expanded.has(allocation.cat.id)
             return (
               <CategoryRow

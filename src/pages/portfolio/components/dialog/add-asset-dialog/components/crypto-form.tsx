@@ -11,7 +11,7 @@ export const CryptoForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
-  const cryptoCatId = categories.find((c) => c.type === 'crypto')?.id ?? ''
+  const cryptoCatId = categories.find((c) => c.assetTypes.includes('crypto'))?.id ?? ''
   const [ticker, setTicker] = useState('')
   const [customTicker, setCustomTicker] = useState('')
   const [isCustom, setIsCustom] = useState(false)

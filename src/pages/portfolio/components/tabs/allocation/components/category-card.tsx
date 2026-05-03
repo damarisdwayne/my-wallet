@@ -126,7 +126,8 @@ export const CategoryCard = memo(
           </div>
         </CardHeader>
 
-        {catAssets.length > 0 && cat.type !== 'fixed_income' && (
+        {catAssets.length > 0 &&
+          !cat.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro') && (
           <CardContent className="pt-0">
             <button
               onClick={onToggleExpand}

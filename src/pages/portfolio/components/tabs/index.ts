@@ -1,6 +1,7 @@
 export * from './allocation'
 export * from './analysis'
 export * from './aporte'
+export * from './categories'
 export * from './diagram'
 export * from './imports'
 export * from './overview'

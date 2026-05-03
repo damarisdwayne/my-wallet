@@ -20,11 +20,13 @@ export interface AllocationSlice {
 const TYPE_META: Record<AssetType, { label: string; color: string }> = {
   stock: { label: 'Ações BR', color: 'hsl(217 91% 60%)' },
   fii: { label: 'FII', color: 'hsl(142 71% 45%)' },
-  etf: { label: 'ETF', color: 'hsl(262 83% 58%)' },
+  etf: { label: 'ETF BR', color: 'hsl(262 83% 58%)' },
   bdr: { label: 'BDR', color: 'hsl(32 98% 56%)' },
+  tesouro: { label: 'Tesouro Direto', color: 'hsl(204 70% 53%)' },
   fixed_income: { label: 'Renda Fixa', color: 'hsl(48 96% 53%)' },
   crypto: { label: 'Cripto', color: 'hsl(0 84% 60%)' },
   stock_us: { label: 'Ações EUA', color: 'hsl(199 89% 48%)' },
+  etf_us: { label: 'ETF EUA', color: 'hsl(280 67% 58%)' },
   other: { label: 'Outros', color: 'hsl(220 9% 46%)' },
 }
 

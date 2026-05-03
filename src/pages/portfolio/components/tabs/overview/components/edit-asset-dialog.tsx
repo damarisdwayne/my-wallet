@@ -78,10 +78,8 @@ export const EditAssetDialog = ({
         await editAsset(duplicate.id, { quantity: mergedQty, avgPrice: mergedAvg })
         await deleteAsset(asset.id)
       } else {
-        const newCatType = categories.find((c) => c.id === editCategoryId)?.type
         const updates: Partial<Asset> = {
           categoryId: editCategoryId,
-          ...(newCatType ? { type: newCatType } : {}),
           ticker: newTicker,
           name: editName.trim(),
           quantity: srcQty,

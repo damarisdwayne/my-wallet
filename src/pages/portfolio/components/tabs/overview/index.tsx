@@ -68,11 +68,22 @@ export const OverviewTab = ({
   const filteredTotal = filteredAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
   const activeCat = filterCatId === ALL ? null : categories.find((c) => c.id === filterCatId)
 
-  const fixedIncomeCatId = useMemo(
-    () => categories.find((c) => c.type === 'fixed_income')?.id ?? null,
+  const fixedIncomeCategories = useMemo(
+    () =>
+      new Set(
+        categories
+          .filter((c) => c.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro'))
+          .map((c) => c.id),
+      ),
     [categories],
   )
-  const showingFixedIncomeDetail = filterCatId !== ALL && filterCatId === fixedIncomeCatId
+  const fixedIncomeCatId = useMemo(
+    () =>
+      categories.find((c) => c.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro'))
+        ?.id ?? null,
+    [categories],
+  )
+  const showingFixedIncomeDetail = filterCatId !== ALL && fixedIncomeCategories.has(filterCatId)
 
   const tableRows = useMemo((): TableRow[] => {
     const baseValue = filterCatId === ALL ? totalValue : filteredTotal
@@ -83,13 +94,17 @@ export const OverviewTab = ({
     if (showingFixedIncomeDetail) {
       return sortAssets(filteredAssets).map((a) => ({ kind: 'asset', asset: a }))
     }
-    const fixedItems = filteredAssets.filter((a) => a.type === 'fixed_income')
-    const otherItems = filteredAssets.filter((a) => a.type !== 'fixed_income')
+    const isFixedOrTesouro = (type: import('@/types').AssetType) =>
+      type === 'fixed_income' || type === 'tesouro'
+    const fixedItems = filteredAssets.filter((a) => isFixedOrTesouro(a.type))
+    const otherItems = filteredAssets.filter((a) => !isFixedOrTesouro(a.type))
     const rows: TableRow[] = sortAssets(otherItems).map((a) => ({ kind: 'asset', asset: a }))
     if (fixedItems.length > 0) {
       const total = fixedItems.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
       const cost = fixedItems.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
-      const fiCat = categories.find((c) => c.type === 'fixed_income')
+      const fiCat = categories.find((c) =>
+        c.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro'),
+      )
       const recommended = fiCat ? (fiCat.targetPercent / 100) * totalValue : 0
       rows.push({
         kind: 'group',

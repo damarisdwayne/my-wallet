@@ -5,7 +5,7 @@ export const inputClass =
 
 export const emptyForm = () => ({
   name: '',
-  type: 'stock' as AssetType,
+  assetTypes: ['stock'] as AssetType[],
   targetPercent: '10',
   color: '#3b82f6',
 })

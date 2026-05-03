@@ -60,16 +60,18 @@ export type AssetType =
   | 'fii'
   | 'bdr'
   | 'etf'
+  | 'tesouro'
   | 'fixed_income'
   | 'crypto'
   | 'stock_us'
+  | 'etf_us'
   | 'other'
 
 export type PortfolioCategory = {
   id: string
   name: string
   targetPercent: number
-  type: AssetType
+  assetTypes: AssetType[]
   color: string
 }
 

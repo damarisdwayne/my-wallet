@@ -1,8 +1,7 @@
 import type { Asset, PortfolioCategory } from '@/types'
 import type { SortCol } from './constants'
 
-export const isFlatFixedIncome = (a: Asset) =>
-  a.type === 'fixed_income' && !a.ticker.toUpperCase().startsWith('TESOURO')
+export const isFlatFixedIncome = (a: Asset) => a.type === 'fixed_income'
 
 export const assetNumericValue = (a: Asset, col: SortCol, baseValue: number): number => {
   if (col === 'qty') return a.quantity

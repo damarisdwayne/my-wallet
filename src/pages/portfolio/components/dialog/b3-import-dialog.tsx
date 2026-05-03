@@ -37,9 +37,9 @@ export const B3ImportDialog = ({ open, onOpenChange, existingAssets, onImport }:
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const processBuffer = (buffer: ArrayBuffer) => {
+  const processBuffer = async (buffer: ArrayBuffer) => {
     try {
-      const parsed = parseB3Excel(buffer)
+      const parsed = await parseB3Excel(buffer)
       const withAction: ParsedRow[] = parsed.assets
         .filter((a) => {
           const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)

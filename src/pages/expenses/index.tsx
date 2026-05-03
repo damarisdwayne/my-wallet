@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components'
 import { useExpenses } from '@/hooks/use-expenses'
 import type { DisplayExpense, ExpenseCategory } from '@/types'
 import { addMonthStr, todayMonth } from './utils'
-import { ExpensesSkeleton } from '@/skeletons'
+import { ExpensesSkeleton } from '@/skeleton'
 import {
   CategoryBreakdown,
   MonthlyExpensesChart,
@@ -125,7 +125,7 @@ export const ExpensesPage = () => {
         canGoNext={canGoNext}
         onPrev={prevMonth}
         onNext={() => canGoNext && setSelectedMonth(availableMonths[currentIndex - 1])}
-        onImport={addExpenses}
+        onImport={async (expenses) => { await addExpenses(expenses as Parameters<typeof addExpenses>[0]) }}
         onAddFixed={async (item) => {
           await addFixedExpense(item)
         }}

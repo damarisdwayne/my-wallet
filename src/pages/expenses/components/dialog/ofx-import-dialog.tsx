@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { guessCategory, parseOFX } from '@/services/ofx-import'
 import type { ExpenseCategory } from '@/types'
-import { categoryColors, categoryLabel } from './utils'
+import { categoryColors, categoryLabel } from '../../utils'
 
 interface Row {
   fitId: string

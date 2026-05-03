@@ -8,6 +8,7 @@ import { PortfolioPage } from '@/pages/portfolio'
 import { SalesPage } from '@/pages/sales'
 import { TaxPage } from '@/pages/tax'
 import { useAuth } from '@/store/auth'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { AppLayout } from './app-layout'
 import { ProtectedRoute } from './protected-route'
 
@@ -20,13 +21,62 @@ export const Router = () => {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/expenses" element={<ExpensesPage />} />
-          <Route path="/portfolio" element={<PortfolioPage />} />
-          <Route path="/dividends" element={<DividendsPage />} />
-          <Route path="/tax" element={<TaxPage />} />
-          <Route path="/sales" element={<SalesPage />} />
-          <Route path="/calculators" element={<CalculatorsPage />} />
+          <Route
+            path="/"
+            element={
+              <ErrorBoundary fallbackLabel="Dashboard">
+                <DashboardPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <ErrorBoundary fallbackLabel="Despesas">
+                <ExpensesPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <ErrorBoundary fallbackLabel="Portfólio">
+                <PortfolioPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/dividends"
+            element={
+              <ErrorBoundary fallbackLabel="Dividendos">
+                <DividendsPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/tax"
+            element={
+              <ErrorBoundary fallbackLabel="IR">
+                <TaxPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/sales"
+            element={
+              <ErrorBoundary fallbackLabel="Vendas">
+                <SalesPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/calculators"
+            element={
+              <ErrorBoundary fallbackLabel="Calculadoras">
+                <CalculatorsPage />
+              </ErrorBoundary>
+            }
+          />
         </Route>
       </Route>
 

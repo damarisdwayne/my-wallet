@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
 import type { PatrimonyPoint } from '@/services/patrimony'
 
@@ -71,7 +71,7 @@ interface Props {
   currentMonth: string
 }
 
-export const PatrimonyChart = ({ history, currentValue, currentMonth }: Props) => {
+export const PatrimonyChart = memo(({ history, currentValue, currentMonth }: Props) => {
   const [range, setRange] = useState<Range>('MAX')
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
@@ -310,4 +310,4 @@ export const PatrimonyChart = ({ history, currentValue, currentMonth }: Props) =
       </div>
     </div>
   )
-}
+})

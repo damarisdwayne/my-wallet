@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
-import { ALL, typeLabel } from '../../../../../constants'
+import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
 import type { Asset, PortfolioCategory } from '@/types'
 import { isFlatFixedIncome } from '../utils'

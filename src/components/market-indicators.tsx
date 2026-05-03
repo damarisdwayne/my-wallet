@@ -1,17 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { useMarketData } from '@/hooks/use-market-data'
-import { cn } from '@/lib/utils'
-
-function fmtNum(value: number, decimals = 2) {
-  return value.toLocaleString('pt-BR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
-}
-
-function fmtUsd(value: number) {
-  return `$ ${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-}
+import { cn, formatNumber as fmtNum, formatUSD as fmtUsd } from '@/lib/utils'
 
 interface ItemProps {
   label: string

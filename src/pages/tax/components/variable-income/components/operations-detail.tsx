@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatQuantity } from '@/lib/utils'
 import type { RealizedGain } from '@/lib/ir-calc'
 import { assetTypeLabel } from '../../../constants'
 import { EmptyRow, Td, Th, TypeFilterChips } from '../../ui'
@@ -60,15 +60,17 @@ export const OperationsDetail = ({
                 <EmptyRow cols={9} message="Nenhuma operação encontrada." />
               ) : (
                 filteredGains.map((g, i) => (
-                  <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
-                    <Td className="text-muted-foreground">{g.date}</Td>
+                  <tr key={`${g.ticker}-${g.date}-${i}`} className="border-t border-border/50 hover:bg-muted/20">
+                    <Td className="text-muted-foreground">
+                      {g.date ? new Date(g.date + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+                    </Td>
                     <Td className="font-semibold text-foreground">{g.ticker}</Td>
                     <Td>
                       <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
                         {assetTypeLabel[g.assetType] ?? g.assetType}
                       </span>
                     </Td>
-                    <Td right>{g.quantity}</Td>
+                    <Td right>{formatQuantity(g.quantity)}</Td>
                     <Td right className="text-muted-foreground">
                       {formatCurrency(g.avgCost)}
                     </Td>

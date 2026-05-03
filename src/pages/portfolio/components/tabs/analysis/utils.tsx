@@ -5,12 +5,7 @@ export const directPct = (v: number) => v.toFixed(2) + '%'
 export const ratio = (v: number) => v.toFixed(2) + 'x'
 export const num1 = (v: number) => v.toFixed(1) + 'x'
 
-export const fmtDate = (iso: string) =>
-  new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-  })
+export { formatDateShort as fmtDate } from '@/lib/utils'
 
 export const renderInline = (text: string) => {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)

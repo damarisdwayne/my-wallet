@@ -56,6 +56,33 @@ export function clearQuoteCache() {
 const USD_RATE_KEY = 'mw_usd_rate_v1'
 const USD_TTL_MS = 15 * 60 * 1000
 
+// Fetches the historical PTAX USD/BRL rate for a specific date (YYYY-MM-DD).
+// Falls back to current rate if the date is unavailable (weekend/holiday).
+export const fetchUsdBrlRateForDate = async (date: string): Promise<number> => {
+  const key = `mw_usd_ptax_${date}`
+  try {
+    const cached = localStorage.getItem(key)
+    if (cached) return Number(cached)
+  } catch {}
+  try {
+    const d = date.replaceAll('-', '')
+    const res = await fetch(
+      `https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=${d}&end_date=${d}`,
+    )
+    if (res.ok) {
+      const data = (await res.json()) as { bid: string }[]
+      if (Array.isArray(data) && data.length > 0) {
+        const rate = Number.parseFloat(data[0].bid)
+        if (rate > 0) {
+          try { localStorage.setItem(key, String(rate)) } catch {}
+          return rate
+        }
+      }
+    }
+  } catch {}
+  return fetchUsdBrlRate()
+}
+
 export const fetchUsdBrlRate = async (): Promise<number> => {
   try {
     const cached = localStorage.getItem(USD_RATE_KEY)

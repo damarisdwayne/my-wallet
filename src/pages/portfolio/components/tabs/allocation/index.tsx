@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { GitBranch, Plus } from 'lucide-react'
+import { GitBranch, ListChecks, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Asset, Diagram, PortfolioCategory } from '@/types'
 import { computeAssetTargets } from '../../../compute-targets'
 import { emptyForm } from './constants'
 import type { AllocationTabProps } from './types'
 import {
+  AssignAssetsSheet,
   AssetAnswersDialog,
   CategoryCard,
   CategoryFormDialog,
@@ -36,6 +37,7 @@ export const AllocationTab = ({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const [diagramsOpen, setDiagramsOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
   const [expandedCatId, setExpandedCatId] = useState<string | null>(null)
   const [manualDrafts, setManualDrafts] = useState<Record<string, Record<string, string>>>({})
   const [diagramViewCats, setDiagramViewCats] = useState<Set<string>>(new Set())
@@ -68,9 +70,7 @@ export const AllocationTab = ({
       if (diag) await saveDiagram({ ...diag, categoryId: catId })
     }
     // Unlink any diagram previously pointing to this category (if a different one is now selected)
-    const prev = diagrams.find(
-      (d) => d.categoryId === catId && d.id !== selectedDiagramId,
-    )
+    const prev = diagrams.find((d) => d.categoryId === catId && d.id !== selectedDiagramId)
     if (prev) await saveDiagram({ ...prev, categoryId: '' })
   }
 
@@ -145,7 +145,11 @@ export const AllocationTab = ({
 
   const enterManual = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
     const share = (100 / catAssets.length).toFixed(1)
-    setDiagramViewCats((prev) => { const s = new Set(prev); s.delete(catId); return s })
+    setDiagramViewCats((prev) => {
+      const s = new Set(prev)
+      s.delete(catId)
+      return s
+    })
     setManualDrafts((prev) => ({
       ...prev,
       [catId]: Object.fromEntries(
@@ -222,6 +226,13 @@ export const AllocationTab = ({
         </p>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setAssignOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
+          >
+            <ListChecks size={14} />
+            Categorizar Ativos
+          </button>
+          <button
             onClick={() => setDiagramsOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
           >
@@ -293,6 +304,15 @@ export const AllocationTab = ({
           />
         )
       })}
+
+      <AssignAssetsSheet
+        open={assignOpen}
+        assets={assets}
+        categories={categories}
+        totalValue={totalValue}
+        editAsset={editAsset}
+        onClose={() => setAssignOpen(false)}
+      />
 
       <DiagramsSheet
         open={diagramsOpen}

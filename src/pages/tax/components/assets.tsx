@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { buildPositions } from '@/lib/ir-calc'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatQuantity } from '@/lib/utils'
 import type { TickerSets } from '@/services/quotes'
 import type { Asset, Trade } from '@/types'
 import { assetTypeLabel } from '../constants'
@@ -86,7 +86,7 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
                   </Td>
                   <Td className="text-muted-foreground max-w-[200px] truncate">{r.assetName}</Td>
                   <Td right>
-                    {r.quantity > 0 ? r.quantity.toFixed(r.quantity % 1 === 0 ? 0 : 6) : '—'}
+                    {r.quantity > 0 ? formatQuantity(r.quantity) : '—'}
                   </Td>
                   <Td right className="text-muted-foreground">
                     {r.avgCost > 0 ? formatCurrency(r.avgCost) : '—'}

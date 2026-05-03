@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatPercent } from '@/lib/utils'
+import { formatCurrency, formatPercent, formatQuantity } from '@/lib/utils'
 import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
 import type { Asset, PortfolioCategory } from '@/types'
@@ -170,11 +170,7 @@ export const AssetsTable = memo(
                     )}
                   </td>
                   <td className="py-3 text-right text-foreground">
-                    {flatFI
-                      ? '—'
-                      : a.quantity % 1 === 0
-                        ? a.quantity
-                        : Number.parseFloat(a.quantity.toFixed(2))}
+                    {flatFI ? '—' : formatQuantity(a.quantity)}
                   </td>
                   <td className="py-3 text-right text-muted-foreground">
                     {flatFI ? '—' : formatCurrency(a.avgPrice)}

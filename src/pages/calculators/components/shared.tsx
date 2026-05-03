@@ -38,8 +38,7 @@ export const toMonths = (value: number, unit: PeriodUnit) => {
 
 // ─── Formatter ───────────────────────────────────────────────────────────────
 
-export const fmtBRL = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+export { formatCurrency as fmtBRL } from '@/lib/utils'
 
 // ─── Input components ────────────────────────────────────────────────────────
 

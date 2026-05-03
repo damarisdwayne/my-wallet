@@ -23,6 +23,9 @@ export interface B3Dividend {
   currency?: 'USD'
   amountUsd?: number
   irUsd?: number
+  amountBrl?: number
+  irBrl?: number
+  usdRateAtPayment?: number
 }
 
 const UNIT_TICKERS = new Set([

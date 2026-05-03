@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatCompact as fmtCompact, formatMonthYear as fmtMonth } from '@/lib/utils'
 import type { PatrimonyPoint } from '@/services/patrimony'
 
 /* ─── chart geometry ─── */
@@ -22,33 +22,6 @@ const filterByRange = (data: PatrimonyPoint[], range: Range): PatrimonyPoint[] =
   if (range === 'MAX') return data
   const months = range === '6M' ? 6 : 12
   return data.slice(-months)
-}
-
-/* ─── month label ─── */
-const monthAbbr = [
-  'Jan',
-  'Fev',
-  'Mar',
-  'Abr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Set',
-  'Out',
-  'Nov',
-  'Dez',
-]
-const fmtMonth = (ym: string) => {
-  const [y, m] = ym.split('-')
-  return `${monthAbbr[Number(m) - 1]}/${y.slice(2)}`
-}
-
-/* ─── compact currency (K / M) ─── */
-const fmtCompact = (v: number) => {
-  if (Math.abs(v) >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
-  if (Math.abs(v) >= 1_000) return `R$${(v / 1_000).toFixed(0)}k`
-  return formatCurrency(v)
 }
 
 /* ─── X-axis label spacing ─── */

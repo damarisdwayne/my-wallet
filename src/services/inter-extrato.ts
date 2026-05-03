@@ -1,5 +1,5 @@
 import type { B3Dividend } from './b3-import'
-import { fetchUsdBrlRate } from './quotes'
+import { fetchUsdBrlRate, fetchUsdBrlRateForDate } from './quotes'
 
 export interface ExtratoEntry {
   date: string
@@ -7,6 +7,9 @@ export interface ExtratoEntry {
   ticker: string | null
   amountUsd: number
   irUsd: number
+  amountBrl: number
+  irBrl: number
+  usdRate: number
 }
 
 const PT_MONTHS: Record<string, string> = {
@@ -169,17 +172,28 @@ export const parseInterExtrato = async (
     grouped.set(key, g)
   }
 
-  const entries: ExtratoEntry[] = []
-  for (const { div, tax, fundName, date } of grouped.values()) {
-    if (div < 0.005) continue
-    entries.push({
+  const pendingEntries = [...grouped.values()].filter((g) => g.div >= 0.005)
+
+  const uniqueDates = [...new Set(pendingEntries.map((g) => g.date))]
+  const rateByDate = Object.fromEntries(
+    await Promise.all(uniqueDates.map(async (d) => [d, await fetchUsdBrlRateForDate(d)])),
+  )
+
+  const entries: ExtratoEntry[] = pendingEntries.map(({ div, tax, fundName, date }) => {
+    const rate = rateByDate[date] ?? 1
+    const amountUsd = Math.round(div * 100) / 100
+    const irUsd = Math.round(Math.max(0, -tax) * 100) / 100
+    return {
       date,
       fundName,
       ticker: inferTickerFromFundName(fundName),
-      amountUsd: Math.round(div * 100) / 100,
-      irUsd: Math.round(Math.max(0, -tax) * 100) / 100,
-    })
-  }
+      amountUsd,
+      irUsd,
+      amountBrl: Math.round(amountUsd * rate * 100) / 100,
+      irBrl: Math.round(irUsd * rate * 100) / 100,
+      usdRate: rate,
+    }
+  })
 
   entries.sort((a, b) => a.date.localeCompare(b.date))
   const usdRate = await fetchUsdBrlRate()
@@ -193,8 +207,10 @@ export const extratoToDividends = (entries: ExtratoEntry[]): B3Dividend[] =>
       ticker: e.ticker!,
       amount: 0,
       amountUsd: e.amountUsd,
+      amountBrl: e.amountBrl,
       paymentDate: e.date,
       type: 'dividendo_ext' as const,
       currency: 'USD' as const,
-      ...(e.irUsd > 0 ? { irUsd: e.irUsd } : {}),
+      usdRateAtPayment: e.usdRate,
+      ...(e.irUsd > 0 ? { irUsd: e.irUsd, irBrl: e.irBrl } : {}),
     }))

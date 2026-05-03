@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, Trash2 } from 'lucide-react'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, formatQuantity } from '@/lib/utils'
 import type { Asset, Trade } from '@/types'
 import { tradeLabel, tradeColor, sourceLabel } from '../utils'
 
@@ -91,7 +91,7 @@ export const TickerRow = ({
                       {tradeLabel(t)}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-xs">{t.quantity}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-xs">{formatQuantity(t.quantity)}</td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
                     {t.price > 0 ? formatCurrency(t.price) : '—'}
                   </td>

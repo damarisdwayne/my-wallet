@@ -118,13 +118,16 @@ export interface Asset {
 export interface Dividend {
   id: string
   ticker: string
-  amount: number // BRL for domestic; 0 for USD dividends
+  amount: number // BRL for domestic; 0 for USD dividends (use amountBrl for fixed BRL)
   paymentDate: string
   type: 'dividendo' | 'jcp' | 'rendimento' | 'dividendo_ext'
-  ir?: number // BRL for domestic; 0 for USD dividends
+  ir?: number // BRL for domestic; 0 for USD dividends (use irBrl for fixed BRL)
   currency?: 'USD' // undefined = BRL
-  amountUsd?: number // source of truth for USD dividends
+  amountUsd?: number // original USD amount
   irUsd?: number // withholding tax in USD
+  amountBrl?: number // BRL at payment date PTAX rate (source of truth for USD dividends)
+  irBrl?: number // withholding tax in BRL at payment date PTAX rate
+  usdRateAtPayment?: number // PTAX rate used for the conversion
 }
 
 export interface MonthlyResult {

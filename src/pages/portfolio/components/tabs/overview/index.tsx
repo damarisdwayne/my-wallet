@@ -4,13 +4,7 @@ import { computeAssetTargets } from '../../../compute-targets'
 import { AddAssetDialog, BrokerImportDialog } from '../../dialog'
 import type { TableRow, OverviewTabProps } from './constants'
 import { compareAssets } from './utils'
-import {
-  CategoryFilter,
-  CategoryCards,
-  Toolbar,
-  AssetsTable,
-  EditAssetDialog,
-} from './components'
+import { CategoryFilter, CategoryCards, Toolbar, AssetsTable, EditAssetDialog } from './components'
 
 export const OverviewTab = ({
   assets,

@@ -56,9 +56,7 @@ export const AssetAnswersDialog = ({
               key={q.id}
               className="flex items-start gap-3 py-2 border-b border-border last:border-0"
             >
-              <span className="text-xs text-muted-foreground w-5 shrink-0 mt-0.5">
-                {i + 1}.
-              </span>
+              <span className="text-xs text-muted-foreground w-5 shrink-0 mt-0.5">{i + 1}.</span>
               <p className="flex-1 text-sm text-foreground">{q.text}</p>
               <div className="flex gap-1 shrink-0">
                 <button

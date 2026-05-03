@@ -191,8 +191,8 @@ export const EditAssetDialog = ({
             />
             {splitRatio && Number(splitRatio) > 0 && Number(splitRatio) !== 1 && asset && (
               <p className="text-xs text-muted-foreground mt-1">
-                {asset.quantity} → {Math.round(asset.quantity * Number(splitRatio))}{' '}
-                cotas · PM {formatCurrency(asset.avgPrice)} →{' '}
+                {asset.quantity} → {Math.round(asset.quantity * Number(splitRatio))} cotas · PM{' '}
+                {formatCurrency(asset.avgPrice)} →{' '}
                 {formatCurrency(asset.avgPrice / Number(splitRatio))}
               </p>
             )}

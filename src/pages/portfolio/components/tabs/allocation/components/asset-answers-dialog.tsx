@@ -36,7 +36,10 @@ export const AssetAnswersDialog = ({
             {asset.ticker} — {diagram.name}
           </DialogTitle>
           <DialogDescription>
-            Pontuação: <strong>{yes}/{total}</strong>
+            Pontuação:{' '}
+            <strong>
+              {yes}/{total}
+            </strong>
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">

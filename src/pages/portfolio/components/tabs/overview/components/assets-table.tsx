@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { cn, formatCurrency, formatPercent } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
 import type { Asset, PortfolioCategory } from '@/types'
@@ -130,8 +130,7 @@ export const AssetsTable = ({
             const catCurrentValue = assets
               .filter((x) => x.categoryId === a.categoryId)
               .reduce((s, x) => s + x.currentPrice * x.quantity, 0)
-            const withinCatRatio =
-              cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
+            const withinCatRatio = cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
             const recommended = withinCatRatio * catCurrentValue
 
             const flatFI = isFlatFixedIncome(a)
@@ -153,10 +152,7 @@ export const AssetsTable = ({
                 </td>
                 <td className="py-3">
                   {cat ? (
-                    <Badge
-                      variant="secondary"
-                      style={{ borderColor: cat.color, color: cat.color }}
-                    >
+                    <Badge variant="secondary" style={{ borderColor: cat.color, color: cat.color }}>
                       {cat.name}
                     </Badge>
                   ) : (

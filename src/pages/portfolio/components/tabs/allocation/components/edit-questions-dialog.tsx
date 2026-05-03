@@ -48,9 +48,7 @@ export const EditQuestionsDialog = ({
     if (!text || !editingQuestion) return
     await onSaveDiagram({
       ...diagram,
-      questions: diagram.questions.map((q) =>
-        q.id === editingQuestion.id ? { ...q, text } : q,
-      ),
+      questions: diagram.questions.map((q) => (q.id === editingQuestion.id ? { ...q, text } : q)),
     })
     setEditingQuestion(null)
     setEditingQuestionText('')

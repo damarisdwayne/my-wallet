@@ -14,7 +14,7 @@ interface CategoryFormDialogProps {
   description: string
   submitLabel: string
   disabled?: boolean
-  form: { name: string; type: string; targetPercent: string; color: string }
+  form: { name: string; type: import('@/types').AssetType; targetPercent: string; color: string }
   onSet: (k: string, v: string) => void
   onClose: () => void
   onSubmit: () => void
@@ -31,7 +31,12 @@ export const CategoryFormDialog = ({
   onClose,
   onSubmit,
 }: CategoryFormDialogProps) => (
-  <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+  <Dialog
+    open={open}
+    onOpenChange={(v) => {
+      if (!v) onClose()
+    }}
+  >
     <DialogContent className="max-w-sm">
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>

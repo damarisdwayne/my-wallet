@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  ArrowLeft,
-  BookmarkCheck,
-  FileText,
-  Plus,
-  Sparkles,
-  Upload,
-} from 'lucide-react'
+import { ArrowLeft, BookmarkCheck, FileText, Plus, Sparkles, Upload } from 'lucide-react'
 import { analyzeDocument } from '@/services/gemini'
 import { extractReportDate, saveAiAnalysis, subscribeToAiAnalyses } from '@/services/ai-analyses'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'
-import type { AiAnalysis, Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, StockInfo } from '@/types'
+import type {
+  AiAnalysis,
+  Asset,
+  FiiInfo,
+  FundamentalRecord,
+  FundamentalSnapshot,
+  StockInfo,
+} from '@/types'
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
 import { AiHistorySection, AiMarkdown } from './ai-analysis'
 import { FiiInfoDialog, FiiInfoSection } from './fii-info'

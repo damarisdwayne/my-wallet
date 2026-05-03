@@ -6,7 +6,13 @@ interface AssetRowProps {
 }
 
 export const AssetRow = ({ allocation }: AssetRowProps) => {
-  const { asset, aporte: assetAporte, quantityToBuy, recommendedValue, valueAfterAporte } = allocation
+  const {
+    asset,
+    aporte: assetAporte,
+    quantityToBuy,
+    recommendedValue,
+    valueAfterAporte,
+  } = allocation
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 pl-10 text-sm">
       <div className="flex-1 min-w-0">

@@ -32,9 +32,7 @@ export const CreateDiagramDialog = ({
     <DialogContent className="max-w-sm">
       <DialogHeader>
         <DialogTitle>Criar diagrama</DialogTitle>
-        <DialogDescription>
-          Dê um nome ao diagrama para a categoria selecionada.
-        </DialogDescription>
+        <DialogDescription>Dê um nome ao diagrama para a categoria selecionada.</DialogDescription>
       </DialogHeader>
       <div className="mt-2">
         <input

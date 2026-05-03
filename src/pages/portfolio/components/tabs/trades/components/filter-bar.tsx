@@ -9,7 +9,13 @@ interface Props {
   onSync: () => void
 }
 
-export const FilterBar = ({ filterCatId, activeCategories, syncing, onSetFilterCatId, onSync }: Props) => (
+export const FilterBar = ({
+  filterCatId,
+  activeCategories,
+  syncing,
+  onSetFilterCatId,
+  onSync,
+}: Props) => (
   <div className="flex flex-wrap gap-2 items-center justify-between">
     <div className="flex flex-wrap gap-2">
       <button

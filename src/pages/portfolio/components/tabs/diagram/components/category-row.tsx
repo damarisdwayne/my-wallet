@@ -39,10 +39,7 @@ export const CategoryRow = ({
   <div>
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center gap-2">
-        <div
-          className="w-2.5 h-2.5 rounded-full shrink-0"
-          style={{ background: cat.color }}
-        />
+        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
         <span className="text-sm font-semibold text-foreground">{cat.name}</span>
       </div>
       <div className="flex items-center gap-1 rounded-full bg-muted p-0.5 text-xs">

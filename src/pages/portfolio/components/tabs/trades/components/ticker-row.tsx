@@ -82,23 +82,16 @@ export const TickerRow = ({
                   className="border-t border-border/60 hover:bg-accent/20 transition-colors"
                 >
                   <td className="px-4 py-2 text-muted-foreground tabular-nums text-xs">
-                    {t.date
-                      ? new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')
-                      : '—'}
+                    {t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td className="px-4 py-2">
                     <span
-                      className={cn(
-                        'text-xs font-medium px-2 py-0.5 rounded-full',
-                        tradeColor(t),
-                      )}
+                      className={cn('text-xs font-medium px-2 py-0.5 rounded-full', tradeColor(t))}
                     >
                       {tradeLabel(t)}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-xs">
-                    {t.quantity}
-                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-xs">{t.quantity}</td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
                     {t.price > 0 ? formatCurrency(t.price) : '—'}
                   </td>

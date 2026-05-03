@@ -51,9 +51,7 @@ export const EditQuestionsDialog = ({
     if (!text || !editingQuestion) return
     await onSaveDiagram({
       ...diagram,
-      questions: diagram.questions.map((q) =>
-        q.id === editingQuestion.id ? { ...q, text } : q,
-      ),
+      questions: diagram.questions.map((q) => (q.id === editingQuestion.id ? { ...q, text } : q)),
     })
     setEditingQuestion(null)
     setEditingQuestionText('')
@@ -70,9 +68,7 @@ export const EditQuestionsDialog = ({
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Perguntas — {diagram.name}</DialogTitle>
-          <DialogDescription>
-            Adicione, edite ou remova perguntas deste diagrama.
-          </DialogDescription>
+          <DialogDescription>Adicione, edite ou remova perguntas deste diagrama.</DialogDescription>
         </DialogHeader>
         <div className="space-y-2 mt-2">
           {diagram.questions.map((q, i) => (

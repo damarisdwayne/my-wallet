@@ -51,10 +51,7 @@ export const CategoryRow = ({ allocation, isOpen, onToggle }: CategoryRowProps) 
           {!isFixedIncome && (
             <ChevronDown
               size={14}
-              className={cn(
-                'text-muted-foreground transition-transform',
-                isOpen && 'rotate-180',
-              )}
+              className={cn('text-muted-foreground transition-transform', isOpen && 'rotate-180')}
             />
           )}
         </div>

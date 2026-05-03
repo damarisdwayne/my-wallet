@@ -318,14 +318,11 @@ export const CategoryCard = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {catAssets.map((a) => {
                 const withinCatRatio =
-                  cat.targetPercent > 0
-                    ? (assetTargets.get(a.id) ?? 0) / cat.targetPercent
-                    : 0
+                  cat.targetPercent > 0 ? (assetTargets.get(a.id) ?? 0) / cat.targetPercent : 0
                 const metaPct = (withinCatRatio * 100).toFixed(1)
                 const metaValue = withinCatRatio * catValue
                 const atualValue = a.currentPrice * a.quantity
-                const atualPct =
-                  catValue > 0 ? ((atualValue / catValue) * 100).toFixed(1) : '0.0'
+                const atualPct = catValue > 0 ? ((atualValue / catValue) * 100).toFixed(1) : '0.0'
                 return (
                   <div key={a.id} className="text-xs p-2 rounded bg-muted space-y-0.5">
                     <p className="font-semibold text-foreground">{a.ticker}</p>

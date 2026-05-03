@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { inputClass } from '../constants'
 import type { Diagram, PortfolioCategory } from '@/types'
 import { EditQuestionsDialog } from './edit-questions-dialog'
@@ -59,6 +65,11 @@ export const DiagramsSheet = ({
         <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
           <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
             <SheetTitle>Diagramas</SheetTitle>
+            <SheetDescription>
+              Diagramas definem critérios de pontuação para seus ativos. Cada diagrama tem perguntas
+              sim/não — quanto mais "sim", maior o score do ativo e maior deve ser sua alocação
+              naquela categoria.
+            </SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto divide-y divide-border">

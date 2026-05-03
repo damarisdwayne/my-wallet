@@ -255,10 +255,9 @@ export const CategoryCard = memo(
     onCreateDiagram,
   }: CategoryCardProps) => {
     const { tracking } = cat
-    const showDiagramSection = tracking === 'both' || tracking === 'diagram_only'
-    const showModeToggle = tracking === 'both'
-    const effectiveInManual =
-      tracking === 'goal_only' ? true : tracking === 'diagram_only' ? false : inManualMode
+    const showDiagramSection = tracking === 'diagram'
+    const showModeToggle = false
+    const effectiveInManual = tracking !== 'diagram'
     const showingDiagram = showDiagramSection && !effectiveInManual
     const isCollapsed = !expanded
 

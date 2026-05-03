@@ -8,18 +8,18 @@ type RawCategory = Omit<PortfolioCategory, 'assetTypes' | 'tracking'> & {
   tracking?: CategoryTracking
 }
 
-const inferTracking = (assetTypes: AssetType[]): CategoryTracking => {
-  const passiveOnly = assetTypes.every(
-    (t) => t === 'fixed_income' || t === 'tesouro' || t === 'crypto' || t === 'other',
-  )
-  return passiveOnly ? 'goal_only' : 'both'
+const inferTracking = (): CategoryTracking => 'goal'
+
+const normalizeTracking = (t: string | undefined): CategoryTracking => {
+  if (t === 'diagram' || t === 'none') return t
+  return 'goal' // covers 'both', 'goal', undefined, and any legacy value
 }
 
 const migrateCategory = (raw: RawCategory): PortfolioCategory => {
   const { type: _type, ...rest } = raw as RawCategory & { type?: AssetType }
   const assetTypes: AssetType[] =
     raw.assetTypes && raw.assetTypes.length > 0 ? raw.assetTypes : raw.type ? [raw.type] : ['other']
-  const tracking: CategoryTracking = raw.tracking ?? inferTracking(assetTypes)
+  const tracking: CategoryTracking = normalizeTracking(raw.tracking ?? inferTracking())
   return { ...rest, assetTypes, tracking } as PortfolioCategory
 }
 

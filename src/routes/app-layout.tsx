@@ -44,7 +44,7 @@ export const AppLayout = () => {
           onDismissOne={dismissOne}
         />
         <main className="flex-1 overflow-y-auto">
-          <ErrorBoundary>
+          <ErrorBoundary key={pathname}>
             <Suspense fallback={<PageLoader />}>
               <Outlet />
             </Suspense>

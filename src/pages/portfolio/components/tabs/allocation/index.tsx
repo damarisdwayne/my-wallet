@@ -299,7 +299,7 @@ export const AllocationTab = ({
             onEditQuestions={() => setEditQCatId(cat.id)}
             onCreateDiagram={() => {
               // Open edit dialog on the category with tracking set to include diagram
-              openEdit({ ...cat, tracking: cat.tracking === 'goal_only' ? 'both' : cat.tracking })
+              openEdit({ ...cat, tracking: 'diagram' })
             }}
           />
         )

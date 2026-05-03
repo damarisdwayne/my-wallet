@@ -8,7 +8,7 @@ export const emptyForm = () => ({
   assetTypes: ['stock'] as AssetType[],
   targetPercent: '10',
   color: '#3b82f6',
-  tracking: 'both' as CategoryTracking,
+  tracking: 'goal' as CategoryTracking,
   selectedDiagramId: '',
   newDiagramName: '',
 })

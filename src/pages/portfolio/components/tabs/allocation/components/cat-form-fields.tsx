@@ -4,18 +4,16 @@ import { ASSET_TYPES, typeLabel } from '../../../../constants'
 import { inputClass, emptyForm } from '../constants'
 
 const TRACKING_OPTIONS: { value: CategoryTracking; label: string; desc: string }[] = [
-  { value: 'both', label: 'Meta + Diagrama', desc: 'Define % alvo e usa diagrama de qualificação' },
-  { value: 'goal_only', label: 'Só Meta', desc: 'Apenas meta de alocação percentual' },
+  { value: 'goal', label: 'Meta', desc: 'Você define o % ideal e vê o quanto falta aportar' },
   {
-    value: 'diagram_only',
-    label: 'Só Diagrama',
-    desc: 'Meta + qualificação por diagrama, sem % manual',
+    value: 'diagram',
+    label: 'Diagrama',
+    desc: 'Cada ativo recebe um score e o sistema sugere quanto alocar',
   },
-  { value: 'none', label: 'Nenhum', desc: 'Apenas agrupa ativos por categoria' },
+  { value: 'none', label: 'Nenhum', desc: 'Só agrupa os ativos, sem sugestão de aporte' },
 ]
 
-const hasDiagram = (tracking: CategoryTracking) =>
-  tracking === 'both' || tracking === 'diagram_only'
+const hasDiagram = (tracking: CategoryTracking) => tracking === 'diagram'
 
 export const CatFormFields = ({
   form,
@@ -80,7 +78,7 @@ export const CatFormFields = ({
 
       {/* Tracking mode */}
       <div>
-        <p className="text-xs text-muted-foreground mb-2">Modo de acompanhamento</p>
+        <p className="text-xs text-muted-foreground mb-2">Estratégia de alocação</p>
         <div className="grid grid-cols-2 gap-2">
           {TRACKING_OPTIONS.map((opt) => (
             <button

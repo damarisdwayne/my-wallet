@@ -28,9 +28,7 @@ export const ModeSelector = ({ onSelectMode }: ModeSelectorProps) => (
           <FileText size={16} />
           Extrato de movimentações
         </span>
-        <span className="text-xs text-muted-foreground">
-          Importa dividendos recebidos em USD
-        </span>
+        <span className="text-xs text-muted-foreground">Importa dividendos recebidos em USD</span>
       </button>
     </div>
   </div>

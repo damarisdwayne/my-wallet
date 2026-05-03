@@ -9,7 +9,14 @@ import {
 } from '@/components/ui/dialog'
 import type { Asset, AssetType, PortfolioCategory, Trade } from '@/types'
 import { typeLabel } from '../../../constants'
-import { OpSelector, TypeSelector, StandardForm, FixedIncomeForm, CryptoForm, TradeForm } from './components'
+import {
+  OpSelector,
+  TypeSelector,
+  StandardForm,
+  FixedIncomeForm,
+  CryptoForm,
+  TradeForm,
+} from './components'
 import type { OpMode } from './constants'
 
 interface Props {

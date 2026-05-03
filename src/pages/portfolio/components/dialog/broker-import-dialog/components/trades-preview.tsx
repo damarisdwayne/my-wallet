@@ -23,13 +23,9 @@ export const TradesPreview = ({ rows, pendingDividends, onReset }: TradesPreview
         {updateCount > 0 && (
           <span className="text-foreground font-medium">{updateCount} a atualizar</span>
         )}
-        {sellCount > 0 && (
-          <span className="text-destructive font-medium">-{sellCount} vendas</span>
-        )}
+        {sellCount > 0 && <span className="text-destructive font-medium">-{sellCount} vendas</span>}
         {pendingDividends.length > 0 && (
-          <span className="text-primary font-medium">
-            {pendingDividends.length} provento(s)
-          </span>
+          <span className="text-primary font-medium">{pendingDividends.length} provento(s)</span>
         )}
         <button onClick={onReset} className="ml-auto underline hover:text-foreground">
           Trocar arquivo

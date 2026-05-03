@@ -17,9 +17,7 @@ export const ResultsSection = ({ results }: ResultsSectionProps) => {
           <CardHeader>
             <CardTitle>Valor atual de mercado</CardTitle>
             <p className="text-2xl font-bold text-foreground">{fmtBRL(results.currentValue)}</p>
-            <p className="text-xs text-muted-foreground">
-              {results.daysElapsed} dias decorridos
-            </p>
+            <p className="text-xs text-muted-foreground">{results.daysElapsed} dias decorridos</p>
           </CardHeader>
         </Card>
         <Card>
@@ -31,20 +29,15 @@ export const ResultsSection = ({ results }: ResultsSectionProps) => {
               {fmtBRL(results.grossGainSell)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {((results.grossGainSell / results.currentValue) * 100).toFixed(2)}% de
-              valorização
+              {((results.grossGainSell / results.currentValue) * 100).toFixed(2)}% de valorização
             </p>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Valor no vencimento</CardTitle>
-            <p className="text-2xl font-bold text-foreground">
-              {fmtBRL(results.valueAtMaturity)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {results.daysRemaining} dias restantes
-            </p>
+            <p className="text-2xl font-bold text-foreground">{fmtBRL(results.valueAtMaturity)}</p>
+            <p className="text-xs text-muted-foreground">{results.daysRemaining} dias restantes</p>
           </CardHeader>
         </Card>
       </div>
@@ -74,8 +67,8 @@ export const ResultsSection = ({ results }: ResultsSectionProps) => {
                 <strong className="text-foreground">
                   {results.annualizedHold.toFixed(2)}% a.a. líq.
                 </strong>{' '}
-                total. Vender e reinvestir no mesmo título resulta no mesmo valor bruto final —
-                a diferença real está no IR e no que você faz com o capital.
+                total. Vender e reinvestir no mesmo título resulta no mesmo valor bruto final — a
+                diferença real está no IR e no que você faz com o capital.
               </p>
             </>
           )}

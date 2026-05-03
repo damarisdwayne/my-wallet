@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   addAsset as addAssetService,
-  subscribeToAssets,
+  deleteAsset as deleteAssetService,
   updateAsset as updateAssetService,
-  updateAssetPrice as updateAssetPriceService,
 } from '@/services/assets'
 import { saveAnswers as saveAnswersService, subscribeToAnswers } from '@/services/answers'
 import {
@@ -12,46 +11,23 @@ import {
   subscribeToCategories,
 } from '@/services/categories'
 import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
-import {
-  fetchBrapiSummary,
-  saveFiiInfo as saveFiiInfoService,
-  saveFiiManualData,
-  saveStockInfo as saveStockInfoService,
-  subscribeToFiiInfo,
-  subscribeToFiiManual,
-  subscribeToFundamentals,
-  subscribeToStockInfo,
-  upsertMonthlySnapshot,
-} from '@/services/fundamentals'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
 import { addTrades, deleteTrade as deleteTradeService, subscribeToTrades } from '@/services/trades'
-import { calcFixedIncomeValue } from '@/services/bcb-rates'
-import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
-import { clearTesouroBondsCache } from '@/services/tesouro'
 import { useAuth } from '@/store/auth'
 import type {
-  Asset,
   AssetAnswers,
   Diagram,
-  FiiInfo,
-  FiiManualData,
-  FundamentalRecord,
   ImportItem,
   ImportRecord,
   PortfolioCategory,
-  StockInfo,
   Trade,
 } from '@/types'
 import type { B3Asset, B3Dividend, B3RawTrade } from '@/services/b3-import'
 import { addDividends } from '@/services/dividends'
+import { useAssets } from './use-assets'
+import { useFundamentals } from './use-fundamentals'
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-
-const deleteExpiredAssets = async (uid: string, assets: Asset[]) => {
-  const { deleteDoc, doc } = await import('firebase/firestore')
-  const { db } = await import('@/lib/firestore')
-  await Promise.all(assets.map((a) => deleteDoc(doc(db, 'users', uid, 'assets', a.id))))
-}
 
 const makeDefaultCategories = (): PortfolioCategory[] => [
   { id: mkId(), name: 'Fundos Imobiliários', type: 'fii', targetPercent: 30, color: '#f97316' },
@@ -63,105 +39,72 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
 
 export const usePortfolio = () => {
   const { user } = useAuth()
-  const [assets, setAssets] = useState<Asset[]>([])
+  const uid = user?.uid ?? null
+
+  const assetsHook = useAssets(uid)
+  const fundamentalsHook = useFundamentals(uid)
+
+  const { assets } = assetsHook
+
   const [categories, setCategories] = useState<PortfolioCategory[]>([])
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [answers, setAnswers] = useState<Record<string, AssetAnswers>>({})
   const [importRecords, setImportRecords] = useState<ImportRecord[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
-  const [refreshingPrices, setRefreshingPrices] = useState(false)
-  const [priceError, setPriceError] = useState<string | null>(null)
-  const [fundamentals, setFundamentals] = useState<Record<string, FundamentalRecord>>({})
-  const [fiiManual, setFiiManual] = useState<Record<string, FiiManualData>>({})
-  const [fiiInfo, setFiiInfo] = useState<Record<string, FiiInfo>>({})
-  const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({})
-  const [refreshingFundamentals, setRefreshingFundamentals] = useState<Record<string, boolean>>({})
-  const [fundamentalErrors, setFundamentalErrors] = useState<Record<string, string>>({})
   const seededRef = useRef(false)
 
+  // Track when all 5 sources have loaded: assets + categories + diagrams + answers + imports
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false)
+  const [diagramsLoaded, setDiagramsLoaded] = useState(false)
+  const [answersLoaded, setAnswersLoaded] = useState(false)
+  const [importsLoaded, setImportsLoaded] = useState(false)
+
   useEffect(() => {
-    if (!user) return
-    let resolved = 0
-    const onLoad = () => {
-      resolved++
-      if (resolved === 5) setLoading(false)
+    if (assetsHook.loaded && categoriesLoaded && diagramsLoaded && answersLoaded && importsLoaded) {
+      setLoading(false)
     }
+  }, [assetsHook.loaded, categoriesLoaded, diagramsLoaded, answersLoaded, importsLoaded])
+
+  useEffect(() => {
+    if (!uid) return
     const unsubs = [
-      subscribeToAssets(user.uid, (data) => {
-        const today = new Date().toISOString().slice(0, 10)
-        const expired = data.filter(
-          (a) => a.type === 'fixed_income' && a.maturityDate && a.maturityDate < today,
-        )
-        if (expired.length > 0) void deleteExpiredAssets(user.uid, expired)
-        setAssets(data.filter((a) => !expired.some((e) => e.id === a.id)))
-        onLoad()
-      }),
-      subscribeToCategories(user.uid, (data) => {
+      subscribeToCategories(uid, (data) => {
         if (data.length === 0 && !seededRef.current) {
           seededRef.current = true
-          makeDefaultCategories().forEach((cat) => saveCategoryService(user.uid, cat))
+          makeDefaultCategories().forEach((cat) => saveCategoryService(uid, cat))
         }
         setCategories(data)
-        onLoad()
+        setCategoriesLoaded(true)
       }),
-      subscribeToDiagrams(user.uid, (data) => {
+      subscribeToDiagrams(uid, (data) => {
         setDiagrams(data)
-        onLoad()
+        setDiagramsLoaded(true)
       }),
-      subscribeToAnswers(user.uid, (data) => {
+      subscribeToAnswers(uid, (data) => {
         setAnswers(data)
-        onLoad()
+        setAnswersLoaded(true)
       }),
-      subscribeToImports(user.uid, (data) => {
+      subscribeToImports(uid, (data) => {
         setImportRecords(data)
-        onLoad()
+        setImportsLoaded(true)
       }),
-      subscribeToFundamentals(user.uid, setFundamentals),
-      subscribeToFiiManual(user.uid, setFiiManual),
-      subscribeToFiiInfo(user.uid, setFiiInfo),
-      subscribeToTrades(user.uid, setTrades),
-      subscribeToStockInfo(user.uid, setStockInfo),
+      subscribeToTrades(uid, setTrades),
     ]
     return () => unsubs.forEach((u) => u())
-  }, [user])
+  }, [uid])
 
-  const addAsset = (asset: Asset) => {
-    if (!user) return Promise.resolve()
-    return addAssetService(user.uid, asset)
-  }
+  const saveCategory = (cat: PortfolioCategory) =>
+    uid ? saveCategoryService(uid, cat) : Promise.resolve()
 
-  const editAsset = (assetId: string, data: Partial<Asset>) => {
-    if (!user) return Promise.resolve()
-    return updateAssetService(user.uid, assetId, data)
-  }
+  const deleteCategory = (catId: string) =>
+    uid ? deleteCategoryService(uid, catId) : Promise.resolve()
 
-  const deleteAsset = async (assetId: string) => {
-    if (!user) return
-    const { deleteDoc, doc } = await import('firebase/firestore')
-    const { db } = await import('@/lib/firestore')
-    await deleteDoc(doc(db, 'users', user.uid, 'assets', assetId))
-  }
+  const saveDiagram = (diagram: Diagram) =>
+    uid ? saveDiagramService(uid, diagram) : Promise.resolve()
 
-  const saveCategory = (cat: PortfolioCategory) => {
-    if (!user) return Promise.resolve()
-    return saveCategoryService(user.uid, cat)
-  }
-
-  const deleteCategory = (catId: string) => {
-    if (!user) return Promise.resolve()
-    return deleteCategoryService(user.uid, catId)
-  }
-
-  const saveDiagram = (diagram: Diagram) => {
-    if (!user) return Promise.resolve()
-    return saveDiagramService(user.uid, diagram)
-  }
-
-  const saveAnswers = (assetId: string, assetAnswers: AssetAnswers) => {
-    if (!user) return Promise.resolve()
-    return saveAnswersService(user.uid, assetId, assetAnswers)
-  }
+  const saveAnswers = (assetId: string, assetAnswers: AssetAnswers) =>
+    uid ? saveAnswersService(uid, assetId, assetAnswers) : Promise.resolve()
 
   const importFromB3 = async (
     b3Assets: B3Asset[],
@@ -170,7 +113,7 @@ export const usePortfolio = () => {
     filename: string,
     source?: 'b3' | 'inter',
   ) => {
-    if (!user) return
+    if (!uid) return
     const items: ImportItem[] = []
 
     await Promise.all(
@@ -183,16 +126,14 @@ export const usePortfolio = () => {
           const newQty = Math.max(0, prevQty + b3.quantity)
 
           if (newQty === 0) {
-            const { deleteDoc, doc } = await import('firebase/firestore')
-            const { db } = await import('@/lib/firestore')
-            await deleteDoc(doc(db, 'users', user.uid, 'assets', existing.id))
+            await deleteAssetService(uid, existing.id)
           } else {
             // PM only changes on buys; sells don't affect average cost
             const newAvg =
               b3.boughtQty > 0
                 ? (prevQty * prevAvg + b3.boughtQty * b3.avgPrice) / (prevQty + b3.boughtQty)
                 : prevAvg
-            await updateAssetService(user.uid, existing.id, {
+            await updateAssetService(uid, existing.id, {
               quantity: newQty,
               avgPrice: newAvg,
               currentPrice: b3.currentPrice > 0 ? b3.currentPrice : existing.currentPrice,
@@ -217,7 +158,7 @@ export const usePortfolio = () => {
             rawTrades
               .filter((t) => t.ticker === b3.ticker && t.type === 'buy' && t.date)
               .sort((a, b) => a.date.localeCompare(b.date))[0]?.date
-          const newAsset: Asset = {
+          const newAsset = {
             id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             ticker: b3.ticker,
             name: b3.name,
@@ -229,7 +170,7 @@ export const usePortfolio = () => {
             targetPercent: 0,
             ...(firstBuyDate ? { operationDate: firstBuyDate } : {}),
           }
-          await addAssetService(user.uid, newAsset)
+          await addAssetService(uid, newAsset)
           items.push({
             assetId: newAsset.id,
             ticker: b3.ticker,
@@ -251,19 +192,19 @@ export const usePortfolio = () => {
       items,
     }
     await Promise.all([
-      saveImportRecord(user.uid, record),
+      saveImportRecord(uid, record),
       rawTrades.length > 0 &&
         addTrades(
-          user.uid,
+          uid,
           rawTrades.map((t) => ({ ...t, source: 'b3_import' as const, importId })),
         ),
-      dividends.length > 0 && addDividends(user.uid, dividends),
+      dividends.length > 0 && addDividends(uid, dividends),
     ])
   }
 
   const addManualTrade = async (trade: Omit<Trade, 'id' | 'source'>) => {
-    if (!user) return
-    await addTrades(user.uid, [{ ...trade, source: 'manual' as const }])
+    if (!uid) return
+    await addTrades(uid, [{ ...trade, source: 'manual' as const }])
 
     const existing = assets.find((a) => a.ticker.toUpperCase() === trade.ticker.toUpperCase())
     if (existing) {
@@ -273,45 +214,41 @@ export const usePortfolio = () => {
           : Math.max(0, existing.quantity - trade.quantity)
 
       if (newQty === 0) {
-        const { deleteDoc, doc } = await import('firebase/firestore')
-        const { db } = await import('@/lib/firestore')
-        await deleteDoc(doc(db, 'users', user.uid, 'assets', existing.id))
+        await deleteAssetService(uid, existing.id)
       } else {
         const newAvg =
           trade.type === 'buy'
             ? (existing.quantity * existing.avgPrice + trade.quantity * trade.price) /
               (existing.quantity + trade.quantity)
             : existing.avgPrice
-        await updateAssetService(user.uid, existing.id, { quantity: newQty, avgPrice: newAvg })
+        await updateAssetService(uid, existing.id, { quantity: newQty, avgPrice: newAvg })
       }
     } else if (trade.type === 'buy') {
-      const newAsset: Asset = {
+      const newAsset = {
         id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         ticker: trade.ticker.toUpperCase(),
         name: trade.ticker.toUpperCase(),
-        type: 'stock',
+        type: 'stock' as const,
         categoryId: '',
         quantity: trade.quantity,
         avgPrice: trade.price,
         currentPrice: trade.price,
         targetPercent: 0,
       }
-      await addAssetService(user.uid, newAsset)
+      await addAssetService(uid, newAsset)
     }
   }
 
   const revertImport = async (record: ImportRecord) => {
-    if (!user) return
+    if (!uid) return
     await Promise.all(
       record.items.map(async (item) => {
         if (item.wasCreated) {
-          const { deleteDoc, doc } = await import('firebase/firestore')
-          const { db } = await import('@/lib/firestore')
-          await deleteDoc(doc(db, 'users', user.uid, 'assets', item.assetId))
+          await deleteAssetService(uid, item.assetId)
         } else {
           const stillExists = assets.some((a) => a.id === item.assetId)
           if (stillExists) {
-            await updateAssetService(user.uid, item.assetId, {
+            await updateAssetService(uid, item.assetId, {
               quantity: item.previousQuantity,
               avgPrice: item.previousAvgPrice,
             })
@@ -319,75 +256,17 @@ export const usePortfolio = () => {
         }
       }),
     )
-    await deleteImportRecord(user.uid, record.id)
-  }
-
-  const refreshFundamentals = async (tickers: string[]) => {
-    if (!user || tickers.length === 0) return
-    setRefreshingFundamentals(Object.fromEntries(tickers.map((t) => [t, true])))
-    const errors: Record<string, string> = {}
-    await Promise.all(
-      tickers.map(async (ticker) => {
-        try {
-          const existing = fundamentals[ticker.toUpperCase()] ?? null
-          const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
-          const brapi = await fetchBrapiSummary(ticker)
-          await upsertMonthlySnapshot(
-            user.uid,
-            ticker,
-            { priceEarnings: brapi.priceEarnings, sector: brapi.sector, industry: brapi.industry },
-            existing,
-            asset?.currentPrice,
-          )
-        } catch (err) {
-          errors[ticker] = err instanceof Error ? err.message : 'Erro'
-        }
-      }),
-    )
-    setFundamentalErrors(errors)
-    setRefreshingFundamentals({})
-  }
-
-  const saveManualSnapshot = async (
-    ticker: string,
-    partial: Partial<import('@/types').FundamentalSnapshot>,
-    priceOverride?: number,
-  ) => {
-    if (!user) return
-    const existing = fundamentals[ticker.toUpperCase()] ?? null
-    const asset = assets.find((a) => a.ticker.toUpperCase() === ticker.toUpperCase())
-    await upsertMonthlySnapshot(
-      user.uid,
-      ticker,
-      partial,
-      existing,
-      priceOverride ?? asset?.currentPrice,
-    )
-  }
-
-  const saveFiiManual = (data: FiiManualData) => {
-    if (!user) return Promise.resolve()
-    return saveFiiManualData(user.uid, data)
-  }
-
-  const saveFiiInfo = (data: FiiInfo) => {
-    if (!user) return Promise.resolve()
-    return saveFiiInfoService(user.uid, data)
-  }
-
-  const saveStockInfo = (data: StockInfo) => {
-    if (!user) return Promise.resolve()
-    return saveStockInfoService(user.uid, data)
+    await deleteImportRecord(uid, record.id)
   }
 
   const syncMissingTrades = async () => {
-    if (!user) return
+    if (!uid) return
     const today = new Date().toISOString().slice(0, 10)
     const tickersWithTrades = new Set(trades.map((t) => t.ticker.toUpperCase()))
     const missing = assets.filter((a) => !tickersWithTrades.has(a.ticker.toUpperCase()))
     if (missing.length === 0) return
     await addTrades(
-      user.uid,
+      uid,
       missing.map((a) => ({
         ticker: a.ticker,
         type: 'buy' as const,
@@ -400,56 +279,15 @@ export const usePortfolio = () => {
     )
   }
 
-  const refreshPrices = async () => {
-    if (!user || assets.length === 0) return
-    setRefreshingPrices(true)
-    setPriceError(null)
-    clearQuoteCache()
-    clearTesouroBondsCache()
-    try {
-      // Stocks, FIIs, ETFs, BDRs, crypto + Tesouro Direto
-      const priceable = assets.filter(
-        (a) =>
-          (a.type !== 'fixed_income' && a.type !== 'other') ||
-          a.ticker.toUpperCase().startsWith('TESOURO'),
-      )
-      const prices = await fetchLivePrices(
-        priceable.map((a) => ({ ticker: a.ticker, type: a.type })),
-      )
-      await Promise.all(
-        priceable
-          .filter((a) => prices[a.ticker.toUpperCase()] !== undefined)
-          .map((a) => updateAssetPriceService(user.uid, a.id, prices[a.ticker.toUpperCase()])),
-      )
+  // Wrap fundamentals actions that need assets from this hook
+  const refreshFundamentals = (tickers: string[]) =>
+    fundamentalsHook.refreshFundamentals(tickers, assets)
 
-      // Flat fixed income (CDB, LCI, LCA…) — calculate via BCB rates API
-      const flatFI = assets.filter(
-        (a) => a.type === 'fixed_income' && !a.ticker.toUpperCase().startsWith('TESOURO'),
-      )
-      await Promise.all(
-        flatFI
-          .filter((a) => a.operationDate && a.rateType)
-          .map(async (a) => {
-            const rateType = a.rateType ?? ''
-            const operationDate = a.operationDate ?? ''
-            const newValue = await calcFixedIncomeValue(
-              a.avgPrice,
-              rateType,
-              a.indexerRate,
-              a.prefixedRate,
-              operationDate,
-            )
-            if (Math.abs(newValue - a.currentPrice) > 0.01) {
-              await updateAssetPriceService(user.uid, a.id, newValue)
-            }
-          }),
-      )
-    } catch (err) {
-      setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
-    } finally {
-      setRefreshingPrices(false)
-    }
-  }
+  const saveManualSnapshot = (
+    ticker: string,
+    partial: Partial<import('@/types').FundamentalSnapshot>,
+    priceOverride?: number,
+  ) => fundamentalsHook.saveManualSnapshot(ticker, partial, priceOverride, assets)
 
   return {
     loading,
@@ -459,32 +297,31 @@ export const usePortfolio = () => {
     answers,
     importRecords,
     trades,
-    addAsset,
+    addAsset: assetsHook.addAsset,
     addManualTrade,
-    deleteTrade: (tradeId: string) =>
-      user ? deleteTradeService(user.uid, tradeId) : Promise.resolve(),
+    deleteTrade: (tradeId: string) => (uid ? deleteTradeService(uid, tradeId) : Promise.resolve()),
     importFromB3,
     revertImport,
-    editAsset,
-    deleteAsset,
+    editAsset: assetsHook.editAsset,
+    deleteAsset: assetsHook.deleteAsset,
     saveCategory,
     deleteCategory,
     saveDiagram,
     saveAnswers,
-    refreshPrices,
-    refreshingPrices,
-    priceError,
-    fundamentals,
-    fiiManual,
-    fiiInfo,
-    saveFiiInfo,
-    stockInfo,
-    saveStockInfo,
-    refreshingFundamentals,
-    fundamentalErrors,
+    refreshPrices: assetsHook.refreshPrices,
+    refreshingPrices: assetsHook.refreshingPrices,
+    priceError: assetsHook.priceError,
+    fundamentals: fundamentalsHook.fundamentals,
+    fiiManual: fundamentalsHook.fiiManual,
+    fiiInfo: fundamentalsHook.fiiInfo,
+    saveFiiInfo: fundamentalsHook.saveFiiInfo,
+    stockInfo: fundamentalsHook.stockInfo,
+    saveStockInfo: fundamentalsHook.saveStockInfo,
+    refreshingFundamentals: fundamentalsHook.refreshingFundamentals,
+    fundamentalErrors: fundamentalsHook.fundamentalErrors,
     refreshFundamentals,
     saveManualSnapshot,
-    saveFiiManual,
+    saveFiiManual: fundamentalsHook.saveFiiManual,
     syncMissingTrades,
   }
 }

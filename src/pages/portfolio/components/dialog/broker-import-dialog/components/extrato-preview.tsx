@@ -20,9 +20,7 @@ export const ExtratoPreview = ({ entries, usdRate, onReset }: ExtratoPreviewProp
             {unmappedFunds.length} fundo(s) sem ticker mapeado
           </span>
         )}
-        <span className="ml-auto text-muted-foreground">
-          Cotação: R$ {usdRate.toFixed(2)}/USD
-        </span>
+        <span className="ml-auto text-muted-foreground">Cotação: R$ {usdRate.toFixed(2)}/USD</span>
         <button onClick={onReset} className="underline hover:text-foreground">
           Trocar arquivo
         </button>
@@ -30,8 +28,7 @@ export const ExtratoPreview = ({ entries, usdRate, onReset }: ExtratoPreviewProp
 
       {unmappedFunds.length > 0 && (
         <div className="rounded-md bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-warning">
-          Não importados (ticker desconhecido):{' '}
-          {unmappedFunds.map((e) => e.fundName).join(', ')}
+          Não importados (ticker desconhecido): {unmappedFunds.map((e) => e.fundName).join(', ')}
         </div>
       )}
 

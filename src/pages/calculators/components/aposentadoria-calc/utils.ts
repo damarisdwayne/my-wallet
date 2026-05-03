@@ -1,6 +1,11 @@
 export type RowEntry = { label: string; totalInvested: number; balance: number; earnings: number }
 
-export const buildMonthlyRows = (PV: number, PMT: number, rMonthly: number, n: number): RowEntry[] => {
+export const buildMonthlyRows = (
+  PV: number,
+  PMT: number,
+  rMonthly: number,
+  n: number,
+): RowEntry[] => {
   let balance = PV
   return Array.from({ length: n }, (_, i) => {
     balance = balance * (1 + rMonthly) + PMT
@@ -14,7 +19,12 @@ export const buildMonthlyRows = (PV: number, PMT: number, rMonthly: number, n: n
   })
 }
 
-export const buildYearlyRows = (PV: number, PMT: number, rMonthly: number, n: number): RowEntry[] => {
+export const buildYearlyRows = (
+  PV: number,
+  PMT: number,
+  rMonthly: number,
+  n: number,
+): RowEntry[] => {
   let balance = PV
   const totalYears = Math.ceil(n / 12)
   return Array.from({ length: totalYears }, (_, i) => {

@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Asset } from '@/types'
 
@@ -18,3 +18,6 @@ export const updateAssetPrice = (userId: string, assetId: string, price: number)
 
 export const updateAsset = (userId: string, assetId: string, data: Partial<Asset>) =>
   updateDoc(doc(db, 'users', userId, 'assets', assetId), data)
+
+export const deleteAsset = (userId: string, assetId: string) =>
+  deleteDoc(doc(db, 'users', userId, 'assets', assetId))

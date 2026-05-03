@@ -1,13 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Asset } from '@/types'
 import type { TesouroBond } from '@/services/tesouro'
-import {
-  CalcActions,
-  CurrencyInput,
-  DateInput,
-  Field,
-  PercentInput,
-} from '../../shared'
+import { CalcActions, CurrencyInput, DateInput, Field, PercentInput } from '../../shared'
 import type { BondType } from '../types'
 import { BOND_OPTIONS } from '../constants'
 

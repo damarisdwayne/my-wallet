@@ -1,12 +1,6 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  CalcActions,
-  CurrencyInput,
-  NumberInput,
-  PercentInput,
-  fmtBRL,
-} from '../../shared'
+import { CalcActions, CurrencyInput, NumberInput, PercentInput, fmtBRL } from '../../shared'
 
 export type IFResults = {
   monthlyContrib: number

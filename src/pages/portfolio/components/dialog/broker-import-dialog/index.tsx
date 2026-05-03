@@ -206,11 +206,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
         )}
 
         {rows && (
-          <TradesPreview
-            rows={rows}
-            pendingDividends={pendingDividends}
-            onReset={resetFile}
-          />
+          <TradesPreview rows={rows} pendingDividends={pendingDividends} onReset={resetFile} />
         )}
 
         {extratoResult && (

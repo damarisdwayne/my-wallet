@@ -5,8 +5,8 @@ export const GuidanceCard = () => (
     <CardContent className="pt-4 pb-4">
       <p className="text-sm font-semibold text-foreground mb-2">Quando vale a pena vender?</p>
       <p className="text-sm text-muted-foreground mb-3">
-        O preço sobe quando a taxa cai. Quanto mais tempo resta até o vencimento, maior o
-        impacto de cada ponto percentual (pp) de queda.
+        O preço sobe quando a taxa cai. Quanto mais tempo resta até o vencimento, maior o impacto de
+        cada ponto percentual (pp) de queda.
       </p>
       <div className="space-y-2">
         {[

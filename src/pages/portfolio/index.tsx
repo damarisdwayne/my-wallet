@@ -32,6 +32,7 @@ export const PortfolioPage = () => {
     saveCategory,
     deleteCategory,
     saveDiagram,
+    deleteDiagram,
     saveAnswers,
     refreshPrices,
     refreshingPrices,
@@ -100,6 +101,7 @@ export const PortfolioPage = () => {
           deleteCategory={deleteCategory}
           editAsset={editAsset}
           saveDiagram={saveDiagram}
+          deleteDiagram={deleteDiagram}
           saveAnswers={saveAnswers}
         />
       )}

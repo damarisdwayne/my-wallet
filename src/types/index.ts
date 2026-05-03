@@ -67,12 +67,15 @@ export type AssetType =
   | 'etf_us'
   | 'other'
 
+export type CategoryTracking = 'both' | 'goal_only' | 'diagram_only' | 'none'
+
 export type PortfolioCategory = {
   id: string
   name: string
   targetPercent: number
   assetTypes: AssetType[]
   color: string
+  tracking: CategoryTracking
 }
 
 export type FixedIncomeType =

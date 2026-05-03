@@ -10,7 +10,11 @@ import {
   saveCategory as saveCategoryService,
   subscribeToCategories,
 } from '@/services/categories'
-import { saveDiagram as saveDiagramService, subscribeToDiagrams } from '@/services/diagrams'
+import {
+  deleteDiagram as deleteDiagramService,
+  saveDiagram as saveDiagramService,
+  subscribeToDiagrams,
+} from '@/services/diagrams'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
 import { addTrades, deleteTrade as deleteTradeService, subscribeToTrades } from '@/services/trades'
 import { useAuth } from '@/store/auth'
@@ -37,6 +41,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['fii'],
     targetPercent: 30,
     color: '#f97316',
+    tracking: 'both',
   },
   {
     id: mkId(),
@@ -44,6 +49,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['fixed_income', 'tesouro'],
     targetPercent: 30,
     color: '#3b82f6',
+    tracking: 'goal_only',
   },
   {
     id: mkId(),
@@ -51,6 +57,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['stock', 'bdr', 'etf'],
     targetPercent: 20,
     color: '#22c55e',
+    tracking: 'both',
   },
   {
     id: mkId(),
@@ -58,8 +65,16 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['stock_us', 'etf_us'],
     targetPercent: 17,
     color: '#8b5cf6',
+    tracking: 'both',
   },
-  { id: mkId(), name: 'Cripto', assetTypes: ['crypto'], targetPercent: 3, color: '#eab308' },
+  {
+    id: mkId(),
+    name: 'Cripto',
+    assetTypes: ['crypto'],
+    targetPercent: 3,
+    color: '#eab308',
+    tracking: 'goal_only',
+  },
 ]
 
 export const usePortfolio = () => {
@@ -139,6 +154,9 @@ export const usePortfolio = () => {
 
   const saveDiagram = (diagram: Diagram) =>
     uid ? saveDiagramService(uid, diagram) : Promise.resolve()
+
+  const deleteDiagram = (diagramId: string) =>
+    uid ? deleteDiagramService(uid, diagramId) : Promise.resolve()
 
   const saveAnswers = (assetId: string, assetAnswers: AssetAnswers) =>
     uid ? saveAnswersService(uid, assetId, assetAnswers) : Promise.resolve()
@@ -356,6 +374,7 @@ export const usePortfolio = () => {
     saveCategory,
     deleteCategory,
     saveDiagram,
+    deleteDiagram,
     saveAnswers,
     refreshPrices: assetsHook.refreshPrices,
     refreshingPrices: assetsHook.refreshingPrices,

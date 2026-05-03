@@ -10,5 +10,6 @@ export interface AllocationTabProps {
   deleteCategory: (catId: string) => Promise<void>
   editAsset: (assetId: string, data: Partial<Asset>) => Promise<void>
   saveDiagram: (diagram: Diagram) => Promise<void>
+  deleteDiagram: (diagramId: string) => Promise<void>
   saveAnswers: (assetId: string, answers: AssetAnswers) => Promise<void>
 }

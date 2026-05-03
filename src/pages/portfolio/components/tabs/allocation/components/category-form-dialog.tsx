@@ -6,6 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import type { Diagram } from '@/types'
+import { emptyForm } from '../constants'
 import { CatFormFields } from './cat-form-fields'
 
 interface CategoryFormDialogProps {
@@ -14,12 +16,8 @@ interface CategoryFormDialogProps {
   description: string
   submitLabel: string
   disabled?: boolean
-  form: {
-    name: string
-    assetTypes: import('@/types').AssetType[]
-    targetPercent: string
-    color: string
-  }
+  form: ReturnType<typeof emptyForm>
+  diagrams: Diagram[]
   onSet: (k: string, v: string | import('@/types').AssetType[]) => void
   onClose: () => void
   onSubmit: () => void
@@ -32,6 +30,7 @@ export const CategoryFormDialog = ({
   submitLabel,
   disabled,
   form,
+  diagrams,
   onSet,
   onClose,
   onSubmit,
@@ -42,12 +41,12 @@ export const CategoryFormDialog = ({
       if (!v) onClose()
     }}
   >
-    <DialogContent className="max-w-sm">
+    <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
-      <CatFormFields form={form} set={onSet} prefix={title} />
+      <CatFormFields form={form} set={onSet} prefix={title} diagrams={diagrams} />
       <DialogFooter className="mt-4">
         <button
           onClick={onClose}

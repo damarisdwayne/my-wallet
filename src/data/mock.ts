@@ -117,6 +117,7 @@ export const mockCategories: PortfolioCategory[] = [
     targetPercent: 40,
     assetTypes: ['fii'],
     color: '#10b981',
+    tracking: 'both',
   },
   {
     id: 'cat-2',
@@ -124,6 +125,7 @@ export const mockCategories: PortfolioCategory[] = [
     targetPercent: 35,
     assetTypes: ['stock', 'bdr', 'etf'],
     color: '#3b82f6',
+    tracking: 'both',
   },
   {
     id: 'cat-3',
@@ -131,6 +133,7 @@ export const mockCategories: PortfolioCategory[] = [
     targetPercent: 15,
     assetTypes: ['bdr', 'etf'],
     color: '#f59e0b',
+    tracking: 'both',
   },
   {
     id: 'cat-4',
@@ -138,6 +141,7 @@ export const mockCategories: PortfolioCategory[] = [
     targetPercent: 10,
     assetTypes: ['fixed_income', 'tesouro'],
     color: '#8b5cf6',
+    tracking: 'goal_only',
   },
 ]
 

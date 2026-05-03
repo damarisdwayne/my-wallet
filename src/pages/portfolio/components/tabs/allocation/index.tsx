@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Asset, PortfolioCategory } from '@/types'
+import type { Asset, Diagram, PortfolioCategory } from '@/types'
 import { computeAssetTargets } from '../../../compute-targets'
 import { emptyForm } from './constants'
 import type { AllocationTabProps } from './types'
@@ -9,7 +9,7 @@ import {
   AssetAnswersDialog,
   CategoryCard,
   CategoryFormDialog,
-  CreateDiagramDialog,
+  DiagramsSection,
   EditQuestionsDialog,
 } from './components'
 
@@ -23,6 +23,7 @@ export const AllocationTab = ({
   deleteCategory,
   editAsset,
   saveDiagram,
+  deleteDiagram,
   saveAnswers,
 }: AllocationTabProps) => {
   const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
@@ -35,44 +36,71 @@ export const AllocationTab = ({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const [expandedCatId, setExpandedCatId] = useState<string | null>(null)
-
   const [manualDrafts, setManualDrafts] = useState<Record<string, Record<string, string>>>({})
   const [savingManual, setSavingManual] = useState<string | null>(null)
-
   const [answeringAsset, setAnsweringAsset] = useState<Asset | null>(null)
-
   const [editQCatId, setEditQCatId] = useState<string | null>(null)
-
-  const [createDiagCatId, setCreateDiagCatId] = useState<string | null>(null)
-  const [newDiagName, setNewDiagName] = useState('')
 
   const setAdd = (k: string, v: string | import('@/types').AssetType[]) =>
     setAddForm((p) => ({ ...p, [k]: v }))
   const setEdit = (k: string, v: string | import('@/types').AssetType[]) =>
     setEditForm((p) => ({ ...p, [k]: v }))
 
+  // Link/unlink diagram when a category is saved with a diagram selection
+  const applyDiagramLink = async (
+    catId: string,
+    selectedDiagramId: string,
+    newDiagramName: string,
+  ) => {
+    if (selectedDiagramId === 'new' && newDiagramName.trim()) {
+      await saveDiagram({
+        id: `diag-${Date.now()}`,
+        name: newDiagramName.trim(),
+        categoryId: catId,
+        questions: [],
+      })
+      return
+    }
+    if (selectedDiagramId && selectedDiagramId !== 'new') {
+      const diag = diagrams.find((d) => d.id === selectedDiagramId)
+      if (diag) await saveDiagram({ ...diag, categoryId: catId })
+    }
+    // Unlink any diagram previously pointing to this category (if a different one is now selected)
+    const prev = diagrams.find(
+      (d) => d.categoryId === catId && d.id !== selectedDiagramId,
+    )
+    if (prev) await saveDiagram({ ...prev, categoryId: '' })
+  }
+
   const handleAdd = async () => {
     const name = addForm.name.trim()
     if (!name || addForm.assetTypes.length === 0) return
     const target = Number.parseFloat(addForm.targetPercent)
+    const catId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     await saveCategory({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: catId,
       name,
       assetTypes: addForm.assetTypes,
       targetPercent: Number.isNaN(target) ? 0 : Math.round(target * 10) / 10,
       color: addForm.color,
+      tracking: addForm.tracking,
     })
+    await applyDiagramLink(catId, addForm.selectedDiagramId, addForm.newDiagramName)
     setAddForm(emptyForm())
     setAddOpen(false)
   }
 
   const openEdit = (cat: PortfolioCategory) => {
+    const linkedDiagram = diagrams.find((d) => d.categoryId === cat.id)
     setEditingCat(cat)
     setEditForm({
       name: cat.name,
       assetTypes: cat.assetTypes,
       targetPercent: String(cat.targetPercent),
       color: cat.color,
+      tracking: cat.tracking,
+      selectedDiagramId: linkedDiagram?.id ?? '',
+      newDiagramName: '',
     })
     setEditOpen(true)
   }
@@ -86,7 +114,9 @@ export const AllocationTab = ({
       assetTypes: editForm.assetTypes.length > 0 ? editForm.assetTypes : editingCat.assetTypes,
       targetPercent: Number.isNaN(target) ? editingCat.targetPercent : Math.round(target * 10) / 10,
       color: editForm.color,
+      tracking: editForm.tracking,
     })
+    await applyDiagramLink(editingCat.id, editForm.selectedDiagramId, editForm.newDiagramName)
     setEditOpen(false)
     setEditingCat(null)
   }
@@ -155,7 +185,7 @@ export const AllocationTab = ({
     setSavingManual(null)
   }
 
-  const getDiagram = (cat: PortfolioCategory) =>
+  const getDiagram = (cat: PortfolioCategory): Diagram | null =>
     diagrams.find((d) =>
       d.categoryId
         ? d.categoryId === cat.id
@@ -164,25 +194,15 @@ export const AllocationTab = ({
 
   const setAnswer = async (questionId: string, value: 0 | 1) => {
     if (!answeringAsset) return
-    await saveAnswers(answeringAsset.id, {
-      ...(answers[answeringAsset.id] ?? {}),
-      [questionId]: value,
-    })
-  }
-
-  const createDiagram = async (catId: string) => {
-    const name = newDiagName.trim()
-    if (!name) return
-    await saveDiagram({ id: `diag-${Date.now()}`, name, categoryId: catId, questions: [] })
-    setCreateDiagCatId(null)
-    setNewDiagName('')
+    const existing = answers[answeringAsset.id] ?? {}
+    await saveAnswers(answeringAsset.id, { ...existing, [questionId]: value })
   }
 
   const totalAllocated = categories.reduce((s, c) => s + c.targetPercent, 0)
-  const editQDiagram = editQCatId ? getDiagram(categories.find((c) => c.id === editQCatId)!) : null
-  const answeringDiagram = answeringAsset
-    ? getDiagram(categories.find((c) => c.id === answeringAsset.categoryId)!)
-    : null
+  const editQCat = categories.find((c) => c.id === editQCatId)
+  const editQDiagram = editQCat ? getDiagram(editQCat) : null
+  const answeringCat = categories.find((c) => c.id === answeringAsset?.categoryId)
+  const answeringDiagram = answeringCat ? getDiagram(answeringCat) : null
 
   return (
     <div className="space-y-4">
@@ -256,20 +276,28 @@ export const AllocationTab = ({
             onAnswerAsset={(asset) => setAnsweringAsset(asset)}
             onEditQuestions={() => setEditQCatId(cat.id)}
             onCreateDiagram={() => {
-              setCreateDiagCatId(cat.id)
-              setNewDiagName(cat.name)
+              // Open edit dialog on the category with tracking set to include diagram
+              openEdit({ ...cat, tracking: cat.tracking === 'goal_only' ? 'both' : cat.tracking })
             }}
           />
         )
       })}
 
+      <DiagramsSection
+        diagrams={diagrams}
+        categories={categories}
+        saveDiagram={saveDiagram}
+        deleteDiagram={deleteDiagram}
+      />
+
       <CategoryFormDialog
         open={addOpen}
         title="Nova categoria"
-        description="Defina nome, tipo, meta de alocação e cor."
+        description="Defina nome, tipos, modo de acompanhamento e cor."
         submitLabel="Criar categoria"
         disabled={!addForm.name.trim()}
         form={addForm}
+        diagrams={diagrams}
         onSet={setAdd}
         onClose={() => {
           setAddOpen(false)
@@ -281,26 +309,16 @@ export const AllocationTab = ({
       <CategoryFormDialog
         open={editOpen}
         title="Editar categoria"
-        description="Altere nome, tipo, meta ou cor."
+        description="Altere nome, tipos, modo ou diagrama."
         submitLabel="Salvar"
         form={editForm}
+        diagrams={diagrams}
         onSet={setEdit}
         onClose={() => {
           setEditOpen(false)
           setEditingCat(null)
         }}
         onSubmit={handleEditSave}
-      />
-
-      <CreateDiagramDialog
-        open={!!createDiagCatId}
-        value={newDiagName}
-        onChange={setNewDiagName}
-        onClose={() => {
-          setCreateDiagCatId(null)
-          setNewDiagName('')
-        }}
-        onSubmit={() => createDiagCatId && createDiagram(createDiagCatId)}
       />
 
       {answeringAsset && answeringDiagram && (

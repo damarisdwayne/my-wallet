@@ -1,21 +1,26 @@
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
-import type { AssetType, PortfolioCategory } from '@/types'
+import type { AssetType, CategoryTracking, PortfolioCategory } from '@/types'
 
-type RawCategory = Omit<PortfolioCategory, 'assetTypes'> & {
+type RawCategory = Omit<PortfolioCategory, 'assetTypes' | 'tracking'> & {
   assetTypes?: AssetType[]
-  type?: AssetType // legacy field
+  type?: AssetType // legacy single-type field
+  tracking?: CategoryTracking
+}
+
+const inferTracking = (assetTypes: AssetType[]): CategoryTracking => {
+  const passiveOnly = assetTypes.every(
+    (t) => t === 'fixed_income' || t === 'tesouro' || t === 'crypto' || t === 'other',
+  )
+  return passiveOnly ? 'goal_only' : 'both'
 }
 
 const migrateCategory = (raw: RawCategory): PortfolioCategory => {
-  if (raw.assetTypes && raw.assetTypes.length > 0) {
-    const { type: _type, ...rest } = raw as RawCategory & { type?: AssetType }
-    return rest as PortfolioCategory
-  }
-  // Migrate old single-type field
-  const assetTypes: AssetType[] = raw.type ? [raw.type] : ['other']
   const { type: _type, ...rest } = raw as RawCategory & { type?: AssetType }
-  return { ...rest, assetTypes } as PortfolioCategory
+  const assetTypes: AssetType[] =
+    raw.assetTypes && raw.assetTypes.length > 0 ? raw.assetTypes : raw.type ? [raw.type] : ['other']
+  const tracking: CategoryTracking = raw.tracking ?? inferTracking(assetTypes)
+  return { ...rest, assetTypes, tracking } as PortfolioCategory
 }
 
 export const subscribeToCategories = (userId: string, cb: (cats: PortfolioCategory[]) => void) =>
@@ -23,8 +28,8 @@ export const subscribeToCategories = (userId: string, cb: (cats: PortfolioCatego
     const cats = snap.docs.map((d) => {
       const raw = { id: d.id, ...d.data() } as RawCategory
       const migrated = migrateCategory(raw)
-      // Persist migration back to Firestore if the old format was detected
-      if (!raw.assetTypes) {
+      const needsMigration = !raw.assetTypes || raw.tracking === undefined
+      if (needsMigration) {
         void setDoc(doc(db, 'users', userId, 'categories', migrated.id), migrated)
       }
       return migrated

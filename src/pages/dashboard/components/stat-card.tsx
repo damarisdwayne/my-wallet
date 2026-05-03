@@ -1,4 +1,5 @@
 import { Card, CardHeader, CardTitle, CardValue } from '@/components'
+import { MASK } from '@/store/privacy'
 
 type StatCardProps = {
   title: string
@@ -9,6 +10,7 @@ type StatCardProps = {
   icon: React.ReactNode
   loading?: boolean
   valueClass?: string
+  hidden?: boolean
 }
 
 export const StatCard = ({
@@ -20,6 +22,7 @@ export const StatCard = ({
   icon,
   loading,
   valueClass,
+  hidden,
 }: StatCardProps) => (
   <Card>
     <CardHeader>
@@ -30,9 +33,11 @@ export const StatCard = ({
       {loading ? (
         <div className="h-7 w-32 rounded bg-muted animate-pulse mt-1" />
       ) : (
-        <CardValue className={valueClass}>{value}</CardValue>
+        <CardValue className={hidden ? 'tracking-widest text-muted-foreground' : valueClass}>
+          {hidden ? MASK : value}
+        </CardValue>
       )}
-      {sub && !loading && (
+      {sub && !loading && !hidden && (
         <p
           className={`text-xs font-medium ${
             subPositive === undefined
@@ -45,7 +50,7 @@ export const StatCard = ({
           {sub}
         </p>
       )}
-      {note && !loading && <p className="text-xs text-muted-foreground">{note}</p>}
+      {note && !loading && !hidden && <p className="text-xs text-muted-foreground">{note}</p>}
     </CardHeader>
   </Card>
 )

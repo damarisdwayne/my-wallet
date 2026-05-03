@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
+
 import { computeAssetTargets } from '../../../compute-targets'
 import type { CategoryAllocation, Props } from './constants'
 import { calcDistribution } from './utils'
@@ -17,6 +19,7 @@ export const AporteTab = ({
   const [aporteInput, setAporteInput] = useState('')
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const { hideValues } = usePrivacy()
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -93,7 +96,9 @@ export const AporteTab = ({
           <div className="flex justify-between items-center pt-3 border-t border-border">
             <span className="text-sm text-muted-foreground">Total distribuído</span>
             <span className="font-semibold text-foreground">
-              {formatCurrency(distribution.reduce((s, c) => s + c.catAporte, 0))}
+              {hideValues
+                ? MASK
+                : formatCurrency(distribution.reduce((s, c) => s + c.catAporte, 0))}
             </span>
           </div>
         </div>

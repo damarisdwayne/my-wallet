@@ -2,6 +2,8 @@ import { memo } from 'react'
 import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatPercent, formatQuantity } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
+
 import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
 import type { Asset, PortfolioCategory } from '@/types'
@@ -39,6 +41,9 @@ export const AssetsTable = memo(
     onEditAsset,
     onSetFilterCatId,
   }: AssetsTableProps) => {
+    const { hideValues } = usePrivacy()
+    const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+
     const renderGroupRow = (row: Extract<TableRow, { kind: 'group' }>) => {
       const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
       return (
@@ -56,18 +61,14 @@ export const AssetsTable = memo(
           </td>
           <td className="py-3 text-right text-muted-foreground">—</td>
           <td className="py-3 text-right text-muted-foreground">—</td>
-          <td className="py-3 text-right font-medium text-foreground">
-            {formatCurrency(row.cost)}
-          </td>
+          <td className="py-3 text-right font-medium text-foreground">{fmt(row.cost)}</td>
           <td className="py-3 text-right text-muted-foreground">—</td>
-          <td className="py-3 text-right font-medium text-foreground">
-            {formatCurrency(row.total)}
-          </td>
+          <td className="py-3 text-right font-medium text-foreground">{fmt(row.total)}</td>
           <td className="py-3 text-right">
-            <p className="font-medium text-foreground">{formatCurrency(row.recommended)}</p>
+            <p className="font-medium text-foreground">{fmt(row.recommended)}</p>
             <p className={`text-xs ${row.diff >= 0 ? 'text-success' : 'text-destructive'}`}>
               {row.diff >= 0 ? '+' : ''}
-              {formatCurrency(row.diff)}
+              {fmt(row.diff)}
             </p>
           </td>
           <td
@@ -173,23 +174,19 @@ export const AssetsTable = memo(
                     {flatFI ? '—' : formatQuantity(a.quantity)}
                   </td>
                   <td className="py-3 text-right text-muted-foreground">
-                    {flatFI ? '—' : formatCurrency(a.avgPrice)}
+                    {flatFI ? '—' : fmt(a.avgPrice)}
                   </td>
-                  <td className="py-3 text-right font-medium text-foreground">
-                    {formatCurrency(cost)}
-                  </td>
+                  <td className="py-3 text-right font-medium text-foreground">{fmt(cost)}</td>
                   <td className="py-3 text-right text-foreground">
-                    {flatFI ? '—' : formatCurrency(a.currentPrice)}
+                    {flatFI ? '—' : fmt(a.currentPrice)}
                   </td>
-                  <td className="py-3 text-right font-medium text-foreground">
-                    {formatCurrency(totalAtual)}
-                  </td>
+                  <td className="py-3 text-right font-medium text-foreground">{fmt(totalAtual)}</td>
                   <td className="py-3 text-right">
                     {a.type === 'fixed_income' || a.type === 'tesouro' ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <>
-                        <p className="font-medium text-foreground">{formatCurrency(recommended)}</p>
+                        <p className="font-medium text-foreground">{fmt(recommended)}</p>
                       </>
                     )}
                   </td>

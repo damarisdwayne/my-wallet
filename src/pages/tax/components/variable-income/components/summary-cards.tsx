@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
 import { darfDeadline, monthLabel } from '../../../utils'
 
 type Props = {
@@ -19,59 +20,62 @@ export const SummaryCards = ({
   currentData,
   currentMonth,
   activeMonthsCount,
-}: Props) => (
-  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">Ganho líquido</p>
-      <p
-        className={`text-xl font-bold mt-1 ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}
-      >
-        {formatCurrency(totalGain)}
-      </p>
-      <p className="text-xs text-muted-foreground mt-0.5">
-        {activeMonthsCount} mês(es) com operações
-      </p>
-    </div>
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">Total DARF no ano</p>
-      <p
-        className={`text-xl font-bold mt-1 ${totalDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
-      >
-        {formatCurrency(totalDarf)}
-      </p>
-      <p className="text-xs text-muted-foreground mt-0.5">Cód. 6015</p>
-    </div>
-    {isCurrentYear && (
+}: Props) => {
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
       <div className="rounded-lg border border-border bg-card p-4">
-        <p className="text-xs text-muted-foreground">DARF pendente</p>
+        <p className="text-xs text-muted-foreground">Ganho líquido</p>
         <p
-          className={`text-xl font-bold mt-1 ${pendingDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
+          className={`text-xl font-bold mt-1 ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}
         >
-          {formatCurrency(pendingDarf)}
+          {fmt(totalGain)}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {pendingDarf > 0 ? 'Verifique os meses abaixo' : 'Nada em aberto'}
+          {activeMonthsCount} mês(es) com operações
         </p>
       </div>
-    )}
-    {isCurrentYear && currentData && currentData.sales > 0 && (
-      <div
-        className={`rounded-lg border p-4 ${
-          currentData.irDue > 0 ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-border bg-card'
-        }`}
-      >
-        <p className="text-xs text-muted-foreground">Mês atual — {monthLabel(currentMonth)}</p>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-xs text-muted-foreground">Total DARF no ano</p>
         <p
-          className={`text-xl font-bold mt-1 ${
-            currentData.irDue > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-success'
-          }`}
+          className={`text-xl font-bold mt-1 ${totalDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
         >
-          {currentData.irDue > 0 ? formatCurrency(currentData.irDue) : 'Isento'}
+          {fmt(totalDarf)}
         </p>
-        {currentData.irDue > 0 && (
-          <p className="text-xs text-muted-foreground mt-0.5">Vence {darfDeadline(currentMonth)}</p>
-        )}
+        <p className="text-xs text-muted-foreground mt-0.5">Cód. 6015</p>
       </div>
-    )}
-  </div>
-)
+      {isCurrentYear && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">DARF pendente</p>
+          <p
+            className={`text-xl font-bold mt-1 ${pendingDarf > 0 ? 'text-destructive' : 'text-foreground'}`}
+          >
+            {fmt(pendingDarf)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {pendingDarf > 0 ? 'Verifique os meses abaixo' : 'Nada em aberto'}
+          </p>
+        </div>
+      )}
+      {isCurrentYear && currentData && currentData.sales > 0 && (
+        <div
+          className={`rounded-lg border p-4 ${currentData.irDue > 0 ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-border bg-card'}`}
+        >
+          <p className="text-xs text-muted-foreground">Mês atual — {monthLabel(currentMonth)}</p>
+          <p
+            className={`text-xl font-bold mt-1 ${currentData.irDue > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-success'}`}
+          >
+            {currentData.irDue > 0 ? fmt(currentData.irDue) : 'Isento'}
+          </p>
+          {currentData.irDue > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Vence {darfDeadline(currentMonth)}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components'
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
 import { INPUT_CLASS } from '../constants'
 
 type SalaryCardProps = {
@@ -25,6 +26,7 @@ type SalaryCardProps = {
 const SalaryCard = ({ salary, isCurrentMonth, onSave }: SalaryCardProps) => {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
+  const { hideValues } = usePrivacy()
 
   const handleSave = async () => {
     const parsed = Number.parseFloat(input.replace(',', '.'))
@@ -90,7 +92,7 @@ const SalaryCard = ({ salary, isCurrentMonth, onSave }: SalaryCardProps) => {
             </Dialog>
           )}
         </div>
-        <CardValue>{formatCurrency(salary)}</CardValue>
+        <CardValue>{hideValues ? MASK : formatCurrency(salary)}</CardValue>
       </CardHeader>
     </Card>
   )
@@ -112,30 +114,36 @@ export const SummaryCards = ({
   spentPct,
   isCurrentMonth,
   onSaveSalary,
-}: Props) => (
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <SalaryCard salary={salary} isCurrentMonth={isCurrentMonth} onSave={onSaveSalary} />
-    <Card>
-      <CardHeader>
-        <CardTitle>Total gasto</CardTitle>
-        <CardValue className="text-destructive">{formatCurrency(grand)}</CardValue>
-        {salary > 0 && (
-          <p className="text-xs text-muted-foreground">{spentPct.toFixed(1)}% do salário</p>
-        )}
-      </CardHeader>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle>Sobrou</CardTitle>
-        <CardValue className={leftover >= 0 ? 'text-success' : 'text-destructive'}>
-          {formatCurrency(leftover)}
-        </CardValue>
-        {salary > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {((leftover / salary) * 100).toFixed(1)}% do salário
-          </p>
-        )}
-      </CardHeader>
-    </Card>
-  </div>
-)
+}: Props) => {
+  const { hideValues } = usePrivacy()
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <SalaryCard salary={salary} isCurrentMonth={isCurrentMonth} onSave={onSaveSalary} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Total gasto</CardTitle>
+          <CardValue className="text-destructive">
+            {hideValues ? MASK : formatCurrency(grand)}
+          </CardValue>
+          {salary > 0 && !hideValues && (
+            <p className="text-xs text-muted-foreground">{spentPct.toFixed(1)}% do salário</p>
+          )}
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Sobrou</CardTitle>
+          <CardValue className={leftover >= 0 ? 'text-success' : 'text-destructive'}>
+            {hideValues ? MASK : formatCurrency(leftover)}
+          </CardValue>
+          {salary > 0 && !hideValues && (
+            <p className="text-xs text-muted-foreground">
+              {((leftover / salary) * 100).toFixed(1)}% do salário
+            </p>
+          )}
+        </CardHeader>
+      </Card>
+    </div>
+  )
+}

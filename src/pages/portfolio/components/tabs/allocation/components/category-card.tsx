@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn, formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
+
 import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
 import { calcScore } from '../utils'
 
@@ -152,6 +154,8 @@ const DiagramAssetRow = ({
   catValue: number
   onAnswerAsset: (asset: Asset) => void
 }) => {
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const { yes, total } = calcScore(answers[a.id] ?? {}, diagram.questions)
   const scorePct = total > 0 ? (yes / total) * 100 : 0
   const scoreColor =
@@ -182,11 +186,11 @@ const DiagramAssetRow = ({
         <p className="text-[10px] text-muted-foreground">
           Meta {(withinCatRatio * 100).toFixed(1)}%
         </p>
-        <p className="text-xs font-medium text-foreground">{formatCurrency(metaValue)}</p>
+        <p className="text-xs font-medium text-foreground">{fmt(metaValue)}</p>
       </div>
       <div className="w-28 shrink-0 text-right">
         <p className="text-[10px] text-muted-foreground">Atual {atualPct}%</p>
-        <p className="text-xs font-medium text-foreground">{formatCurrency(atualValue)}</p>
+        <p className="text-xs font-medium text-foreground">{fmt(atualValue)}</p>
       </div>
       <ChevronRight
         size={12}
@@ -254,6 +258,9 @@ export const CategoryCard = memo(
     onEditQuestions,
     onCreateDiagram,
   }: CategoryCardProps) => {
+    const { hideValues } = usePrivacy()
+    const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+
     const { tracking } = cat
     const showDiagramSection = tracking === 'diagram'
     const showModeToggle = false
@@ -277,11 +284,11 @@ export const CategoryCard = memo(
             <div className="flex items-center gap-3 text-sm">
               {true && (
                 <span className="hidden sm:inline text-xs text-muted-foreground">
-                  Meta: {cat.targetPercent}% · {formatCurrency(catTargetValue)}
+                  Meta: {cat.targetPercent}% · {fmt(catTargetValue)}
                 </span>
               )}
               <span className="hidden sm:inline text-xs font-medium text-foreground">
-                Atual: {actualPct.toFixed(1)}% · {formatCurrency(catValue)}
+                Atual: {actualPct.toFixed(1)}% · {fmt(catValue)}
               </span>
               {true && (
                 <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
@@ -424,11 +431,11 @@ export const CategoryCard = memo(
                       <p className="font-semibold text-foreground">{a.ticker}</p>
                       {true && (
                         <p className="text-muted-foreground">
-                          Meta {metaPct}% · {formatCurrency(metaValue)}
+                          Meta {metaPct}% · {fmt(metaValue)}
                         </p>
                       )}
                       <p className="text-muted-foreground">
-                        Atual {atualPct}% · {formatCurrency(atualValue)}
+                        Atual {atualPct}% · {fmt(atualValue)}
                       </p>
                     </div>
                   )

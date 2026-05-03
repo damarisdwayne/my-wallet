@@ -1,5 +1,16 @@
 import { useState } from 'react'
-import { Bell, ExternalLink, Loader2, LogOut, Moon, RefreshCw, Sun, X } from 'lucide-react'
+import {
+  Bell,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Loader2,
+  LogOut,
+  Moon,
+  RefreshCw,
+  Sun,
+  X,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/store/auth'
+import { usePrivacy } from '@/store/privacy'
 import { useTheme } from '@/store/theme'
 import type { CvmAlert } from '@/hooks/use-cvm-alerts'
 
@@ -69,6 +81,7 @@ export const Header = ({
 }: HeaderProps) => {
   const { resolved, setTheme } = useTheme()
   const { user, logout } = useAuth()
+  const { hideValues, toggleHideValues } = usePrivacy()
   const [sheetOpen, setSheetOpen] = useState(false)
 
   return (
@@ -210,6 +223,16 @@ export const Header = ({
           aria-label="Toggle theme"
         >
           {resolved === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
+        {/* hide values toggle */}
+        <button
+          onClick={toggleHideValues}
+          className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+          title={hideValues ? 'Mostrar valores' : 'Ocultar valores'}
+        >
+          {hideValues ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
 
         {/* user menu */}

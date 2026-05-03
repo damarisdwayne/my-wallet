@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
+import { MASK_SHORT, usePrivacy } from '@/store/privacy'
 import {
   CH,
   CW,
@@ -23,6 +24,8 @@ type Props = {
 
 export const MonthlyChart = ({ byMonth, avg12 }: Props) => {
   const [hovIdx, setHovIdx] = useState<number | null>(null)
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK_SHORT : formatCurrency(v))
 
   const entries = Object.entries(byMonth)
   const n = entries.length
@@ -76,7 +79,7 @@ export const MonthlyChart = ({ byMonth, avg12 }: Props) => {
               fill="currentColor"
               opacity="0.45"
             >
-              {fmtCompact(v)}
+              {hideValues ? MASK_SHORT : fmtCompact(v)}
             </text>
           </g>
         ))}
@@ -200,7 +203,7 @@ export const MonthlyChart = ({ byMonth, avg12 }: Props) => {
                 <p className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: FII_COLOR }} />
                   <span className="text-muted-foreground">FII/ETF</span>
-                  <span className="ml-auto font-medium">{formatCurrency(b.fii)}</span>
+                  <span className="ml-auto font-medium">{fmt(b.fii)}</span>
                 </p>
               )}
               {b.stock > 0 && (
@@ -210,7 +213,7 @@ export const MonthlyChart = ({ byMonth, avg12 }: Props) => {
                     style={{ background: STOCK_COLOR }}
                   />
                   <span className="text-muted-foreground">Ações</span>
-                  <span className="ml-auto font-medium">{formatCurrency(b.stock)}</span>
+                  <span className="ml-auto font-medium">{fmt(b.stock)}</span>
                 </p>
               )}
               {b.fixed > 0 && (
@@ -220,19 +223,19 @@ export const MonthlyChart = ({ byMonth, avg12 }: Props) => {
                     style={{ background: FIXED_COLOR }}
                   />
                   <span className="text-muted-foreground">Renda Fixa</span>
-                  <span className="ml-auto font-medium">{formatCurrency(b.fixed)}</span>
+                  <span className="ml-auto font-medium">{fmt(b.fixed)}</span>
                 </p>
               )}
               {b.ext > 0 && (
                 <p className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: EXT_COLOR }} />
                   <span className="text-muted-foreground">Exterior</span>
-                  <span className="ml-auto font-medium">{formatCurrency(b.ext)}</span>
+                  <span className="ml-auto font-medium">{fmt(b.ext)}</span>
                 </p>
               )}
               <p className="flex items-center gap-2 border-t border-border pt-1 mt-1">
                 <span className="text-muted-foreground">Total</span>
-                <span className="ml-auto font-bold text-success">{formatCurrency(b.total)}</span>
+                <span className="ml-auto font-bold text-success">{fmt(b.total)}</span>
               </p>
             </div>
           )

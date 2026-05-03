@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MarketIndicators } from '@/components/market-indicators'
 import { useDashboard } from '@/hooks/use-dashboard'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+import { usePrivacy } from '@/store/privacy'
 import { AllocationBar, PatrimonyChartComponent, StatCard } from './components'
 
 export const DashboardPage = () => {
@@ -21,6 +22,8 @@ export const DashboardPage = () => {
     allocation,
   } = useDashboard()
 
+  const { hideValues } = usePrivacy()
+
   const monthLabel = new Date().toLocaleString('pt-BR', { month: 'long' })
   const monthLabelShort = new Date().toLocaleString('pt-BR', { month: 'short' })
   const balance = monthlySalary + monthlyDividends - monthlyExpenses
@@ -36,6 +39,7 @@ export const DashboardPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           loading={loading}
+          hidden={hideValues}
           title="Patrimônio Total"
           value={formatCurrency(totalPatrimony)}
           sub={`${formatPercent(totalReturn)} desde o início`}
@@ -45,6 +49,7 @@ export const DashboardPage = () => {
         />
         <StatCard
           loading={loading}
+          hidden={hideValues}
           title="Ganho não realizado"
           value={`${totalGain >= 0 ? '+' : ''}${formatCurrency(totalGain)}`}
           valueClass={totalGain >= 0 ? 'text-success' : 'text-destructive'}
@@ -54,6 +59,7 @@ export const DashboardPage = () => {
         />
         <StatCard
           loading={loading}
+          hidden={hideValues}
           title="Proventos (12M)"
           value={formatCurrency(last12Dividends)}
           sub={
@@ -67,12 +73,13 @@ export const DashboardPage = () => {
         />
         <StatCard
           loading={loading}
+          hidden={hideValues}
           title={`Gastos (${monthLabelShort})`}
           value={formatCurrency(monthlyExpenses)}
           sub={
-            balance !== 0
-              ? `Saldo: ${balance >= 0 ? '+' : ''}${formatCurrency(balance)}`
-              : undefined
+            balance === 0
+              ? undefined
+              : `Saldo: ${balance >= 0 ? '+' : ''}${formatCurrency(balance)}`
           }
           subPositive={balance >= 0}
           note="Inclui fixos e parcelas"
@@ -86,6 +93,7 @@ export const DashboardPage = () => {
         patrimonyHistory={patrimonyHistory}
         totalPatrimony={totalPatrimony}
         loading={loading}
+        hidden={hideValues}
       />
 
       {!loading && monthlyDividends === 0 && monthlyExpenses === 0 && (

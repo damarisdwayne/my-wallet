@@ -1,5 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
+
 import type { CategoryAllocation } from '../constants'
 import { AssetRow } from './asset-row'
 
@@ -10,6 +12,8 @@ interface CategoryRowProps {
 }
 
 export const CategoryRow = ({ allocation, isOpen, onToggle }: CategoryRowProps) => {
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const {
     cat,
     catAporte,
@@ -35,9 +39,9 @@ export const CategoryRow = ({ allocation, isOpen, onToggle }: CategoryRowProps) 
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm text-foreground">{cat.name}</p>
           <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
-            rec. {formatCurrency(catRecommendedValue)}
+            rec. {fmt(catRecommendedValue)}
             <span className="mx-1">→</span>
-            <span className="text-foreground">após {formatCurrency(catValueAfterAporte)}</span>
+            <span className="text-foreground">após {fmt(catValueAfterAporte)}</span>
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs shrink-0">
@@ -46,7 +50,7 @@ export const CategoryRow = ({ allocation, isOpen, onToggle }: CategoryRowProps) 
             <span className="text-foreground font-medium">{catPercentAfter.toFixed(1)}%</span>
           </span>
           <span className="font-semibold text-foreground text-sm min-w-20 text-right">
-            {formatCurrency(catAporte)}
+            {fmt(catAporte)}
           </span>
           {!isFixedIncome && (
             <ChevronDown

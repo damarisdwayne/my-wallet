@@ -6,12 +6,14 @@ type PatrimonyChartComponentProps = {
   patrimonyHistory: PatrimonyPoint[]
   totalPatrimony: number
   loading: boolean
+  hidden?: boolean
 }
 
 export const PatrimonyChartComponent = ({
   patrimonyHistory,
   totalPatrimony,
   loading,
+  hidden,
 }: PatrimonyChartComponentProps) => {
   return (
     <Card>
@@ -26,6 +28,7 @@ export const PatrimonyChartComponent = ({
             history={patrimonyHistory}
             currentValue={totalPatrimony}
             currentMonth={CURRENT_MONTH}
+            hidden={hidden}
           />
         )}
       </CardContent>

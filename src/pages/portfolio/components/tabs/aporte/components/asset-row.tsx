@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
 import type { AssetAllocation } from '../constants'
 
 interface AssetRowProps {
@@ -6,6 +7,8 @@ interface AssetRowProps {
 }
 
 export const AssetRow = ({ allocation }: AssetRowProps) => {
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const {
     asset,
     aporte: assetAporte,
@@ -18,17 +21,17 @@ export const AssetRow = ({ allocation }: AssetRowProps) => {
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-foreground">{asset.ticker}</p>
         <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
-          rec. {formatCurrency(recommendedValue)}
+          rec. {fmt(recommendedValue)}
           <span className="mx-1">→</span>
-          <span className="text-foreground">após {formatCurrency(valueAfterAporte)}</span>
+          <span className="text-foreground">após {fmt(valueAfterAporte)}</span>
         </p>
       </div>
       <div className="text-right shrink-0 min-w-20">
-        <p className="font-medium text-foreground">{formatCurrency(assetAporte)}</p>
+        <p className="font-medium text-foreground">{fmt(assetAporte)}</p>
         {asset.currentPrice > 0 && (
           <p className="text-xs text-muted-foreground">
             ~{Math.floor(quantityToBuy)} unid. (
-            {formatCurrency(Math.floor(quantityToBuy) * asset.currentPrice)})
+            {fmt(Math.floor(quantityToBuy) * asset.currentPrice)})
           </p>
         )}
       </div>

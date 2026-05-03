@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components'
 import type { AllocationSlice } from '@/hooks/use-dashboard'
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
 import { BarChart2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -11,6 +12,7 @@ type AllocationBarProps = {
 
 export const AllocationBar = ({ allocation, loading }: AllocationBarProps) => {
   const [hovered, setHovered] = useState<AllocationSlice | null>(null)
+  const { hideValues } = usePrivacy()
 
   if (loading) {
     return (
@@ -64,7 +66,9 @@ export const AllocationBar = ({ allocation, loading }: AllocationBarProps) => {
               />
               <span className="font-medium text-foreground">{hovered.label}</span>
               <span className="text-muted-foreground">{hovered.pct.toFixed(1)}%</span>
-              <span className="font-semibold text-foreground">{formatCurrency(hovered.value)}</span>
+              <span className="font-semibold text-foreground">
+                {hideValues ? MASK : formatCurrency(hovered.value)}
+              </span>
             </div>
           )}
         </div>
@@ -79,7 +83,9 @@ export const AllocationBar = ({ allocation, loading }: AllocationBarProps) => {
               />
               <span className="text-xs text-muted-foreground">{s.label}</span>
               <span className="text-xs font-medium ml-auto">{s.pct.toFixed(1)}%</span>
-              <span className="text-xs text-muted-foreground">{formatCurrency(s.value)}</span>
+              <span className="text-xs text-muted-foreground">
+                {hideValues ? MASK : formatCurrency(s.value)}
+              </span>
             </div>
           ))}
         </div>

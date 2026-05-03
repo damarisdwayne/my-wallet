@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components'
 import { formatCurrency } from '@/lib/utils'
+import { MASK, usePrivacy } from '@/store/privacy'
+
 import type { ExpenseCategory } from '@/types'
 import { CATEGORY_SVG_COLORS, categoryLabel } from '../utils'
 
@@ -11,6 +13,9 @@ type Props = {
 }
 
 export const SalaryBar = ({ salary, grand, spentPct, totals }: Props) => {
+  const { hideValues } = usePrivacy()
+  const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+
   if (salary <= 0) return null
 
   return (
@@ -27,7 +32,7 @@ export const SalaryBar = ({ salary, grand, spentPct, totals }: Props) => {
                 width: `${(val / salary) * 100}%`,
                 background: CATEGORY_SVG_COLORS[cat as ExpenseCategory],
               }}
-              title={`${categoryLabel[cat as ExpenseCategory]}: ${formatCurrency(val)}`}
+              title={`${categoryLabel[cat as ExpenseCategory]}: ${fmt(val)}`}
             />
           ))}
         </div>
@@ -44,9 +49,9 @@ export const SalaryBar = ({ salary, grand, spentPct, totals }: Props) => {
             >
               {spentPct.toFixed(1)}%
             </span>{' '}
-            comprometido — {formatCurrency(grand)}
+            comprometido — {fmt(grand)}
           </span>
-          <span>{formatCurrency(salary)}</span>
+          <span>{fmt(salary)}</span>
         </div>
         {Object.keys(totals).length > 0 && (
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-border">
@@ -61,7 +66,7 @@ export const SalaryBar = ({ salary, grand, spentPct, totals }: Props) => {
                   <span className="text-muted-foreground">
                     {categoryLabel[cat as ExpenseCategory]}
                   </span>
-                  <span className="font-medium text-foreground">{formatCurrency(val)}</span>
+                  <span className="font-medium text-foreground">{fmt(val)}</span>
                 </div>
               ))}
           </div>

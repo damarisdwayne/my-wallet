@@ -5,6 +5,7 @@ import {
   formatMonthYear as fmtMonth,
 } from '@/lib/utils'
 import type { PatrimonyPoint } from '@/services/patrimony'
+import { MASK, MASK_SHORT } from '@/store/privacy'
 
 /* ─── chart geometry ─── */
 const W = 800
@@ -42,13 +43,15 @@ const xLabels = (data: PatrimonyPoint[]): number[] => {
 }
 
 /* ─── component ─── */
+
 interface Props {
   history: PatrimonyPoint[]
   currentValue: number
   currentMonth: string
+  hidden?: boolean
 }
 
-export const PatrimonyChart = memo(({ history, currentValue, currentMonth }: Props) => {
+export const PatrimonyChart = memo(({ history, currentValue, currentMonth, hidden }: Props) => {
   const [range, setRange] = useState<Range>('MAX')
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
@@ -124,8 +127,7 @@ export const PatrimonyChart = memo(({ history, currentValue, currentMonth }: Pro
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className={`text-xl font-bold ${positive ? 'text-success' : 'text-destructive'}`}>
-            {positive ? '+' : ''}
-            {formatCurrency(absChange)}
+            {hidden ? MASK : `${positive ? '+' : ''}${formatCurrency(absChange)}`}
           </span>
           <span
             className={`text-sm font-medium px-2 py-0.5 rounded-full ${positive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}
@@ -201,7 +203,7 @@ export const PatrimonyChart = memo(({ history, currentValue, currentMonth }: Pro
                 fill="currentColor"
                 opacity="0.45"
               >
-                {fmtCompact(v)}
+                {hidden ? MASK_SHORT : fmtCompact(v)}
               </text>
             </g>
           ))}
@@ -280,7 +282,9 @@ export const PatrimonyChart = memo(({ history, currentValue, currentMonth }: Pro
               transform: hovPt.x > W * 0.7 ? 'translate(-110%, -120%)' : 'translate(8px, -120%)',
             }}
           >
-            <p className="font-semibold text-foreground text-sm">{formatCurrency(hov.value)}</p>
+            <p className="font-semibold text-foreground text-sm">
+              {hidden ? MASK : formatCurrency(hov.value)}
+            </p>
             <p className="text-muted-foreground mt-0.5">{fmtMonth(hov.month)}</p>
           </div>
         )}

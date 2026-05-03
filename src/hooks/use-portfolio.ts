@@ -41,7 +41,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['fii'],
     targetPercent: 30,
     color: '#f97316',
-    tracking: 'both',
+    tracking: 'goal',
   },
   {
     id: mkId(),
@@ -49,7 +49,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['fixed_income', 'tesouro'],
     targetPercent: 30,
     color: '#3b82f6',
-    tracking: 'goal_only',
+    tracking: 'goal',
   },
   {
     id: mkId(),
@@ -57,7 +57,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['stock', 'bdr', 'etf'],
     targetPercent: 20,
     color: '#22c55e',
-    tracking: 'both',
+    tracking: 'goal',
   },
   {
     id: mkId(),
@@ -65,7 +65,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['stock_us', 'etf_us'],
     targetPercent: 17,
     color: '#8b5cf6',
-    tracking: 'both',
+    tracking: 'goal',
   },
   {
     id: mkId(),
@@ -73,7 +73,7 @@ const makeDefaultCategories = (): PortfolioCategory[] => [
     assetTypes: ['crypto'],
     targetPercent: 3,
     color: '#eab308',
-    tracking: 'goal_only',
+    tracking: 'goal',
   },
 ]
 

@@ -3,9 +3,11 @@ export const assetTypeLabel: Record<string, string> = {
   fii: 'FII',
   etf: 'ETF',
   bdr: 'BDR',
+  tesouro: 'Tesouro Direto',
   fixed_income: 'Renda Fixa',
   crypto: 'Cripto',
   stock_us: 'Exterior',
+  etf_us: 'ETF Exterior',
   other: 'Outros',
 }
 

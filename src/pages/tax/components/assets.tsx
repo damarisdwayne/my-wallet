@@ -62,7 +62,6 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
               <Th>Grupo/Código</Th>
               <Th>Ticker</Th>
               <Th>Tipo</Th>
-              <Th>Descrição</Th>
               <Th right>Qtd.</Th>
               <Th right>PM Custo</Th>
               <Th right>{`31/12/${year - 1}`}</Th>
@@ -71,7 +70,7 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <EmptyRow cols={8} message="Nenhuma posição encontrada para o ano selecionado." />
+              <EmptyRow cols={7} message="Nenhuma posição encontrada para o ano selecionado." />
             ) : (
               rows.map((r) => (
                 <tr key={r.ticker} className="border-t border-border/50 hover:bg-muted/20">
@@ -84,7 +83,6 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
                       {assetTypeLabel[r.assetType] ?? r.assetType}
                     </span>
                   </Td>
-                  <Td className="text-muted-foreground max-w-[200px] truncate">{r.assetName}</Td>
                   <Td right>
                     {r.quantity > 0 ? formatQuantity(r.quantity) : '—'}
                   </Td>

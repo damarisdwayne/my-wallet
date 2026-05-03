@@ -1,36 +1,52 @@
 # My Wallet
 
-A personal finance and investment portfolio manager built for Brazilian investors. Track your assets across multiple asset classes, import brokerage statements, monitor dividends, and analyze your portfolio allocation — all in one place.
+A personal finance and investment portfolio manager built for Brazilian investors. Track assets across multiple asset classes, import brokerage statements, monitor dividends, calculate taxes, and analyze your portfolio allocation — all in one place.
+
+## Pages
+
+| Page | What it does |
+|---|---|
+| **Dashboard** | Net worth summary, market indicators (USD, BTC, SELIC, IPCA, IGP-M), patrimony chart over time |
+| **Portfolio** | Full asset register with real-time prices, target allocation, rebalancing suggestions, and fundamental analysis |
+| **Dividends** | Log and track dividends, JCP, and rendimentos; import from B3 statements |
+| **Expenses** | Manual expenses, fixed recurring charges, and installment purchases |
+| **Tax** | Monthly DARF calculation for variable income (stocks, FIIs, BDRs); swing-trade vs. day-trade split |
+| **Sales** | Track hardware/tech resales (GPUs, CPUs, smartphones, etc.) |
+| **Calculators** | CDB × LCI/LCA comparator, Tesouro Direto mark-to-market, retirement projector |
 
 ## Features
 
-### Portfolio Management
-- Track stocks (B3), FIIs, BDRs, ETFs, US stocks, crypto, fixed income (CDB, LCI, LCA, Tesouro Direto), and other assets
-- Automatic weighted average cost (PM) calculation on buys and sells
-- Real-time price updates via BrAPI, CoinGecko, and USD/BRL conversion
-- Target allocation per category with rebalancing suggestions
+### Portfolio
+
+- Tracks stocks (B3), FIIs, BDRs, ETFs, US stocks, crypto, fixed income (CDB, LCI, LCA, Tesouro Direto), and other assets
+- Automatic weighted average cost (PM) on buys and sells
+- Real-time prices via BrAPI, CoinGecko, and USD/BRL conversion
+- Target allocation per category with rebalancing diff
+- Grouped view for fixed-income assets
 
 ### Broker Import
-- **B3** — Import from the official B3 Excel statement (Extrato de Negociação)
-- **Inter Co Securities** — Import Transaction Confirmation PDFs (supports Apex Clearing and the newer DriveWealth format). Prices are automatically converted from USD to BRL at the current exchange rate.
 
-### Dividends
-- Log dividends, JCP, and rendimentos
-- Import dividend history from B3 statements
-- Tax tracking (IR on JCP)
+- **B3** — Official B3 Excel statement (Extrato de Negociação)
+- **Inter Co Securities** — Transaction Confirmation PDFs (Apex Clearing and DriveWealth formats); USD prices auto-converted to BRL
 
 ### Fundamental Analysis
-- P/L, sector, industry data via BrAPI
+
+- P/L, sector, and industry data via BrAPI
 - FII-specific metrics: vacancy, property count, DY, manager fees
 - Monthly snapshots for historical tracking
+- AI-powered analysis via Google Gemini
 
-### Expenses
-- Manual expense entry with categories
-- Fixed recurring expenses
-- Installment purchases
+### Tax Calculation
 
-### Sales Tracking
-- Track hardware/tech resales (GPUs, CPUs, smartphones, etc.)
+- Monthly DARF amounts for swing trade and day trade
+- Isenção for monthly sales under R$ 20,000 (common stocks)
+- Loss carry-forward between months
+- Detailed operation log per month
+
+### CVM Alerts
+
+- Automatic polling of CVM regulatory filings for assets in your portfolio
+- Unseen count badge in the header
 
 ## Tech Stack
 
@@ -38,23 +54,27 @@ A personal finance and investment portfolio manager built for Brazilian investor
 |---|---|
 | Framework | React 19 + TypeScript |
 | Routing | React Router 7 |
-| Build | Vite 8 |
+| Build | Vite |
 | State | Jotai |
-| Styling | Tailwind CSS 4 + Radix UI |
+| Styling | Tailwind CSS 4 + Radix UI + shadcn/ui |
 | Database | Firebase Firestore |
 | Auth | Firebase Auth (Google, GitHub, Apple) |
-| PDF parsing | PDF.js |
+| Notifications | Sonner (toast) |
+| PDF parsing | PDF.js + JSZip |
 | Excel parsing | SheetJS (XLSX) |
+| AI | Google Generative AI (Gemini 2.5 Flash) |
 
 ## External APIs
 
 | API | Purpose |
 |---|---|
-| [BrAPI](https://brapi.dev) | Brazilian stock, FII, BDR, ETF, and US stock quotes |
+| [BrAPI](https://brapi.dev) | Brazilian stock, FII, BDR, ETF, and US stock quotes + fundamentals |
 | [CoinGecko](https://coingecko.com) | Cryptocurrency prices in BRL |
 | [AwesomeAPI](https://economia.awesomeapi.com.br) | USD/BRL exchange rate |
-| [BCB](https://api.bcb.gov.br) | CDI, Selic, IPCA, IGP-M rates for fixed income |
-| [Dados de Mercado](https://dadosdemercado.com.br) | Tesouro Direto bond prices |
+| [BCB](https://api.bcb.gov.br) | CDI, SELIC, IPCA, IGP-M rates for fixed income calculations |
+| [Dados de Mercado](https://dadosdemercado.com.br) | Tesouro Direto bond prices (mark-to-market) |
+| [CVM](https://www.rad.cvm.gov.br) | Regulatory filings and company disclosures |
+| [Google Gemini](https://ai.google.dev) | AI-powered asset analysis |
 
 ## Getting Started
 
@@ -86,19 +106,22 @@ VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 
-# BrAPI — required for stock/FII/ETF/US price refresh
+# BrAPI — required for stock/FII/ETF/US price refresh and fundamentals
 VITE_BRAPI_TOKEN=
 
-# Dados de Mercado — optional, enables Tesouro Direto price refresh
+# Dados de Mercado — optional, enables Tesouro Direto mark-to-market
 VITE_DADOSDEMERCADO_TOKEN=
+
+# Google Gemini — optional, enables AI analysis in Portfolio
+VITE_GEMINI_API_KEY=
 ```
 
 ### 3. Firebase setup
 
-In your Firebase console:
+In the Firebase console:
 1. Create a Firestore database (production mode)
 2. Enable Authentication and add providers: **Google**, **GitHub**, **Apple**
-3. Copy the project credentials into your `.env`
+3. Copy the project credentials into `.env`
 
 ### 4. Run
 
@@ -108,7 +131,7 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Available Scripts
+## Scripts
 
 | Command | Description |
 |---|---|
@@ -124,30 +147,53 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```
 src/
-├── components/       # Shared UI components (shadcn/ui based)
-├── hooks/            # Custom React hooks (usePortfolio, etc.)
-├── lib/              # Firebase client, utilities
-├── pages/            # Page components (portfolio, dividends, expenses…)
-├── services/         # External API clients and data parsers
-│   ├── b3-import.ts      # B3 Excel statement parser
-│   ├── inter-import.ts   # Inter PDF parser (Apex + DriveWealth formats)
-│   ├── quotes.ts         # Live price fetching with localStorage cache
-│   ├── bcb-rates.ts      # BCB fixed income rate calculations
-│   └── fundamentals.ts   # BrAPI fundamentals integration
-├── store/            # Jotai atoms (auth, etc.)
-└── types/            # TypeScript type definitions
+├── components/        # Shared UI components (shadcn/ui based)
+│   ├── ui/            # Base primitives (Button, Badge, Dialog…)
+│   ├── error-boundary.tsx
+│   └── patrimony-chart.tsx
+├── hooks/             # Custom React hooks
+│   ├── use-portfolio.ts      # Orchestrator: composes useAssets + useFundamentals
+│   ├── use-assets.ts         # Asset CRUD, price refresh
+│   ├── use-fundamentals.ts   # FII/stock fundamentals snapshots
+│   ├── use-dashboard.ts
+│   ├── use-expenses.ts
+│   ├── use-market-data.ts    # USD, BTC, BCB macro rates
+│   ├── use-sales.ts
+│   └── use-cvm-alerts.ts
+├── lib/               # Firebase client, utility functions
+├── pages/             # Page components
+│   ├── dashboard/
+│   ├── portfolio/     # Tabs: overview, allocation, analysis, imports
+│   ├── dividends/
+│   ├── expenses/
+│   ├── tax/
+│   ├── sales/
+│   └── calculators/   # CDB, LCI/LCA, Tesouro Direto, aposentadoria
+├── routes/            # React Router setup + AppLayout
+├── services/          # External API clients and data parsers
+│   ├── assets.ts          # Firestore CRUD for assets
+│   ├── b3-import.ts       # B3 Excel statement parser
+│   ├── inter-import.ts    # Inter PDF parser (Apex + DriveWealth)
+│   ├── quotes.ts          # Live price fetching with localStorage cache
+│   ├── bcb-rates.ts       # BCB macro rate calculations
+│   ├── fundamentals.ts    # BrAPI fundamentals integration
+│   └── import-parser.ts   # ImportParser interface
+├── store/             # Jotai atoms (auth)
+└── types/             # TypeScript type definitions
 ```
 
 ## Broker Import Guide
 
-### B3
+### B3 (Brazilian stocks, FIIs, ETFs)
+
 1. Go to [investidor.b3.com.br](https://investidor.b3.com.br)
 2. Navigate to **Extratos → Negociação → Baixar → Excel**
 3. Import the `.xlsx` file in the app under **Portfolio → Importações**
 
 ### Inter Co Securities (US assets)
-1. In the Inter app, go to **Investimentos → Notas de corretagem Ações EUA**
+
+1. In the Inter app go to **Investimentos → Notas de corretagem Ações EUA**
 2. Download the PDF for each transaction confirmation
-3. Import each PDF in the app under **Portfolio → Importações → Inter Co Securities**
+3. Import each PDF under **Portfolio → Importações → Inter Co Securities**
 
 > **Note:** Inter only provides downloadable PDFs from 08/28/2023 onward. For older trades, use manual entry or add the asset directly with your known average cost.

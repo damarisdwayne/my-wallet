@@ -1,3 +1,27 @@
+/* ─── Notifications ────────────────────────────────────────────── */
+
+export type NotificationType = 'price_alert'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  message: string
+  read: boolean
+  createdAt: string
+  data?: Record<string, unknown>
+}
+
+export interface PriceAlert {
+  id: string
+  ticker: string
+  targetPrice: number
+  condition: 'above' | 'below'
+  channels: Array<'browser' | 'email'>
+  active: boolean
+  createdAt: string
+}
+
 /* ─── Expenses ─────────────────────────────────────────────────── */
 
 export type ExpenseCategory =

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSetAtom } from 'jotai'
 import {
   addAsset as addAssetService,
   deleteAsset as deleteAssetService,
@@ -9,6 +10,7 @@ import {
 import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
 import { clearTesouroBondsCache } from '@/services/tesouro'
+import { freshPricesAtom } from '@/store/prices'
 import type { Asset } from '@/types'
 import { toast } from 'sonner'
 
@@ -21,6 +23,7 @@ export const useAssets = (uid: string | null) => {
   const [loaded, setLoaded] = useState(false)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
+  const setFreshPrices = useSetAtom(freshPricesAtom)
 
   useEffect(() => {
     if (!uid) return
@@ -82,6 +85,7 @@ export const useAssets = (uid: string | null) => {
           .filter((a) => prices[a.ticker.toUpperCase()] !== undefined)
           .map((a) => updateAssetPriceService(uid, a.id, prices[a.ticker.toUpperCase()])),
       )
+      setFreshPrices(prices)
 
       // Flat fixed income (CDB, LCI, LCA…) — calculate via BCB rates API
       const flatFI = assets.filter((a) => a.type === 'fixed_income')

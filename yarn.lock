@@ -1837,6 +1837,11 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.25.24.tgz#8c7688559979f7079aacaf31aa881c3aa410b718"
   integrity sha512-XJfwUVUKDHF5ugKwIcxEgc9k8b7HbznCp6eUfWgu710hMPNIO4aw4/zB5RogDQz8nd6gyCDpU9O/m6qYEWY6yQ==
 
+"@stablelib/base64@^1.0.0":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@stablelib/base64/-/base64-1.0.1.tgz#bdfc1c6d3a62d7a3b7bbc65b6cce1bb4561641be"
+  integrity sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==
+
 "@tailwindcss/node@4.2.2":
   version "4.2.2"
   resolved "https://registry.npmjs.org/@tailwindcss/node/-/node-4.2.2.tgz"
@@ -3580,6 +3585,11 @@ fast-levenshtein@^2.0.6:
   resolved "https://registry.npmjs.org/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz"
   integrity sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==
 
+fast-sha256@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/fast-sha256/-/fast-sha256-1.3.0.tgz#7916ba2054eeb255982608cccd0f6660c79b7ae6"
+  integrity sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==
+
 fastq@^1.6.0:
   version "1.20.1"
   resolved "https://registry.yarnpkg.com/fastq/-/fastq-1.20.1.tgz#ca750a10dc925bc8b18839fd203e3ef4b3ced675"
@@ -4656,6 +4666,11 @@ nanoid@^3.3.11:
   resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz"
   integrity sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==
 
+nanoid@^5.1.11:
+  version "5.1.11"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-5.1.11.tgz#559dbdbc41737da341ac938c25514563d2dd94c7"
+  integrity sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==
+
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
@@ -5018,6 +5033,11 @@ post-robot@^10:
     universal-serialize "^1.0.4"
     zalgo-promise "^1.0.3"
 
+postal-mime@2.7.4:
+  version "2.7.4"
+  resolved "https://registry.yarnpkg.com/postal-mime/-/postal-mime-2.7.4.tgz#3718d1f188357ed86f906f1db8d4ca455efa4927"
+  integrity sha512-0WdnFQYUrPGGTFu1uOqD2s7omwua8xaeYGdO6rb88oD5yJ/4pPHDA4sdWqfD8wQVfCny563n/HQS7zTFft+f/g==
+
 postcss@^8.5.8:
   version "8.5.10"
   resolved "https://registry.npmjs.org/postcss/-/postcss-8.5.10.tgz"
@@ -5254,6 +5274,14 @@ require-from-string@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/require-from-string/-/require-from-string-2.0.2.tgz#89a7fdd938261267318eafe14f9c32e598c36909"
   integrity sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==
+
+resend@^6.12.2:
+  version "6.12.2"
+  resolved "https://registry.yarnpkg.com/resend/-/resend-6.12.2.tgz#4b9eb2e129c9369e25e19c8abd12913968e8c647"
+  integrity sha512-xwgmU4b0OqoabJsIoK/x0Whk0Fcs3bpbK4i/DEWPiE5hYJHyHl0TbB6QbI3gIr+bLdLUJ1GYm/fe41aVFuHXgw==
+  dependencies:
+    postal-mime "2.7.4"
+    svix "1.90.0"
 
 resolve-from@^4.0.0:
   version "4.0.0"
@@ -5593,6 +5621,14 @@ ssf@~0.11.2:
   dependencies:
     frac "~1.1.2"
 
+standardwebhooks@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/standardwebhooks/-/standardwebhooks-1.0.0.tgz#5faa23ceacbf9accd344361101d9e3033b64324f"
+  integrity sha512-BbHGOQK9olHPMvQNHWul6MYlrRTAOKn03rOe4A8O3CLWhNf4YHBqq2HJKKC+sfqpxiBY52pNeesD6jIiLDz8jg==
+  dependencies:
+    "@stablelib/base64" "^1.0.0"
+    fast-sha256 "^1.3.0"
+
 stat-mode@0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/stat-mode/-/stat-mode-0.3.0.tgz#69283b081f851582b328d2a4ace5f591ce52f54b"
@@ -5739,6 +5775,14 @@ supports-preserve-symlinks-flag@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
+
+svix@1.90.0:
+  version "1.90.0"
+  resolved "https://registry.yarnpkg.com/svix/-/svix-1.90.0.tgz#49c3a310745b05a26d322f17c0207d0c6da88dc6"
+  integrity sha512-ljkZuyy2+IBEoESkIpn8sLM+sxJHQcPxlZFxU+nVDhltNfUMisMBzWX/UR8SjEnzoI28ZjCzMbmYAPwSTucoMw==
+  dependencies:
+    standardwebhooks "1.0.0"
+    uuid "^10.0.0"
 
 synckit@^0.11.12:
   version "0.11.12"
@@ -6053,6 +6097,11 @@ util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
+
+uuid@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-10.0.0.tgz#5a95aa454e6e002725c79055fd42aaba30ca6294"
+  integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
 
 vercel@^53.1.0:
   version "53.1.0"

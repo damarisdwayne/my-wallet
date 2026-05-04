@@ -7,12 +7,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { NotificationsSheet } from '@/components/layout/notifications'
 import { useAuth } from '@/store/auth'
 import { usePrivacy } from '@/store/privacy'
 import { useTheme } from '@/store/theme'
+import type { AppNotification, PriceAlert } from '@/types'
 
 interface HeaderProps {
   title: string
+  notifications: AppNotification[]
+  unreadCount: number
+  alerts: PriceAlert[]
+  onMarkRead: (id: string) => void
+  onMarkAllRead: () => void
+  onRemoveNotification: (id: string) => void
+  onCreateAlert: (data: Omit<PriceAlert, 'id' | 'createdAt' | 'active'>) => Promise<void>
+  onToggleAlert: (id: string, active: boolean) => void
+  onRemoveAlert: (id: string) => void
 }
 
 const UserAvatar = ({
@@ -34,7 +45,18 @@ const UserAvatar = ({
     </div>
   )
 
-export const Header = ({ title }: HeaderProps) => {
+export const Header = ({
+  title,
+  notifications,
+  unreadCount,
+  alerts,
+  onMarkRead,
+  onMarkAllRead,
+  onRemoveNotification,
+  onCreateAlert,
+  onToggleAlert,
+  onRemoveAlert,
+}: HeaderProps) => {
   const { resolved, setTheme } = useTheme()
   const { user, logout } = useAuth()
   const { hideValues, toggleHideValues } = usePrivacy()
@@ -44,6 +66,19 @@ export const Header = ({ title }: HeaderProps) => {
       <h1 className="text-lg font-semibold text-foreground">{title}</h1>
 
       <div className="flex items-center gap-2">
+        {/* notifications bell */}
+        <NotificationsSheet
+          notifications={notifications}
+          unreadCount={unreadCount}
+          alerts={alerts}
+          onMarkRead={onMarkRead}
+          onMarkAllRead={onMarkAllRead}
+          onRemoveNotification={onRemoveNotification}
+          onCreateAlert={onCreateAlert}
+          onToggleAlert={onToggleAlert}
+          onRemoveAlert={onRemoveAlert}
+        />
+
         {/* theme toggle */}
         <button
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}

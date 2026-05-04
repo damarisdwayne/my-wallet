@@ -80,10 +80,6 @@
   --warning: 38 92% 50%;
 }
 
-* {
-  border-color: hsl(var(--border));
-}
-
 button {
   cursor: pointer;
 }

@@ -70,10 +70,10 @@ export const PortfolioPage = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(i)}
-            className={`relative px-4 py-2 text-sm font-medium transition-colors ${
+            className={`relative px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
               activeTab === i
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab}

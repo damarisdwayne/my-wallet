@@ -1,15 +1,28 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { PortfolioSkeleton } from '@/skeleton'
-import {
-  AllocationTab,
-  AnalysisTab,
-  AporteTab,
-  ImportsTab,
-  OverviewTab,
-  RebalanceTab,
-  TradesTab,
-} from './components'
+
+const OverviewTab = lazy(() =>
+  import('./components/tabs/overview').then((m) => ({ default: m.OverviewTab })),
+)
+const AllocationTab = lazy(() =>
+  import('./components/tabs/allocation').then((m) => ({ default: m.AllocationTab })),
+)
+const AporteTab = lazy(() =>
+  import('./components/tabs/aporte').then((m) => ({ default: m.AporteTab })),
+)
+const RebalanceTab = lazy(() =>
+  import('./components/tabs/rebalance').then((m) => ({ default: m.RebalanceTab })),
+)
+const TradesTab = lazy(() =>
+  import('./components/tabs/trades').then((m) => ({ default: m.TradesTab })),
+)
+const ImportsTab = lazy(() =>
+  import('./components/tabs/imports').then((m) => ({ default: m.ImportsTab })),
+)
+const AnalysisTab = lazy(() =>
+  import('./components/tabs/analysis').then((m) => ({ default: m.AnalysisTab })),
+)
 
 const tabs = [
   'Visão Geral',
@@ -81,79 +94,81 @@ export const PortfolioPage = () => {
         ))}
       </div>
 
-      {activeTab === 0 && (
-        <OverviewTab
-          assets={assets}
-          categories={categories}
-          diagrams={diagrams}
-          answers={answers}
-          totalValue={totalValue}
-          addAsset={addAsset}
-          addManualTrade={addManualTrade}
-          editAsset={editAsset}
-          deleteAsset={deleteAsset}
-          importFromB3={importFromB3}
-          refreshPrices={refreshPrices}
-          refreshingPrices={refreshingPrices}
-          priceError={priceError}
-        />
-      )}
-      {activeTab === 1 && (
-        <AllocationTab
-          assets={assets}
-          categories={categories}
-          totalValue={totalValue}
-          diagrams={diagrams}
-          answers={answers}
-          saveCategory={saveCategory}
-          deleteCategory={deleteCategory}
-          editAsset={editAsset}
-          saveDiagram={saveDiagram}
-          deleteDiagram={deleteDiagram}
-          saveAnswers={saveAnswers}
-        />
-      )}
-      {activeTab === 2 && (
-        <AporteTab
-          assets={assets}
-          categories={categories}
-          diagrams={diagrams}
-          answers={answers}
-          totalValue={totalValue}
-          refreshPrices={refreshPrices}
-          refreshingPrices={refreshingPrices}
-        />
-      )}
-      {activeTab === 3 && (
-        <RebalanceTab
-          assets={assets}
-          categories={categories}
-          diagrams={diagrams}
-          answers={answers}
-          totalValue={totalValue}
-        />
-      )}
-      {activeTab === 4 && (
-        <TradesTab
-          trades={trades}
-          assets={assets}
-          categories={categories}
-          onDeleteTrade={deleteTrade}
-          onSyncMissingTrades={syncMissingTrades}
-        />
-      )}
-      {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
-      {activeTab === 6 && (
-        <AnalysisTab
-          assets={assets}
-          fundamentals={fundamentals}
-          saveManualSnapshot={saveManualSnapshot}
-          fiiInfo={fiiInfo}
-          saveFiiInfo={saveFiiInfo}
-          stockInfo={stockInfo}
-          saveStockInfo={saveStockInfo}
-        />
-      )}
+      <Suspense fallback={<PortfolioSkeleton />}>
+        {activeTab === 0 && (
+          <OverviewTab
+            assets={assets}
+            categories={categories}
+            diagrams={diagrams}
+            answers={answers}
+            totalValue={totalValue}
+            addAsset={addAsset}
+            addManualTrade={addManualTrade}
+            editAsset={editAsset}
+            deleteAsset={deleteAsset}
+            importFromB3={importFromB3}
+            refreshPrices={refreshPrices}
+            refreshingPrices={refreshingPrices}
+            priceError={priceError}
+          />
+        )}
+        {activeTab === 1 && (
+          <AllocationTab
+            assets={assets}
+            categories={categories}
+            totalValue={totalValue}
+            diagrams={diagrams}
+            answers={answers}
+            saveCategory={saveCategory}
+            deleteCategory={deleteCategory}
+            editAsset={editAsset}
+            saveDiagram={saveDiagram}
+            deleteDiagram={deleteDiagram}
+            saveAnswers={saveAnswers}
+          />
+        )}
+        {activeTab === 2 && (
+          <AporteTab
+            assets={assets}
+            categories={categories}
+            diagrams={diagrams}
+            answers={answers}
+            totalValue={totalValue}
+            refreshPrices={refreshPrices}
+            refreshingPrices={refreshingPrices}
+          />
+        )}
+        {activeTab === 3 && (
+          <RebalanceTab
+            assets={assets}
+            categories={categories}
+            diagrams={diagrams}
+            answers={answers}
+            totalValue={totalValue}
+          />
+        )}
+        {activeTab === 4 && (
+          <TradesTab
+            trades={trades}
+            assets={assets}
+            categories={categories}
+            onDeleteTrade={deleteTrade}
+            onSyncMissingTrades={syncMissingTrades}
+          />
+        )}
+        {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
+        {activeTab === 6 && (
+          <AnalysisTab
+            assets={assets}
+            fundamentals={fundamentals}
+            saveManualSnapshot={saveManualSnapshot}
+            fiiInfo={fiiInfo}
+            saveFiiInfo={saveFiiInfo}
+            stockInfo={stockInfo}
+            saveStockInfo={saveStockInfo}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }

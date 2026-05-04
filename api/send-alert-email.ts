@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev',
-      to: userEmail,
+      to: process.env.ALERT_EMAIL ?? userEmail,
       subject: `${emoji} Alerta de preço: ${ticker}`,
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">

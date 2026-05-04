@@ -16,6 +16,32 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'firebase'
+            }
+            if (id.includes('node_modules/pdfjs-dist') || id.includes('node_modules/pdf-lib')) {
+              return 'pdf-vendor'
+            }
+            if (id.includes('node_modules/@radix-ui')) {
+              return 'radix'
+            }
+            if (
+              id.includes('node_modules/react-router') ||
+              id.includes('node_modules/react-router-dom')
+            ) {
+              return 'router'
+            }
+            if (id.includes('node_modules/lucide-react')) {
+              return 'icons'
+            }
+          },
+        },
+      },
+    },
     server: {
       port: 3000,
       proxy: {

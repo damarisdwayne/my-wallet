@@ -7,18 +7,25 @@ export const extractReportDate = (text: string): string | null => {
   return match ? match[1].trim() : null
 }
 
+export const extractDocumentType = (text: string): string | null => {
+  const match = /\*\*Tipo de Documento:\*\*\s*([^\n]+)/.exec(text)
+  return match ? match[1].trim() : null
+}
+
 export const saveAiAnalysis = async (
   userId: string,
   ticker: string,
   type: 'fii' | 'stock',
   text: string,
   reportDate: string | null,
+  documentType: string | null,
 ): Promise<void> => {
   await addDoc(collection(db, 'users', userId, 'ai-analyses'), {
     ticker: ticker.toUpperCase(),
     type,
     text,
     reportDate,
+    documentType,
     analyzedAt: new Date().toISOString(),
   })
 }

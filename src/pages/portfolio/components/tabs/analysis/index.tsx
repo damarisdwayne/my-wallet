@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Props } from './types'
 import { AssetCompactCard, AssetDetailView } from './components'
+import { DocumentGuide } from './components/document-guide'
 
 export const AnalysisTab = ({
   assets,
@@ -64,6 +65,8 @@ export const AnalysisTab = ({
           </button>
         )}
       </div>
+
+      <DocumentGuide type={subTab} />
 
       {allShown.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-10">

@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, BookmarkCheck, FileText, Plus, Sparkles, Upload } from 'lucide-react'
 import { analyzeDocument } from '@/services/gemini'
-import { extractReportDate, saveAiAnalysis, subscribeToAiAnalyses } from '@/services/ai-analyses'
+import {
+  extractDocumentType,
+  extractReportDate,
+  saveAiAnalysis,
+  subscribeToAiAnalyses,
+} from '@/services/ai-analyses'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'
 import type {
@@ -62,7 +67,15 @@ export const AssetDetailView = ({
     if (!user || !aiAnalysis) return
     setAiSaving(true)
     const reportDate = extractReportDate(aiAnalysis)
-    await saveAiAnalysis(user.uid, asset.ticker, isFii ? 'fii' : 'stock', aiAnalysis, reportDate)
+    const documentType = extractDocumentType(aiAnalysis)
+    await saveAiAnalysis(
+      user.uid,
+      asset.ticker,
+      isFii ? 'fii' : 'stock',
+      aiAnalysis,
+      reportDate,
+      documentType,
+    )
     setAiSaving(false)
     setAiAnalysis(null)
   }

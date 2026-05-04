@@ -355,6 +355,7 @@ export interface AiAnalysis {
   ticker: string
   type: 'fii' | 'stock'
   text: string
-  reportDate: string | null // MM/AAAA extracted from document
-  analyzedAt: string // ISO
+  reportDate: string | null
+  documentType: string | null
+  analyzedAt: string
 }

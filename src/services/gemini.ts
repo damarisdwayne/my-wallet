@@ -5,8 +5,9 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY ?? '')
 const FII_PROMPT = `Você é um analista especializado em Fundos de Investimento Imobiliário (FIIs) brasileiros.
 Analise o relatório gerencial a seguir e forneça uma análise estruturada.
 
-Comece SEMPRE com esta linha (extraia do documento; use MM/AAAA):
+Comece SEMPRE com estas duas linhas (extraia do documento):
 **Data do Relatório:** MM/AAAA
+**Tipo de Documento:** Relatório Gerencial | Informe Mensal | Fato Relevante | Laudo de Avaliação | Outro
 
 Depois responda os tópicos:
 
@@ -38,8 +39,9 @@ Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
 const RI_PROMPT = `Você é um analista fundamentalista especializado em ações brasileiras.
 Analise o relatório de RI (Relações com Investidores) a seguir e forneça uma análise estruturada.
 
-Comece SEMPRE com esta linha (extraia do documento; use MM/AAAA ou TT/AAAA para trimestre):
+Comece SEMPRE com estas duas linhas (extraia do documento):
 **Data do Relatório:** MM/AAAA
+**Tipo de Documento:** DFP | ITR | Release de Resultados | Fato Relevante | FRE | Outro
 
 Depois responda os tópicos:
 

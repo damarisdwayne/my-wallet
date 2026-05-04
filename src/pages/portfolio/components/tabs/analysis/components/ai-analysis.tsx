@@ -137,7 +137,7 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
               className="rounded-lg border border-border p-3 text-left hover:border-primary/40 hover:bg-muted/20 transition-colors"
             >
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
-                Relatório
+                {item.documentType ?? 'Relatório'}
               </p>
               <p className="text-sm font-bold text-foreground">{item.reportDate ?? savedAt}</p>
               <div className="flex items-center justify-between mt-2">

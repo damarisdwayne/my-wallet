@@ -35,6 +35,8 @@ A personal finance and investment portfolio manager built for Brazilian investor
 - FII-specific metrics: vacancy, property count, DY, manager fees
 - Monthly snapshots for historical tracking
 - AI-powered analysis via Google Gemini
+- Graham fair price (√22.5 × EPS × BVS) for stocks; P/VP + DY valuation for FIIs
+- Inline sparkline chart (last 30 days) on each asset card
 
 ### Tax Calculation
 
@@ -47,6 +49,18 @@ A personal finance and investment portfolio manager built for Brazilian investor
 
 - Automatic polling of CVM regulatory filings for assets in your portfolio
 - Unseen count badge in the header
+
+### Privacy Mode
+
+- Toggle to mask all monetary values with `••••••` across every page
+- State persisted in `localStorage` via Jotai
+
+### Price Alerts & Notifications
+
+- Create price alerts for any ticker (above / below a target price)
+- Triggers browser notification (persistent, requires interaction to dismiss), in-app beep, and email via Resend
+- Notification center in the header with read/unread state; notifications older than 30 days are auto-deleted
+- Works for tickers both inside and outside the portfolio
 
 ## Tech Stack
 
@@ -75,6 +89,8 @@ A personal finance and investment portfolio manager built for Brazilian investor
 | [Dados de Mercado](https://dadosdemercado.com.br) | Tesouro Direto bond prices (mark-to-market) |
 | [CVM](https://www.rad.cvm.gov.br) | Regulatory filings and company disclosures |
 | [Google Gemini](https://ai.google.dev) | AI-powered asset analysis |
+| [Resend](https://resend.com) | Email delivery for price alert notifications |
+| [Pluggy](https://pluggy.ai) | Open Finance — automatic bank transaction import |
 
 ## Getting Started
 
@@ -114,6 +130,13 @@ VITE_DADOSDEMERCADO_TOKEN=
 
 # Google Gemini — optional, enables AI analysis in Portfolio
 VITE_GEMINI_API_KEY=
+
+# Resend — optional, enables email delivery for price alerts (server-side only)
+RESEND_API_KEY=
+
+# Pluggy Open Finance — optional, enables automatic bank import in Expenses (server-side only)
+PLUGGY_CLIENT_ID=
+PLUGGY_CLIENT_SECRET=
 ```
 
 ### 3. Firebase setup
@@ -159,7 +182,9 @@ src/
 │   ├── use-expenses.ts
 │   ├── use-market-data.ts    # USD, BTC, BCB macro rates
 │   ├── use-sales.ts
-│   └── use-cvm-alerts.ts
+│   ├── use-notifications.ts  # In-app notification center (read/unread, auto-delete)
+│   ├── use-price-alerts.ts   # Price alert creation, evaluation, and firing
+│   └── use-cvm-alerts.ts     # CVM regulatory filing polling
 ├── lib/               # Firebase client, utility functions
 ├── pages/             # Page components
 │   ├── dashboard/
@@ -174,9 +199,12 @@ src/
 │   ├── assets.ts          # Firestore CRUD for assets
 │   ├── b3-import.ts       # B3 Excel statement parser
 │   ├── inter-import.ts    # Inter PDF parser (Apex + DriveWealth)
-│   ├── quotes.ts          # Live price fetching with localStorage cache
+│   ├── quotes.ts          # Live price fetching + historical prices (sparkline)
 │   ├── bcb-rates.ts       # BCB macro rate calculations
 │   ├── fundamentals.ts    # BrAPI fundamentals integration
+│   ├── notifications.ts   # Firestore CRUD for in-app notifications
+│   ├── price-alerts.ts    # Firestore CRUD for price alerts
+│   ├── pluggy.ts          # Pluggy Open Finance integration
 │   └── import-parser.ts   # ImportParser interface
 ├── store/             # Jotai atoms (auth)
 └── types/             # TypeScript type definitions

@@ -82,3 +82,140 @@ export const analyzeDocument = async (
   ])
   return result.response.text()
 }
+
+export interface CommunicationItem {
+  type: string
+  date: string
+  summary: string
+}
+
+export interface RecentCommunicationsResult {
+  items: CommunicationItem[]
+}
+
+const COMMUNICATIONS_PROMPT = (ticker: string, type: 'fii' | 'stock') => {
+  const importantDocs =
+    type === 'fii'
+      ? 'Relatório Gerencial e Fato Relevante'
+      : 'Release de Resultados, DFP, ITR e Fato Relevante'
+
+  return `Pesquise os documentos mais recentes e importantes do ${type === 'fii' ? 'FII' : 'ação'} ${ticker} na bolsa brasileira (B3).
+
+Retorne APENAS os documentos desta lista: ${importantDocs}.
+Ignore: Comunicados ao Mercado genéricos, Avisos aos Cotistas de rotina (distribuição mensal padrão), Atas de assembleia sem pauta relevante, Prospectos.
+
+Responda EXATAMENTE neste formato para cada documento encontrado (máximo 5):
+
+TIPO: [nome do tipo de documento]
+DATA: [data no formato DD/MM/AAAA]
+RESUMO: [1-2 frases objetivas sobre o conteúdo]
+---
+
+Não invente informações. Use apenas o que encontrar nas buscas.`
+}
+
+const parseCommunications = (text: string): CommunicationItem[] => {
+  const blocks = text
+    .split('---')
+    .map((b) => b.trim())
+    .filter(Boolean)
+  return blocks.flatMap((block) => {
+    const get = (key: string) => {
+      const match = new RegExp(String.raw`${key}:\s*(.+)`).exec(block)
+      return match ? match[1].trim() : ''
+    }
+    const type = get('TIPO')
+    const date = get('DATA')
+    const summary = get('RESUMO')
+    if (!type || !summary) return []
+    return [{ type, date, summary }]
+  })
+}
+
+export const fetchRecentCommunications = async (
+  ticker: string,
+  type: 'fii' | 'stock',
+): Promise<RecentCommunicationsResult> => {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    // @ts-expect-error — google_search is valid but not yet typed in 0.24.x
+    tools: [{ google_search: {} }],
+  })
+
+  const result = await model.generateContent(COMMUNICATIONS_PROMPT(ticker, type))
+  const text = result.response.text()
+  return { items: parseCommunications(text) }
+}
+
+export interface MarketIntelligenceSection {
+  title: string
+  content: string
+  highlight?: boolean
+}
+
+export interface MarketIntelligenceResult {
+  sections: MarketIntelligenceSection[]
+  fetchedAt: string
+}
+
+const MARKET_INTELLIGENCE_PROMPT = (ticker: string, type: 'fii' | 'stock') => {
+  const isFii = type === 'fii'
+  const focus = isFii
+    ? 'distribuição por cota, vacância, aquisições ou desinvestimentos, gestão, emissão de cotas, desempenho vs expectativas do mercado'
+    : 'resultado trimestral/anual (lucro, receita, margens vs expectativas), guidance, planos de expansão, M&A, mudanças na gestão, visão de analistas, dividendos'
+
+  return `Você é um analista de investimentos experiente. Pesquise as informações mais atuais e relevantes sobre ${isFii ? 'o FII' : 'a ação'} ${ticker} na bolsa brasileira (B3).
+
+Foque em: ${focus}.
+
+Responda EXATAMENTE neste formato (não omita nenhuma seção, escreva "Sem informações recentes." se não encontrar):
+
+DESTAQUE: [O ponto mais crítico que o investidor precisa saber AGORA — 1 frase direta]
+RESULTADOS: [Últimos resultados financeiros — lucro/distribuição vs período anterior e vs expectativas do mercado]
+PERSPECTIVAS: [Guidance, planos, expansões ou mudanças estratégicas divulgadas]
+MERCADO: [Visão de analistas, recomendações recentes, preço-alvo se disponível]
+RISCOS: [Principais riscos ou pontos de atenção no momento]
+---
+
+Use apenas informações verificadas. Seja direto e objetivo.`
+}
+
+const parseMarketIntelligence = (text: string): MarketIntelligenceSection[] => {
+  const MAP: { key: string; title: string; highlight?: boolean }[] = [
+    { key: 'DESTAQUE', title: 'Destaque', highlight: true },
+    { key: 'RESULTADOS', title: 'Resultados' },
+    { key: 'PERSPECTIVAS', title: 'Perspectivas' },
+    { key: 'MERCADO', title: 'Visão do Mercado' },
+    { key: 'RISCOS', title: 'Riscos' },
+  ]
+
+  return MAP.flatMap(({ key, title, highlight }) => {
+    const match = new RegExp(String.raw`${key}:\s*([^\n]+(?:\n(?![A-Z]{3,}:)[^\n]+)*)`).exec(text)
+    const content = match ? match[1].trim() : ''
+    if (!content || content === 'Sem informações recentes.') return []
+    return [{ title, content, highlight }]
+  })
+}
+
+export const fetchMarketIntelligence = async (
+  ticker: string,
+  type: 'fii' | 'stock',
+): Promise<MarketIntelligenceResult> => {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    // @ts-expect-error — google_search is valid but not yet typed in 0.24.x
+    tools: [{ google_search: {} }],
+  })
+
+  const result = await model.generateContent(MARKET_INTELLIGENCE_PROMPT(ticker, type))
+  const text = result.response.text()
+  return {
+    sections: parseMarketIntelligence(text),
+    fetchedAt: new Date().toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  }
+}

@@ -1,12 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, BookmarkCheck, FileText, Plus, Sparkles, Upload } from 'lucide-react'
-import { analyzeDocument } from '@/services/gemini'
-import {
-  extractDocumentType,
-  extractReportDate,
-  saveAiAnalysis,
-  subscribeToAiAnalyses,
-} from '@/services/ai-analyses'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, Plus } from 'lucide-react'
+import { subscribeToAiAnalyses } from '@/services/ai-analyses'
 import { useAuth } from '@/store/auth'
 import { formatCurrency } from '@/lib/utils'
 import type {
@@ -18,7 +12,8 @@ import type {
   StockInfo,
 } from '@/types'
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
-import { AiHistorySection, AiMarkdown } from './ai-analysis'
+import { AiHistorySection } from './ai-analysis'
+import { AiSheet } from './ai-sheet'
 import { FiiInfoDialog, FiiInfoSection } from './fii-info'
 import { IndicatorCard } from './indicator-card'
 import { ManualSnapshotDialog } from './snapshot-form'
@@ -51,66 +46,12 @@ export const AssetDetailView = ({
   const [registerOpen, setRegisterOpen] = useState(false)
   const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
   const [stockInfoOpen, setStockInfoOpen] = useState(false)
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
-  const [aiSaving, setAiSaving] = useState(false)
   const [aiHistory, setAiHistory] = useState<AiAnalysis[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user) return
     return subscribeToAiAnalyses(user.uid, asset.ticker, setAiHistory)
   }, [user, asset.ticker])
-
-  const handleSaveAnalysis = async () => {
-    if (!user || !aiAnalysis) return
-    setAiSaving(true)
-    const reportDate = extractReportDate(aiAnalysis)
-    const documentType = extractDocumentType(aiAnalysis)
-    await saveAiAnalysis(
-      user.uid,
-      asset.ticker,
-      isFii ? 'fii' : 'stock',
-      aiAnalysis,
-      reportDate,
-      documentType,
-    )
-    setAiSaving(false)
-    setAiAnalysis(null)
-  }
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.type !== 'application/pdf') {
-      setAiError('Envie um arquivo PDF.')
-      return
-    }
-    setAiLoading(true)
-    setAiError(null)
-    setAiAnalysis(null)
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve((reader.result as string).split(',')[1])
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
-      const result = await analyzeDocument(base64, isFii ? 'fii' : 'stock')
-      setAiAnalysis(result)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setAiError(
-        msg.includes('429')
-          ? 'Cota da API excedida. Aguarde alguns segundos e tente novamente.'
-          : `Erro: ${msg}`,
-      )
-    } finally {
-      setAiLoading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
 
   const snapshots = record?.snapshots ?? []
   const current = snapshots.at(-1) ?? null
@@ -119,7 +60,7 @@ export const AssetDetailView = ({
   return (
     <>
       <div className="space-y-6">
-        {/* Top bar: back + ticker + badges */}
+        {/* Top bar */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onBack}
@@ -140,6 +81,9 @@ export const AssetDetailView = ({
           {asset.name !== asset.ticker && (
             <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
           )}
+          <div className="ml-auto shrink-0">
+            <AiSheet ticker={asset.ticker} isFii={isFii} />
+          </div>
         </div>
 
         {/* Price row */}
@@ -152,7 +96,7 @@ export const AssetDetailView = ({
           )}
         </div>
 
-        {/* Valuation */}
+        {/* Valuation — compact chips */}
         {isFii ? (
           <FiiValuation currentPrice={asset.currentPrice} snapshot={snapshots.at(-1) ?? null} />
         ) : (
@@ -219,91 +163,6 @@ export const AssetDetailView = ({
 
         {/* AI analysis history */}
         {aiHistory.length > 0 && <AiHistorySection history={aiHistory} />}
-
-        {/* AI analysis */}
-        <div className="space-y-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-primary/70" />
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Análise por IA
-              </p>
-            </div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={aiLoading}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-            >
-              <Upload size={12} />
-              {aiLoading
-                ? 'Analisando...'
-                : aiAnalysis
-                  ? 'Novo relatório'
-                  : isFii
-                    ? 'Enviar relatório gerencial'
-                    : 'Enviar relatório de RI'}
-            </button>
-          </div>
-
-          {aiLoading && (
-            <div className="rounded-lg border border-border p-5 space-y-3">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-3 w-3 rounded-full bg-primary/30 animate-pulse" />
-                <div className="h-3 w-28 rounded bg-muted animate-pulse" />
-              </div>
-              {['w-[55%]', 'w-[80%]', 'w-[65%]', 'w-[90%]', 'w-[70%]', 'w-[50%]'].map((w) => (
-                <div key={w} className={`h-2.5 rounded bg-muted animate-pulse ${w}`} />
-              ))}
-            </div>
-          )}
-
-          {aiError && !aiLoading && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-              <p className="text-xs text-destructive leading-relaxed">{aiError}</p>
-            </div>
-          )}
-
-          {aiAnalysis && !aiLoading && (
-            <div className="rounded-lg border border-border p-5 space-y-4">
-              <AiMarkdown text={aiAnalysis} />
-              <div className="pt-2 border-t border-border flex justify-end">
-                <button
-                  onClick={handleSaveAnalysis}
-                  disabled={aiSaving}
-                  className="flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-40"
-                >
-                  <BookmarkCheck size={13} />
-                  {aiSaving ? 'Salvando...' : 'Salvar análise'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!aiAnalysis && !aiLoading && !aiError && (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full rounded-lg border border-dashed border-border p-6 text-center hover:border-primary/40 hover:bg-muted/30 transition-colors group"
-            >
-              <FileText
-                size={20}
-                className="mx-auto mb-2 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors"
-              />
-              <p className="text-xs text-muted-foreground">
-                {isFii
-                  ? 'Clique para enviar o PDF do relatório gerencial'
-                  : 'Clique para enviar o PDF do relatório de RI'}
-              </p>
-              <p className="text-[11px] text-muted-foreground/50 mt-1">Powered by Gemini</p>
-            </button>
-          )}
-        </div>
       </div>
 
       <ManualSnapshotDialog

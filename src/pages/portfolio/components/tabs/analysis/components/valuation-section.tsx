@@ -12,6 +12,12 @@ const calcGraham = (price: number, pe: number, pb: number) => {
   return Math.sqrt(22.5 * lpa * vpa)
 }
 
+const calcBazin = (price: number, dyPct: number) => {
+  if (dyPct <= 0 || price <= 0) return null
+  const annualDiv = price * (dyPct / 100)
+  return annualDiv / 0.06
+}
+
 const DY_TARGETS = [
   { label: 'Teto 8%', value: 0.08 },
   { label: 'Teto 10%', value: 0.1 },
@@ -79,24 +85,34 @@ export const StockValuation = ({
   if (!snapshot) return null
   const pe = snapshot.priceEarnings ?? 0
   const pb = snapshot.priceToBook ?? 0
+  const dy = snapshot.dividendYield ?? 0
   const graham = calcGraham(currentPrice, pe, pb)
-  if (!graham) return null
+  const bazin = calcBazin(currentPrice, dy)
 
-  const lpa = currentPrice / pe
-  const vpa = currentPrice / pb
+  const metrics: Metric[] = []
 
-  return (
-    <ValuationStrip
-      currentPrice={currentPrice}
-      metrics={[
-        {
-          label: 'Graham',
-          fair: graham,
-          tooltip: `LPA R$ ${lpa.toFixed(2)} · VPA R$ ${vpa.toFixed(2)} · √(22,5 × LPA × VPA)`,
-        },
-      ]}
-    />
-  )
+  if (graham) {
+    const lpa = currentPrice / pe
+    const vpa = currentPrice / pb
+    metrics.push({
+      label: 'Graham',
+      fair: graham,
+      tooltip: `LPA R$ ${lpa.toFixed(2)} · VPA R$ ${vpa.toFixed(2)} · √(22,5 × LPA × VPA)`,
+    })
+  }
+
+  if (bazin) {
+    const annualDiv = currentPrice * (dy / 100)
+    metrics.push({
+      label: 'Bazin',
+      fair: bazin,
+      tooltip: `Div. anual R$ ${annualDiv.toFixed(2)} · DY ${dy.toFixed(2)}% ÷ 6%`,
+    })
+  }
+
+  if (metrics.length === 0) return null
+
+  return <ValuationStrip currentPrice={currentPrice} metrics={metrics} />
 }
 
 /* ─── FII ─── */

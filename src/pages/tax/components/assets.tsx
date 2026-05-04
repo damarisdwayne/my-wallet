@@ -72,8 +72,8 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
             {rows.length === 0 ? (
               <EmptyRow cols={7} message="Nenhuma posição encontrada para o ano selecionado." />
             ) : (
-              rows.map((r) => (
-                <tr key={r.ticker} className="border-t border-border/50 hover:bg-muted/20">
+              rows.map((r, i) => (
+                <tr key={`${r.ticker}-${i}`} className="border-t border-border/50 hover:bg-muted/20">
                   <Td className="text-muted-foreground">
                     {r.dirpfGroup}/{r.dirpfCode}
                   </Td>

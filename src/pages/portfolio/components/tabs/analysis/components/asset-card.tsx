@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { Sparkline } from '@/components/ui/sparkline'
 import { formatCurrency } from '@/lib/utils'
 import type { Asset, FundamentalRecord, FundamentalSnapshot } from '@/types'
 import { FII_COMMON, STOCK_INDICATORS } from '../constants'
@@ -49,9 +50,10 @@ export const AssetCompactCard = ({
           />
         </div>
 
-        <p className="text-lg font-bold text-foreground mb-3">
-          {formatCurrency(asset.currentPrice)}
-        </p>
+        <div className="flex items-end justify-between mb-3">
+          <p className="text-lg font-bold text-foreground">{formatCurrency(asset.currentPrice)}</p>
+          <Sparkline ticker={asset.ticker} width={72} height={28} />
+        </div>
 
         {keyDefs.length > 0 && current && (
           <div className="flex gap-4">

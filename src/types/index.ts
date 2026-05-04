@@ -15,8 +15,8 @@ export interface AppNotification {
 export interface PriceAlert {
   id: string
   ticker: string
-  targetPrice: number
   condition: 'above' | 'below'
+  targetPrice: number
   channels: Array<'browser' | 'email'>
   active: boolean
   createdAt: string

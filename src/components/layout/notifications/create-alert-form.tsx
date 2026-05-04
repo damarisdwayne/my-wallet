@@ -2,9 +2,14 @@ import { useState } from 'react'
 import { Plus, TrendingDown, TrendingUp } from 'lucide-react'
 import type { PriceAlert } from '@/types'
 
+type AlertData = Omit<PriceAlert, 'id' | 'createdAt' | 'active'>
+
 type Props = {
-  onSubmit: (data: Omit<PriceAlert, 'id' | 'createdAt' | 'active'>) => Promise<void>
+  onSubmit: (data: AlertData) => Promise<void>
 }
+
+const inputCls =
+  'w-full h-9 px-3 text-sm rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring transition-shadow'
 
 export const CreateAlertForm = ({ onSubmit }: Props) => {
   const [ticker, setTicker] = useState('')
@@ -12,15 +17,17 @@ export const CreateAlertForm = ({ onSubmit }: Props) => {
   const [condition, setCondition] = useState<'above' | 'below'>('below')
   const [loading, setLoading] = useState(false)
 
+  const isValid = ticker.trim() && !!targetPrice
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!ticker.trim() || !targetPrice) return
+    if (!isValid) return
     setLoading(true)
     try {
       await onSubmit({
         ticker: ticker.trim().toUpperCase(),
-        targetPrice: Number.parseFloat(targetPrice),
         condition,
+        targetPrice: Number.parseFloat(targetPrice),
         channels: ['browser', 'email'],
       })
       setTicker('')
@@ -44,11 +51,11 @@ export const CreateAlertForm = ({ onSubmit }: Props) => {
             onChange={(e) => setTicker(e.target.value)}
             placeholder="BBAS3"
             autoComplete="off"
-            className="w-full h-9 px-3 text-sm font-semibold rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring uppercase tracking-wider transition-shadow"
+            className={`${inputCls} font-semibold uppercase tracking-wider`}
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="alert-price" className="text-xs font-medium text-muted-foreground">
+          <label htmlFor="alert-value" className="text-xs font-medium text-muted-foreground">
             Preço alvo
           </label>
           <div className="relative">
@@ -56,14 +63,14 @@ export const CreateAlertForm = ({ onSubmit }: Props) => {
               R$
             </span>
             <input
-              id="alert-price"
+              id="alert-value"
               type="number"
               step="0.01"
               min="0"
               value={targetPrice}
               onChange={(e) => setTargetPrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring transition-shadow"
+              className={`${inputCls} pl-8`}
             />
           </div>
         </div>
@@ -99,7 +106,7 @@ export const CreateAlertForm = ({ onSubmit }: Props) => {
 
       <button
         type="submit"
-        disabled={loading || !ticker.trim() || !targetPrice}
+        disabled={loading || !isValid}
         className="w-full h-9 flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Plus size={14} />

@@ -279,3 +279,59 @@ export async function fetchLivePrices(
   saveCache(tickers, prices)
   return prices
 }
+
+export interface HistoricalPoint {
+  date: string
+  close: number
+}
+
+const HIST_CACHE_KEY = 'mw_hist_v1'
+const HIST_TTL_MS = 60 * 60 * 1000
+
+const loadHistCache = (ticker: string): HistoricalPoint[] | null => {
+  try {
+    const raw = localStorage.getItem(`${HIST_CACHE_KEY}_${ticker}`)
+    if (!raw) return null
+    const { data, updatedAt } = JSON.parse(raw) as { data: HistoricalPoint[]; updatedAt: number }
+    return Date.now() - updatedAt < HIST_TTL_MS ? data : null
+  } catch {
+    return null
+  }
+}
+
+const saveHistCache = (ticker: string, data: HistoricalPoint[]) => {
+  try {
+    localStorage.setItem(
+      `${HIST_CACHE_KEY}_${ticker}`,
+      JSON.stringify({ data, updatedAt: Date.now() }),
+    )
+  } catch {
+    // ignore
+  }
+}
+
+export const fetchHistoricalPrices = async (ticker: string): Promise<HistoricalPoint[]> => {
+  const cached = loadHistCache(ticker)
+  if (cached) return cached
+
+  const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
+  if (!token) return []
+
+  try {
+    const url = `https://brapi.dev/api/quote/${ticker}?range=1mo&interval=1d&token=${token}`
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const json = (await res.json()) as {
+      results?: { historicalDataPrice?: { date: number; close: number }[] }[]
+    }
+    const raw = json.results?.[0]?.historicalDataPrice ?? []
+    const data = raw
+      .filter((p) => p.close > 0)
+      .map((p) => ({ date: new Date(p.date * 1000).toISOString().slice(0, 10), close: p.close }))
+      .slice(-20)
+    saveHistCache(ticker, data)
+    return data
+  } catch {
+    return []
+  }
+}

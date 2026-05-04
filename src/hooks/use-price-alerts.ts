@@ -12,6 +12,25 @@ import { fetchLivePrices } from '@/services/quotes'
 import { freshPricesAtom } from '@/store/prices'
 import type { AppNotification, AssetType, PriceAlert } from '@/types'
 
+const playAlertSound = () => {
+  try {
+    const ctx = new AudioContext()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(880, ctx.currentTime)
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15)
+    gain.gain.setValueAtTime(0.25, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.5)
+  } catch {
+    // AudioContext not available
+  }
+}
+
 const requestBrowserPermission = async () => {
   if (!('Notification' in globalThis)) return false
   if (Notification.permission === 'granted') return true
@@ -22,7 +41,7 @@ const requestBrowserPermission = async () => {
 
 const sendBrowserNotification = (title: string, message: string) => {
   if (Notification.permission !== 'granted') return
-  new Notification(title, { body: message, icon: '/favicon.ico' })
+  new Notification(title, { body: message, icon: '/favicon.ico', requireInteraction: true })
 }
 
 const sendEmailNotification = async (
@@ -43,14 +62,18 @@ const sendEmailNotification = async (
   }
 }
 
-const isTriggered = (alert: PriceAlert, price: number) =>
+const isTriggered = (alert: PriceAlert, price: number): boolean =>
   (alert.condition === 'above' && price >= alert.targetPrice) ||
   (alert.condition === 'below' && price <= alert.targetPrice)
 
+const buildMessage = (alert: PriceAlert, price: number): string => {
+  const label = alert.condition === 'above' ? 'subiu para' : 'caiu para'
+  return `${alert.ticker} ${label} R$ ${price.toFixed(2)} (alvo: R$ ${alert.targetPrice.toFixed(2)})`
+}
+
 const fireAlert = (uid: string, alert: PriceAlert, price: number, userEmail: string | null) => {
-  const conditionLabel = alert.condition === 'above' ? 'subiu para' : 'caiu para'
   const title = `Alerta: ${alert.ticker}`
-  const message = `${alert.ticker} ${conditionLabel} R$ ${price.toFixed(2)} (alvo: R$ ${alert.targetPrice.toFixed(2)})`
+  const message = buildMessage(alert, price)
 
   const notification: AppNotification = {
     id: nanoid(),
@@ -64,7 +87,10 @@ const fireAlert = (uid: string, alert: PriceAlert, price: number, userEmail: str
 
   addNotification(uid, notification).catch(() => null)
 
-  if (alert.channels.includes('browser')) sendBrowserNotification(title, message)
+  if (alert.channels.includes('browser')) {
+    sendBrowserNotification(title, message)
+    playAlertSound()
+  }
 
   if (alert.channels.includes('email') && userEmail) {
     sendEmailNotification(alert.ticker, alert.targetPrice, price, alert.condition, userEmail).catch(

@@ -31,11 +31,7 @@ const upsideColor = (u: number) =>
   u > 15 ? 'text-emerald-400' : u < -15 ? 'text-red-400' : 'text-muted-foreground'
 
 const verdictDot = (u: number) =>
-  u > 15
-    ? 'bg-emerald-400/80'
-    : u < -15
-      ? 'bg-red-400/80'
-      : 'bg-muted-foreground/40'
+  u > 15 ? 'bg-emerald-400/80' : u < -15 ? 'bg-red-400/80' : 'bg-muted-foreground/40'
 
 const ValuationStrip = ({ metrics, currentPrice }: { metrics: Metric[]; currentPrice: number }) => (
   <div className="flex flex-wrap gap-px rounded-lg overflow-hidden border border-border/60">
@@ -52,9 +48,12 @@ const ValuationStrip = ({ metrics, currentPrice }: { metrics: Metric[]; currentP
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${verdictDot(upside)}`} />
                   <span className="text-[10px] text-muted-foreground/70 truncate">{label}</span>
                 </div>
-                <span className="text-sm font-semibold text-foreground">{formatCurrency(fair)}</span>
+                <span className="text-sm font-semibold text-foreground">
+                  {formatCurrency(fair)}
+                </span>
                 <span className={`text-[10px] font-medium ${upsideColor(upside)}`}>
-                  {upside >= 0 ? '+' : ''}{upside.toFixed(1)}%
+                  {upside >= 0 ? '+' : ''}
+                  {upside.toFixed(1)}%
                 </span>
               </div>
             </TooltipTrigger>
@@ -89,11 +88,13 @@ export const StockValuation = ({
   return (
     <ValuationStrip
       currentPrice={currentPrice}
-      metrics={[{
-        label: 'Graham',
-        fair: graham,
-        tooltip: `LPA R$ ${lpa.toFixed(2)} · VPA R$ ${vpa.toFixed(2)} · √(22,5 × LPA × VPA)`,
-      }]}
+      metrics={[
+        {
+          label: 'Graham',
+          fair: graham,
+          tooltip: `LPA R$ ${lpa.toFixed(2)} · VPA R$ ${vpa.toFixed(2)} · √(22,5 × LPA × VPA)`,
+        },
+      ]}
     />
   )
 }
@@ -115,13 +116,22 @@ export const FiiValuation = ({
   if (dy > 0) {
     DY_TARGETS.forEach(({ label, value }) => {
       const fair = calcFiiFairPrice(currentPrice, dy, value)
-      if (fair) metrics.push({ label, fair, tooltip: `DY atual ${dy.toFixed(2)}% ÷ alvo ${(value * 100).toFixed(0)}%` })
+      if (fair)
+        metrics.push({
+          label,
+          fair,
+          tooltip: `DY atual ${dy.toFixed(2)}% ÷ alvo ${(value * 100).toFixed(0)}%`,
+        })
     })
   }
 
   if (pb > 0) {
     const vpa = currentPrice / pb
-    metrics.push({ label: 'P/VP = 1', fair: vpa, tooltip: `VPA R$ ${vpa.toFixed(2)} · P/VP atual ${pb.toFixed(2)}x` })
+    metrics.push({
+      label: 'P/VP = 1',
+      fair: vpa,
+      tooltip: `VPA R$ ${vpa.toFixed(2)} · P/VP atual ${pb.toFixed(2)}x`,
+    })
   }
 
   if (metrics.length === 0) return null
@@ -160,7 +170,10 @@ export const ValuationBadge = ({
       <p className="text-[10px] text-muted-foreground">{label}</p>
       <p className={`text-xs font-medium ${upsideColor(upside)}`}>
         {formatCurrency(fair)}{' '}
-        <span className="text-[10px]">({upside >= 0 ? '+' : ''}{upside.toFixed(1)}%)</span>
+        <span className="text-[10px]">
+          ({upside >= 0 ? '+' : ''}
+          {upside.toFixed(1)}%)
+        </span>
       </p>
     </div>
   )

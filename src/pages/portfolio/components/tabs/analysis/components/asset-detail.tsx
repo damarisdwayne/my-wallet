@@ -82,7 +82,12 @@ export const AssetDetailView = ({
             <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
           )}
           <div className="ml-auto shrink-0">
-            <AiSheet ticker={asset.ticker} isFii={isFii} />
+            <AiSheet
+              ticker={asset.ticker}
+              isFii={isFii}
+              sector={stockInfoData?.sector ?? current?.sector ?? undefined}
+              subsector={stockInfoData?.subsector ?? current?.industry ?? undefined}
+            />
           </div>
         </div>
 

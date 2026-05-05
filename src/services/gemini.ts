@@ -2,7 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY ?? '')
 
-const FII_PROMPT = `Você é um analista especializado em Fundos de Investimento Imobiliário (FIIs) brasileiros.
+const FII_PROMPT = (ticker: string) =>
+  `Você é um analista especializado em Fundos de Investimento Imobiliário (FIIs) brasileiros.
 Analise o relatório gerencial a seguir e forneça uma análise estruturada.
 
 Comece SEMPRE com estas duas linhas (extraia do documento):
@@ -31,12 +32,19 @@ Se for FII de Papel (CRI, CRA, recebíveis), priorize: Qualidade do Crédito, Ti
 
 Acrescente outros indicadores relevantes que encontrar no relatório, independentemente do tipo.
 
-**5. Avaliação Geral**
+**5. Comentários do Mercado**
+Pesquise na web o que o mercado esperava para ${ticker} no período deste relatório.
+- O resultado veio acima, abaixo ou em linha com as expectativas? (ex: distribuição acima/abaixo do esperado)
+- Destaque 1-2 reações de analistas ou casas de análise se encontrar.
+- Se não encontrar informações confiáveis, escreva "Sem dados de consenso disponíveis."
+
+**6. Avaliação Geral**
 Otimista / Neutro / Pessimista — com justificativa em 2 linhas.
 
 Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
 
-const RI_PROMPT = `Você é um analista fundamentalista especializado em ações brasileiras.
+const RI_PROMPT = (ticker: string) =>
+  `Você é um analista fundamentalista especializado em ações brasileiras.
 Analise o relatório de RI (Relações com Investidores) a seguir e forneça uma análise estruturada.
 
 Comece SEMPRE com estas duas linhas (extraia do documento):
@@ -66,7 +74,13 @@ Caixa: FCF (Fluxo de Caixa Livre), FCF Yield, Conversão de Caixa.
 Crescimento: Crescimento de Receita (%), Crescimento de Lucro (%).
 Outros relevantes encontrados no relatório (guidance, receita absoluta, lucro líquido, EBITDA absoluto, etc.).
 
-**5. Avaliação Geral**
+**5. Comentários do Mercado**
+Pesquise na web o que o mercado esperava para ${ticker} no período deste relatório.
+- O resultado veio acima, abaixo ou em linha com o consenso de analistas? (ex: lucro acima/abaixo do esperado pelo Bloomberg/Reuters/casas de análise)
+- Destaque 1-2 reações de analistas ou casas de análise se encontrar.
+- Se não encontrar informações confiáveis, escreva "Sem dados de consenso disponíveis."
+
+**6. Avaliação Geral**
 Otimista / Neutro / Pessimista — com justificativa em 2 linhas.
 
 Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
@@ -74,11 +88,16 @@ Seja objetivo, técnico e direto. Use marcadores quando aplicável.`
 export const analyzeDocument = async (
   pdfBase64: string,
   type: 'fii' | 'stock',
+  ticker: string,
 ): Promise<string> => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    // @ts-expect-error — google_search is valid but not yet typed in 0.24.x
+    tools: [{ google_search: {} }],
+  })
   const result = await model.generateContent([
     { inlineData: { data: pdfBase64, mimeType: 'application/pdf' } },
-    type === 'fii' ? FII_PROMPT : RI_PROMPT,
+    type === 'fii' ? FII_PROMPT(ticker) : RI_PROMPT(ticker),
   ])
   return result.response.text()
 }

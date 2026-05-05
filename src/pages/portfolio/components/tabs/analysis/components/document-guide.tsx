@@ -55,6 +55,28 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
 
       {open && (
         <div className="px-3 pb-4 pt-1 space-y-4 border-t border-border bg-muted/10">
+          {type === 'stock' && (
+            <div className="mt-2 space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                Qual documento priorizar
+              </p>
+              {[
+                { tipo: 'Empresa operacional', doc: 'Release de Resultados', reason: 'O lucro vem da operação — receita, margem, crescimento' },
+                { tipo: 'Empresa regulada', doc: 'Relatório da Administração', reason: 'O lucro vem de decisões regulatórias, não do mercado' },
+                { tipo: 'Holding', doc: 'Demonstrações Contábeis', reason: 'O valor vem das participações, não de operação própria' },
+              ].map((row) => (
+                <div key={row.tipo} className="flex gap-2 rounded-md px-2.5 py-2 bg-muted/20">
+                  <div className="min-w-27.5 shrink-0">
+                    <p className="text-[11px] text-muted-foreground">{row.tipo}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground">{row.doc}</p>
+                    <p className="text-[10px] text-muted-foreground/70 leading-snug">{row.reason}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
             <div className="space-y-2">
               <p className="text-[10px] font-semibold text-primary/80 uppercase tracking-widest">

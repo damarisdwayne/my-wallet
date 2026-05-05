@@ -14,8 +14,50 @@ import { useAuth } from '@/store/auth'
 import { AiMarkdown } from './ai-analysis'
 import { MarketIntelligence } from './market-intelligence'
 
-export const AiSheet = ({ ticker, isFii }: { ticker: string; isFii: boolean }) => {
+const getRecommendedDoc = (
+  isFii: boolean,
+  sector?: string,
+  subsector?: string,
+): { doc: string; reason: string } | null => {
+  if (isFii) return { doc: 'Relatório Gerencial', reason: 'toda a gestão do fundo está aqui' }
+  if (!sector && !subsector) return null
+  const s = (sector ?? '').toLowerCase()
+  const sub = (subsector ?? '').toLowerCase()
+  // PT: "Utilidade Pública" / EN: "Utilities"
+  // PT sub: "Saneamento", "Energia Elétrica", "Gás" / EN sub: "Water Utilities", "Electric Utilities", "Gas Utilities"
+  if (
+    s.includes('utilidade') ||
+    s.includes('utilities') ||
+    sub.includes('saneamento') ||
+    sub.includes('energia') ||
+    sub.includes('gás') ||
+    sub.includes('gas') ||
+    sub.includes('electric') ||
+    sub.includes('water utili')
+  )
+    return {
+      doc: 'Relatório da Administração',
+      reason: 'empresa regulada — tarifas e concessão definem o lucro',
+    }
+  // PT: "Holding" / EN: "Conglomerates", "Asset Management & Custody Banks"
+  if (sub.includes('holding') || s.includes('holding') || sub.includes('conglomerate'))
+    return { doc: 'Demonstrações Contábeis', reason: 'o valor vem das participações' }
+  return { doc: 'Release de Resultados', reason: 'resumo executivo dos números do trimestre' }
+}
+
+export const AiSheet = ({
+  ticker,
+  isFii,
+  sector,
+  subsector,
+}: {
+  ticker: string
+  isFii: boolean
+  sector?: string
+  subsector?: string
+}) => {
   const { user } = useAuth()
+  const recommendation = getRecommendedDoc(isFii, sector, subsector)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -56,7 +98,7 @@ export const AiSheet = ({ ticker, isFii }: { ticker: string; isFii: boolean }) =
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
-      setAiAnalysis(await analyzeDocument(base64, isFii ? 'fii' : 'stock'))
+      setAiAnalysis(await analyzeDocument(base64, isFii ? 'fii' : 'stock', ticker))
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setAiError(msg.includes('429') ? 'Cota da API excedida. Tente novamente.' : `Erro: ${msg}`)
@@ -158,19 +200,30 @@ export const AiSheet = ({ ticker, isFii }: { ticker: string; isFii: boolean }) =
             )}
 
             {!aiAnalysis && !aiLoading && !aiError && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full rounded-lg border border-dashed border-border p-5 text-center hover:border-primary/40 hover:bg-muted/20 transition-colors group"
-              >
-                <FileText
-                  size={18}
-                  className="mx-auto mb-2 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {isFii ? 'Envie o PDF do relatório gerencial' : 'Envie o PDF do relatório de RI'}
-                </p>
-                <p className="text-[11px] text-muted-foreground/40 mt-0.5">Powered by Gemini</p>
-              </button>
+              <div className="space-y-2">
+                {recommendation && (
+                  <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 space-y-0.5">
+                    <p className="text-[11px] text-primary/70 font-medium uppercase tracking-wide">
+                      Documento recomendado
+                    </p>
+                    <p className="text-xs font-semibold text-foreground">{recommendation.doc}</p>
+                    <p className="text-[11px] text-muted-foreground">{recommendation.reason}</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full rounded-lg border border-dashed border-border p-5 text-center hover:border-primary/40 hover:bg-muted/20 transition-colors group"
+                >
+                  <FileText
+                    size={18}
+                    className="mx-auto mb-2 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {isFii ? 'Envie o PDF do relatório gerencial' : 'Envie o PDF do relatório de RI'}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/40 mt-0.5">Powered by Gemini</p>
+                </button>
+              </div>
             )}
           </div>
         </div>

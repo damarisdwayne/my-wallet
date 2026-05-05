@@ -102,6 +102,41 @@ export const analyzeDocument = async (
   return result.response.text()
 }
 
+export interface ComparisonResult {
+  text: string
+}
+
+const COMPARISON_PROMPT = (a: string, b: string) =>
+  `Você é um analista fundamentalista. Compare as duas análises de documentos abaixo do mesmo ativo e responda de forma estruturada.
+
+ANÁLISE MAIS ANTIGA:
+${a}
+
+ANÁLISE MAIS RECENTE:
+${b}
+
+Responda EXATAMENTE neste formato:
+
+**Melhorou**
+Liste em bullets o que evoluiu positivamente entre os dois períodos.
+
+**Piorou**
+Liste em bullets o que regrediu ou apresentou piora.
+
+**Estável**
+Liste em bullets o que se manteve sem mudança relevante.
+
+**Tendência Geral**
+Melhorando / Piorando / Estável — com justificativa em 1-2 linhas.
+
+Seja objetivo e direto. Foque em fatos dos documentos, não em opiniões.`
+
+export const compareAnalyses = async (older: string, newer: string): Promise<ComparisonResult> => {
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const result = await model.generateContent(COMPARISON_PROMPT(older, newer))
+  return { text: result.response.text() }
+}
+
 export interface CommunicationItem {
   type: string
   date: string

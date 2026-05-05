@@ -15,26 +15,16 @@ export const AnalysisTab = ({
   const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
 
-  const stocks = assets.filter((a) => a.type === 'stock')
-  const fiis = assets.filter((a) => a.type === 'fii')
-
-  const allShown = subTab === 'stock' ? stocks : fiis
+  const isFii = subTab === 'fii'
+  const allShown = assets.filter((a) => a.type === (isFii ? 'fii' : 'stock'))
   const selectedAsset = allShown.find((a) => a.ticker === selectedTicker) ?? null
-
-  if (stocks.length === 0 && fiis.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-        Nenhuma ação BR ou FII na carteira.
-      </div>
-    )
-  }
 
   if (selectedAsset) {
     return (
       <AssetDetailView
         asset={selectedAsset}
         record={fundamentals[selectedAsset.ticker.toUpperCase()]}
-        isFii={subTab === 'fii'}
+        isFii={isFii}
         fiiInfoData={fiiInfo[selectedAsset.ticker.toUpperCase()]}
         stockInfoData={stockInfo[selectedAsset.ticker.toUpperCase()]}
         onBack={() => setSelectedTicker(null)}
@@ -48,25 +38,21 @@ export const AnalysisTab = ({
   return (
     <div className="space-y-5">
       <div className="flex gap-1">
-        {stocks.length > 0 && (
+        {(['stock', 'fii'] as const).map((tab) => (
           <button
-            onClick={() => setSubTab('stock')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            key={tab}
+            onClick={() => {
+              setSubTab(tab)
+              setSelectedTicker(null)
+            }}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === tab ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
           >
-            Ações BR <span className="ml-1 text-xs opacity-70">({stocks.length})</span>
+            {tab === 'stock' ? 'Ações BR' : 'FIIs'}
           </button>
-        )}
-        {fiis.length > 0 && (
-          <button
-            onClick={() => setSubTab('fii')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === 'fii' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
-          >
-            FIIs <span className="ml-1 text-xs opacity-70">({fiis.length})</span>
-          </button>
-        )}
+        ))}
       </div>
 
-      <DocumentGuide type={subTab} />
+      <DocumentGuide type={isFii ? 'fii' : 'stock'} />
 
       {allShown.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-10">
@@ -79,7 +65,7 @@ export const AnalysisTab = ({
               key={asset.id}
               asset={asset}
               record={fundamentals[asset.ticker.toUpperCase()]}
-              isFii={subTab === 'fii'}
+              isFii={isFii}
               onClick={() => setSelectedTicker(asset.ticker)}
             />
           ))}

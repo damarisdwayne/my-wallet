@@ -1,6 +1,9 @@
 import { useState } from 'react'
-import { Clock, Sparkles } from 'lucide-react'
+import { Clock, GitCompareArrows, Sparkles, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { deleteAiAnalysis } from '@/services/ai-analyses'
+import { compareAnalyses } from '@/services/gemini'
+import { useAuth } from '@/store/auth'
 import type { AiAnalysis } from '@/types'
 import { renderInline, verdictFromText } from '../utils'
 import { VERDICT_MAP } from '../constants'
@@ -91,11 +94,47 @@ export const AiMarkdown = ({ text }: { text: string }) => {
 
 export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
   const [modalItem, setModalItem] = useState<AiAnalysis | null>(null)
+  const [compareMode, setCompareMode] = useState(false)
+  const [selected, setSelected] = useState<AiAnalysis[]>([])
+  const [compareText, setCompareText] = useState<string | null>(null)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareOpen, setCompareOpen] = useState(false)
+  const { user } = useAuth()
+
   const years = [...new Set(history.map((h) => new Date(h.analyzedAt).getFullYear()))].sort(
     (a, b) => b - a,
   )
   const [selectedYear, setSelectedYear] = useState<number>(years[0])
   const filtered = history.filter((h) => new Date(h.analyzedAt).getFullYear() === selectedYear)
+
+  const toggleCompareMode = () => {
+    setCompareMode((v) => !v)
+    setSelected([])
+  }
+
+  const toggleSelect = (item: AiAnalysis) => {
+    setSelected((prev) =>
+      prev.some((s) => s.id === item.id)
+        ? prev.filter((s) => s.id !== item.id)
+        : prev.length < 2
+          ? [...prev, item]
+          : prev,
+    )
+  }
+
+  const runComparison = async () => {
+    const sorted = [...selected].sort(
+      (a, b) => new Date(a.analyzedAt).getTime() - new Date(b.analyzedAt).getTime(),
+    )
+    setCompareLoading(true)
+    setCompareOpen(true)
+    try {
+      const result = await compareAnalyses(sorted[0].text, sorted[1].text)
+      setCompareText(result.text)
+    } finally {
+      setCompareLoading(false)
+    }
+  }
 
   return (
     <div>
@@ -103,24 +142,59 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Histórico de análises
         </p>
-        {years.length > 1 && (
-          <div className="flex gap-1">
-            {years.map((y) => (
-              <button
-                key={y}
-                onClick={() => setSelectedYear(y)}
-                className={`px-2 py-0.5 rounded text-xs transition-colors ${
-                  selectedYear === y
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {years.length > 1 && (
+            <div className="flex gap-1">
+              {years.map((y) => (
+                <button
+                  key={y}
+                  onClick={() => setSelectedYear(y)}
+                  className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                    selectedYear === y
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          )}
+          {history.length >= 2 && (
+            <button
+              onClick={toggleCompareMode}
+              className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                compareMode
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <GitCompareArrows size={11} />
+              Comparar
+            </button>
+          )}
+        </div>
       </div>
+
+      {compareMode && (
+        <div className="mb-3 flex items-center justify-between rounded-md bg-primary/5 border border-primary/15 px-3 py-2">
+          <p className="text-[11px] text-muted-foreground">
+            {selected.length === 0
+              ? 'Selecione 2 análises para comparar'
+              : selected.length === 1
+                ? 'Selecione mais 1 análise'
+                : '2 análises selecionadas'}
+          </p>
+          {selected.length === 2 && (
+            <button
+              onClick={runComparison}
+              className="text-xs bg-primary text-primary-foreground px-2.5 py-1 rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Ver comparação
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         {filtered.map((item) => {
@@ -130,11 +204,16 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
             month: '2-digit',
             year: '2-digit',
           })
+          const isSelected = selected.some((s) => s.id === item.id)
           return (
             <button
               key={item.id}
-              onClick={() => setModalItem(item)}
-              className="rounded-lg border border-border p-3 text-left hover:border-primary/40 hover:bg-muted/20 transition-colors"
+              onClick={() => (compareMode ? toggleSelect(item) : setModalItem(item))}
+              className={`rounded-lg border p-3 text-left transition-colors ${
+                isSelected
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/40 hover:bg-muted/20'
+              }`}
             >
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
                 {item.documentType ?? 'Relatório'}
@@ -150,9 +229,22 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
                 ) : (
                   <span />
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
-                  <Clock size={10} />
-                  {savedAt}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                    <Clock size={10} />
+                    {savedAt}
+                  </div>
+                  {!compareMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (user) deleteAiAnalysis(user.uid, item.id)
+                      }}
+                      className="text-muted-foreground/30 hover:text-destructive transition-colors"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
                 </div>
               </div>
             </button>
@@ -160,6 +252,7 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
         })}
       </div>
 
+      {/* Análise individual */}
       <Dialog
         open={!!modalItem}
         onOpenChange={(v) => {
@@ -179,6 +272,45 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
             </DialogTitle>
           </DialogHeader>
           {modalItem && <AiMarkdown text={modalItem.text} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Comparação */}
+      <Dialog
+        open={compareOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCompareOpen(false)
+            setCompareText(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitCompareArrows size={15} className="text-primary/70" />
+              Comparação —{' '}
+              {selected
+                .map(
+                  (s) =>
+                    s.reportDate ??
+                    new Date(s.analyzedAt).toLocaleDateString('pt-BR', {
+                      month: 'short',
+                      year: '2-digit',
+                    }),
+                )
+                .join(' vs ')}
+            </DialogTitle>
+          </DialogHeader>
+          {compareLoading ? (
+            <div className="space-y-2.5 animate-pulse py-4">
+              {['w-[70%]', 'w-[85%]', 'w-[60%]', 'w-[90%]', 'w-[75%]'].map((w) => (
+                <div key={w} className={`h-2 rounded bg-muted ${w}`} />
+              ))}
+            </div>
+          ) : compareText ? (
+            <AiMarkdown text={compareText} />
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>

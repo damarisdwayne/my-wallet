@@ -61,9 +61,21 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
                 Qual documento priorizar
               </p>
               {[
-                { tipo: 'Empresa operacional', doc: 'Release de Resultados', reason: 'O lucro vem da operação — receita, margem, crescimento' },
-                { tipo: 'Empresa regulada', doc: 'Relatório da Administração', reason: 'O lucro vem de decisões regulatórias, não do mercado' },
-                { tipo: 'Holding', doc: 'Demonstrações Contábeis', reason: 'O valor vem das participações, não de operação própria' },
+                {
+                  tipo: 'Empresa operacional',
+                  doc: 'Release de Resultados',
+                  reason: 'O lucro vem da operação — receita, margem, crescimento',
+                },
+                {
+                  tipo: 'Empresa regulada',
+                  doc: 'Relatório da Administração',
+                  reason: 'O lucro vem de decisões regulatórias, não do mercado',
+                },
+                {
+                  tipo: 'Holding',
+                  doc: 'Demonstrações Contábeis',
+                  reason: 'O valor vem das participações, não de operação própria',
+                },
               ].map((row) => (
                 <div key={row.tipo} className="flex gap-2 rounded-md px-2.5 py-2 bg-muted/20">
                   <div className="min-w-27.5 shrink-0">
@@ -71,7 +83,9 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold text-foreground">{row.doc}</p>
-                    <p className="text-[10px] text-muted-foreground/70 leading-snug">{row.reason}</p>
+                    <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                      {row.reason}
+                    </p>
                   </div>
                 </div>
               ))}

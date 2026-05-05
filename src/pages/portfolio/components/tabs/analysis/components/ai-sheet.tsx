@@ -219,7 +219,9 @@ export const AiSheet = ({
                     className="mx-auto mb-2 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {isFii ? 'Envie o PDF do relatório gerencial' : 'Envie o PDF do relatório de RI'}
+                    {isFii
+                      ? 'Envie o PDF do relatório gerencial'
+                      : 'Envie o PDF do relatório de RI'}
                   </p>
                   <p className="text-[11px] text-muted-foreground/40 mt-0.5">Powered by Gemini</p>
                 </button>

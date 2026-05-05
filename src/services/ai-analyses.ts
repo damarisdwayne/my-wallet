@@ -1,4 +1,4 @@
-import { addDoc, collection, onSnapshot, query, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { AiAnalysis } from '@/types'
 
@@ -29,6 +29,9 @@ export const saveAiAnalysis = async (
     analyzedAt: new Date().toISOString(),
   })
 }
+
+export const deleteAiAnalysis = (userId: string, analysisId: string): Promise<void> =>
+  deleteDoc(doc(db, 'users', userId, 'ai-analyses', analysisId))
 
 export const subscribeToAiAnalyses = (
   userId: string,

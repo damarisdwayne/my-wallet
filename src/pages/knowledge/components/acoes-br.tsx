@@ -5,10 +5,16 @@ export const AcoesBr = () => (
   <div className="space-y-8">
     <Section title="O que é uma ação?">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Uma ação representa uma fração do capital social de uma empresa. Ao comprar ações, você se torna sócio do negócio — com direito a participar dos lucros (dividendos) e da valorização patrimonial. O objetivo é escolher empresas que gerem valor real ao longo do tempo, não especular no curto prazo.
+        Uma ação representa uma fração do capital social de uma empresa. Ao comprar ações, você se
+        torna sócio do negócio — com direito a participar dos lucros (dividendos) e da valorização
+        patrimonial. O objetivo é escolher empresas que gerem valor real ao longo do tempo, não
+        especular no curto prazo.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Existem dois tipos principais: <strong className="text-foreground">ON (Ordinária)</strong> — dá direito a voto nas assembleias; e <strong className="text-foreground">PN (Preferencial)</strong> — prioridade no recebimento de dividendos, sem voto. No Brasil, ações terminadas em 3 são ON; em 4, 11 são PN ou units.
+        Existem dois tipos principais: <strong className="text-foreground">ON (Ordinária)</strong> —
+        dá direito a voto nas assembleias; e{' '}
+        <strong className="text-foreground">PN (Preferencial)</strong> — prioridade no recebimento
+        de dividendos, sem voto. No Brasil, ações terminadas em 3 são ON; em 4, 11 são PN ou units.
       </p>
     </Section>
 
@@ -77,20 +83,25 @@ export const AcoesBr = () => (
           VI = √(22,5 × LPA × VPA)
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">LPA</strong> = Lucro por Ação | <strong className="text-foreground">VPA</strong> = Valor Patrimonial por Ação
+          <strong className="text-foreground">LPA</strong> = Lucro por Ação |{' '}
+          <strong className="text-foreground">VPA</strong> = Valor Patrimonial por Ação
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          O número 22,5 vem de P/L máximo de 15 × P/VP máximo de 1,5 = 22,5. Se o preço atual estiver abaixo do valor intrínseco calculado, a ação pode estar subavaliada. É uma fórmula conservadora, criada para o mercado americano dos anos 70.
+          O número 22,5 vem de P/L máximo de 15 × P/VP máximo de 1,5 = 22,5. Se o preço atual
+          estiver abaixo do valor intrínseco calculado, a ação pode estar subavaliada. É uma fórmula
+          conservadora, criada para o mercado americano dos anos 70.
         </p>
         <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded">
-          ⚠️ Não use para bancos, seguradoras, empresas com LPA negativo ou crescimento muito acelerado. É um ponto de partida, não uma verdade absoluta.
+          ⚠️ Não use para bancos, seguradoras, empresas com LPA negativo ou crescimento muito
+          acelerado. É um ponto de partida, não uma verdade absoluta.
         </p>
       </Card>
     </Section>
 
     <Section title="Análise Qualitativa — As 15 Perguntas de Philip Fisher">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Números sozinhos não bastam. Fisher propôs uma análise do negócio em si, que complementa os indicadores quantitativos:
+        Números sozinhos não bastam. Fisher propôs uma análise do negócio em si, que complementa os
+        indicadores quantitativos:
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         {[
@@ -111,7 +122,9 @@ export const AcoesBr = () => (
           'A gestão age com integridade inquestionável?',
         ].map((q, i) => (
           <div key={q} className="flex gap-2 text-sm">
-            <span className="text-muted-foreground shrink-0 font-mono text-xs mt-0.5">{i + 1}.</span>
+            <span className="text-muted-foreground shrink-0 font-mono text-xs mt-0.5">
+              {i + 1}.
+            </span>
             <p className="text-muted-foreground">{q}</p>
           </div>
         ))}
@@ -121,12 +134,30 @@ export const AcoesBr = () => (
     <Section title="Quando NÃO comprar uma ação">
       <div className="grid gap-2 sm:grid-cols-2">
         {[
-          { label: 'Lucro decrescente há 3+ anos', desc: 'Tendência de piora estrutural, não apenas cíclica.' },
-          { label: 'Dívida fora de controle', desc: 'Dívida Líquida/EBITDA > 3-4x sem perspectiva de melhora.' },
-          { label: 'Gestão com histórico ruim', desc: 'Destruição de valor, promessas não cumpridas, escândalos.' },
-          { label: 'Setor em declínio estrutural', desc: 'Negócio sendo substituído por tecnologia ou mudança de comportamento.' },
-          { label: 'Governança fraca', desc: 'Empresa fora do Novo Mercado, sem tag along ou com controle familiar abusivo.' },
-          { label: 'Preço muito acima do justo', desc: 'Margem de segurança negativa — todo crescimento já está no preço.' },
+          {
+            label: 'Lucro decrescente há 3+ anos',
+            desc: 'Tendência de piora estrutural, não apenas cíclica.',
+          },
+          {
+            label: 'Dívida fora de controle',
+            desc: 'Dívida Líquida/EBITDA > 3-4x sem perspectiva de melhora.',
+          },
+          {
+            label: 'Gestão com histórico ruim',
+            desc: 'Destruição de valor, promessas não cumpridas, escândalos.',
+          },
+          {
+            label: 'Setor em declínio estrutural',
+            desc: 'Negócio sendo substituído por tecnologia ou mudança de comportamento.',
+          },
+          {
+            label: 'Governança fraca',
+            desc: 'Empresa fora do Novo Mercado, sem tag along ou com controle familiar abusivo.',
+          },
+          {
+            label: 'Preço muito acima do justo',
+            desc: 'Margem de segurança negativa — todo crescimento já está no preço.',
+          },
         ].map((item) => (
           <Card key={item.label} className="p-3 border-destructive/30">
             <p className="text-sm font-medium text-foreground">{item.label}</p>
@@ -139,16 +170,24 @@ export const AcoesBr = () => (
     <Section title="Estratégia Geral">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Preço de entrada importa.</strong> A melhor empresa comprada no preço errado pode dar prejuízo por anos. Sempre calcule uma margem de segurança — compre com desconto em relação ao seu valor estimado.
+          <strong className="text-foreground">Preço de entrada importa.</strong> A melhor empresa
+          comprada no preço errado pode dar prejuízo por anos. Sempre calcule uma margem de
+          segurança — compre com desconto em relação ao seu valor estimado.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Diversifique com critério.</strong> 10 a 15 ações bem analisadas são suficientes. Carteiras com 30+ ativos frequentemente têm desempenho medíocre — você não consegue acompanhar tudo.
+          <strong className="text-foreground">Diversifique com critério.</strong> 10 a 15 ações bem
+          analisadas são suficientes. Carteiras com 30+ ativos frequentemente têm desempenho
+          medíocre — você não consegue acompanhar tudo.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Pense como dono.</strong> Antes de comprar, pergunte: "Eu compraria esse negócio inteiro se pudesse?" Se a resposta for não, não compre nem uma ação.
+          <strong className="text-foreground">Pense como dono.</strong> Antes de comprar, pergunte:
+          "Eu compraria esse negócio inteiro se pudesse?" Se a resposta for não, não compre nem uma
+          ação.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Revisão periódica.</strong> A cada trimestre, releia os balanços das empresas que você tem. Os fundamentos mudaram? O motivo pelo qual você comprou ainda existe?
+          <strong className="text-foreground">Revisão periódica.</strong> A cada trimestre, releia
+          os balanços das empresas que você tem. Os fundamentos mudaram? O motivo pelo qual você
+          comprou ainda existe?
         </p>
       </Card>
     </Section>

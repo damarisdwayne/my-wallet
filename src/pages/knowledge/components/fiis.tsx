@@ -6,10 +6,16 @@ export const Fiis = () => (
   <div className="space-y-8">
     <Section title="O que é um FII?">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Fundos de Investimento Imobiliário (FIIs) são fundos que investem no mercado imobiliário — seja comprando imóveis físicos, papéis de crédito imobiliário ou cotas de outros fundos. Ao comprar cotas na bolsa, você se torna cotista e recebe a distribuição dos rendimentos, geralmente mensalmente.
+        Fundos de Investimento Imobiliário (FIIs) são fundos que investem no mercado imobiliário —
+        seja comprando imóveis físicos, papéis de crédito imobiliário ou cotas de outros fundos. Ao
+        comprar cotas na bolsa, você se torna cotista e recebe a distribuição dos rendimentos,
+        geralmente mensalmente.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <strong className="text-foreground">Vantagem tributária:</strong> Para pessoa física com menos de 10% das cotas e com o fundo tendo mais de 50 cotistas e listado em bolsa, os rendimentos são <strong className="text-foreground">isentos de Imposto de Renda</strong>. O ganho de capital na venda das cotas é tributado a 20%.
+        <strong className="text-foreground">Vantagem tributária:</strong> Para pessoa física com
+        menos de 10% das cotas e com o fundo tendo mais de 50 cotistas e listado em bolsa, os
+        rendimentos são <strong className="text-foreground">isentos de Imposto de Renda</strong>. O
+        ganho de capital na venda das cotas é tributado a 20%.
       </p>
     </Section>
 
@@ -119,16 +125,24 @@ export const Fiis = () => (
     <Section title="Ciclo Imobiliário e Taxa de Juros">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          FIIs têm relação inversa com a taxa de juros. Quando a Selic sobe, o preço dos FIIs tende a cair — o rendimento fixo fica mais atrativo e os FIIs precisam oferecer DY maior para competir, o que só acontece com queda de preço.
+          FIIs têm relação inversa com a taxa de juros. Quando a Selic sobe, o preço dos FIIs tende
+          a cair — o rendimento fixo fica mais atrativo e os FIIs precisam oferecer DY maior para
+          competir, o que só acontece com queda de preço.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="bg-green-50 dark:bg-green-950/30 rounded p-3">
             <p className="text-sm font-medium text-green-800 dark:text-green-300">Selic em queda</p>
-            <p className="text-sm text-green-700 dark:text-green-400 mt-1">Boa fase para FIIs. Preços tendem a subir pois o DY se torna mais atrativo em relação à renda fixa. Momento de acumular posição.</p>
+            <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+              Boa fase para FIIs. Preços tendem a subir pois o DY se torna mais atrativo em relação
+              à renda fixa. Momento de acumular posição.
+            </p>
           </div>
           <div className="bg-red-50 dark:bg-red-950/30 rounded p-3">
             <p className="text-sm font-medium text-red-800 dark:text-red-300">Selic em alta</p>
-            <p className="text-sm text-red-700 dark:text-red-400 mt-1">FIIs tendem a desvalorizar. Mas se o rendimento ainda superar o CDI com margem, pode ser oportunidade de comprar bons fundos com desconto.</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+              FIIs tendem a desvalorizar. Mas se o rendimento ainda superar o CDI com margem, pode
+              ser oportunidade de comprar bons fundos com desconto.
+            </p>
           </div>
         </div>
       </Card>
@@ -137,16 +151,24 @@ export const Fiis = () => (
     <Section title="Como Montar uma Carteira de FIIs">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Diversificação por segmento:</strong> Tenha FIIs de diferentes tipos — logística, lajes, shoppings, papel — para não depender de um único setor. A crise do varejo afeta shoppings diferente da crise de escritórios.
+          <strong className="text-foreground">Diversificação por segmento:</strong> Tenha FIIs de
+          diferentes tipos — logística, lajes, shoppings, papel — para não depender de um único
+          setor. A crise do varejo afeta shoppings diferente da crise de escritórios.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Mínimo de 5-8 FIIs:</strong> Com menos que isso, uma crise setorial pode destruir grande parte da carteira. Com mais de 15, fica difícil acompanhar.
+          <strong className="text-foreground">Mínimo de 5-8 FIIs:</strong> Com menos que isso, uma
+          crise setorial pode destruir grande parte da carteira. Com mais de 15, fica difícil
+          acompanhar.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Reinvestir os dividendos:</strong> O poder dos FIIs vem do reinvestimento mensal. Com R$ 1.000 de aporte e R$ 500 de dividendos, no próximo mês você compra R$ 1.500 de cotas — acelerando o crescimento patrimonial.
+          <strong className="text-foreground">Reinvestir os dividendos:</strong> O poder dos FIIs
+          vem do reinvestimento mensal. Com R$ 1.000 de aporte e R$ 500 de dividendos, no próximo
+          mês você compra R$ 1.500 de cotas — acelerando o crescimento patrimonial.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Atenção ao relatório mensal:</strong> Todo FII publica relatório mensal com dados de vacância, contratos, obras e perspectivas. Leia ao menos os de seus fundos principais.
+          <strong className="text-foreground">Atenção ao relatório mensal:</strong> Todo FII publica
+          relatório mensal com dados de vacância, contratos, obras e perspectivas. Leia ao menos os
+          de seus fundos principais.
         </p>
       </Card>
     </Section>
@@ -154,12 +176,30 @@ export const Fiis = () => (
     <Section title="Quando NÃO comprar um FII">
       <div className="grid gap-2 sm:grid-cols-2">
         {[
-          { label: 'Vacância muito alta e crescente', desc: 'Sinal de problema estrutural no imóvel ou setor.' },
-          { label: 'DY muito acima dos pares', desc: 'Pode ser um dividend trap — preço caiu por algum problema real.' },
-          { label: 'P/VPA muito acima de 1.5', desc: 'Você está pagando caro demais pelo patrimônio.' },
-          { label: 'Gestora com histórico ruim', desc: 'Destruição de valor, desinvestimentos ruins, má comunicação.' },
-          { label: 'Fundo muito pequeno ou ilíquido', desc: 'Patrimônio < R$ 100M e liquidez < R$ 200k/dia.' },
-          { label: 'Concentração excessiva', desc: 'Um único inquilino representando > 70% da receita é risco de concentração.' },
+          {
+            label: 'Vacância muito alta e crescente',
+            desc: 'Sinal de problema estrutural no imóvel ou setor.',
+          },
+          {
+            label: 'DY muito acima dos pares',
+            desc: 'Pode ser um dividend trap — preço caiu por algum problema real.',
+          },
+          {
+            label: 'P/VPA muito acima de 1.5',
+            desc: 'Você está pagando caro demais pelo patrimônio.',
+          },
+          {
+            label: 'Gestora com histórico ruim',
+            desc: 'Destruição de valor, desinvestimentos ruins, má comunicação.',
+          },
+          {
+            label: 'Fundo muito pequeno ou ilíquido',
+            desc: 'Patrimônio < R$ 100M e liquidez < R$ 200k/dia.',
+          },
+          {
+            label: 'Concentração excessiva',
+            desc: 'Um único inquilino representando > 70% da receita é risco de concentração.',
+          },
         ].map((item) => (
           <Card key={item.label} className="p-3 border-destructive/30">
             <p className="text-sm font-medium text-foreground">{item.label}</p>

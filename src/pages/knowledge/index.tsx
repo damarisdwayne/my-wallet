@@ -1,16 +1,45 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { AcoesBr, Exterior, Fiis, Fundamentos, GestaoCarteira, ImpostoRenda, RendaFixa, ReservaValor } from './components'
+import {
+  AcoesBr,
+  Exterior,
+  Fiis,
+  Fundamentos,
+  GestaoCarteira,
+  ImpostoRenda,
+  RendaFixa,
+  ReservaValor,
+} from './components'
 
 const tabs = [
-  { label: 'Fundamentos', description: 'Mentalidade, ativos vs passivos, juros compostos, liberdade financeira e como evitar golpes' },
+  {
+    label: 'Fundamentos',
+    description:
+      'Mentalidade, ativos vs passivos, juros compostos, liberdade financeira e como evitar golpes',
+  },
   { label: 'Renda Fixa', description: 'Hierarquia de risco, Tesouro Direto, FGC e tributação' },
   { label: 'FIIs', description: 'Tipos de fundo, indicadores e como montar uma carteira de FIIs' },
-  { label: 'Ações BR', description: 'Indicadores, análise fundamentalista e estratégia para ações brasileiras' },
-  { label: 'Reserva de Valor', description: 'Ouro e Bitcoin: proteção patrimonial e como investir' },
-  { label: 'Exterior', description: 'ETFs americanos, REITs, Treasuries e como investir fora do Brasil' },
-  { label: 'Imposto de Renda', description: 'Regras de IR para cada classe de ativo, DARF e declaração anual' },
-  { label: 'Gestão de Carteira', description: 'Perfis de risco, diversificação, quando vender e mentalidade do investidor de longo prazo' },
+  {
+    label: 'Ações BR',
+    description: 'Indicadores, análise fundamentalista e estratégia para ações brasileiras',
+  },
+  {
+    label: 'Reserva de Valor',
+    description: 'Ouro e Bitcoin: proteção patrimonial e como investir',
+  },
+  {
+    label: 'Exterior',
+    description: 'ETFs americanos, REITs, Treasuries e como investir fora do Brasil',
+  },
+  {
+    label: 'Imposto de Renda',
+    description: 'Regras de IR para cada classe de ativo, DARF e declaração anual',
+  },
+  {
+    label: 'Gestão de Carteira',
+    description:
+      'Perfis de risco, diversificação, quando vender e mentalidade do investidor de longo prazo',
+  },
 ]
 
 export const KnowledgePage = () => {

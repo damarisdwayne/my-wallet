@@ -45,6 +45,120 @@ export const Exterior = () => (
       </Card>
     </Section>
 
+    <Section title="BDRs — Ações estrangeiras na B3">
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        BDRs (Brazilian Depositary Receipts) são certificados que representam ações de empresas
+        estrangeiras negociados na B3 em reais. Uma instituição custodiante no exterior compra as
+        ações originais e emite os BDRs correspondentes no Brasil.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {[
+          {
+            type: 'Patrocinados — Nível 2 e 3',
+            tickers: 'Terminam em 32 ou 33',
+            desc: 'A empresa estrangeira participa ativamente do programa, divulga informações em português e segue regras da CVM. Mais transparentes e regulados.',
+            badge: 'Empresa ativa',
+          },
+          {
+            type: 'Não-patrocinados — Nível 1',
+            tickers: 'Terminam em 34 ou 35',
+            desc: 'A empresa estrangeira não participa. O programa é criado por bancos brasileiros. Os mais comuns — Ex: AAPL34, MSFT34, AMZO34, GOGL34.',
+            badge: 'Mais comum',
+          },
+        ].map((item) => (
+          <Card key={item.type} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="font-semibold text-sm text-foreground">{item.type}</span>
+                <p className="text-xs font-mono text-primary">{item.tickers}</p>
+              </div>
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {item.badge}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{item.desc}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="p-4 space-y-2 bg-muted/50">
+        <p className="text-sm font-semibold text-foreground">Como interpretar o ticker de um BDR</p>
+        <p className="text-sm text-muted-foreground">
+          Tickers têm sempre <strong className="text-foreground">4 letras + 2 números</strong>. Os
+          dois números finais indicam o nível:{' '}
+          <strong className="text-foreground">11</strong> = ETFs,{' '}
+          <strong className="text-foreground">32/33</strong> = BDR patrocinado,{' '}
+          <strong className="text-foreground">34/35</strong> = BDR não-patrocinado.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Exemplos: AAPL34 (Apple), MSFT34 (Microsoft), AMZO34 (Amazon), GOGL34 (Google), NVDC34
+          (Nvidia), TSLA34 (Tesla).
+        </p>
+      </Card>
+      <Card className="p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800">
+        <p className="text-sm text-amber-800 dark:text-amber-300">
+          ⚠️ BDRs ainda têm risco-Brasil (legislação, câmbio, tributação local). Dividendos das
+          empresas passam por retenção de 30% nos EUA antes de chegar ao investidor. Para proteção
+          cambial real, prefira investir diretamente em corretoras no exterior.
+        </p>
+      </Card>
+    </Section>
+
+    <Section title="Empresas dolarizadas — exposição cambial pela B3">
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Uma alternativa para se proteger da desvalorização do Real sem abrir conta no exterior é
+        investir em empresas brasileiras cujas receitas são predominantemente em dólar. Quando o
+        Real cai, essas empresas lucram mais em reais — funcionam como um hedge cambial natural.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {[
+          {
+            ticker: 'WEGE3',
+            name: 'WEG',
+            desc: 'Fabricante de motores elétricos e equipamentos industriais. Exporta para mais de 135 países. Uma das empresas mais internacionalizadas do Brasil — mais de 60% da receita vem do exterior.',
+            badge: 'Industrial',
+          },
+          {
+            ticker: 'JBSS3',
+            name: 'JBS',
+            desc: 'Maior frigorífico do mundo. Opera nos EUA, Austrália, Europa e América do Sul. A maior parte da receita é em dólar, o que a torna uma das empresas mais dolarizadas da B3.',
+            badge: 'Alimentos',
+          },
+          {
+            ticker: 'SUZB3',
+            name: 'Suzano',
+            desc: 'Maior produtora de celulose do mundo. Exporta quase toda a produção para China, Europa e EUA. O preço da celulose é cotado em dólar — queda do Real aumenta a margem.',
+            badge: 'Celulose',
+          },
+          {
+            ticker: 'KLBN11',
+            name: 'Klabin',
+            desc: 'Maior produtora de papéis e embalagens do Brasil. Parte relevante da receita vem de exportações de celulose e papel, cotados em dólar no mercado internacional.',
+            badge: 'Papel',
+          },
+        ].map((item) => (
+          <Card key={item.ticker} className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="font-mono font-bold text-sm text-primary">{item.ticker}</span>
+                <p className="text-xs text-muted-foreground">{item.name}</p>
+              </div>
+              <Badge variant="outline" className="text-xs shrink-0">
+                {item.badge}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{item.desc}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="p-3 bg-muted/50">
+        <p className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Limitação:</strong> empresas dolarizadas ainda têm
+          risco-Brasil (política, tributação, governança local). São um complemento, não
+          substituto, para diversificação real no exterior.
+        </p>
+      </Card>
+    </Section>
+
     <Section title="Como funciona o mercado americano">
       <div className="space-y-3">
         <Card className="p-4 space-y-3">
@@ -82,6 +196,47 @@ export const Exterior = () => (
               </div>
             ))}
           </div>
+        </Card>
+
+        <Card className="p-4 space-y-3">
+          <p className="text-sm font-semibold text-foreground">Ações Classe A e Classe B</p>
+          <p className="text-sm text-muted-foreground">
+            Algumas empresas americanas emitem ações de classes diferentes para controlar o poder de
+            voto. A <strong className="text-foreground">Classe A</strong> costuma ter mais direitos
+            de voto por ação e é geralmente mais cara. A{' '}
+            <strong className="text-foreground">Classe B</strong> tem menos (ou nenhum) poder de
+            voto, mas é mais acessível ao investidor comum.
+          </p>
+          <div className="bg-muted rounded p-3 text-sm">
+            <p className="font-medium text-foreground mb-1">Exemplo clássico: Berkshire Hathaway</p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>
+                <span className="font-mono text-primary">BRK-A</span> — cota inteira (~US$600.000).
+                1 ação = 1 voto. Nunca foi desdobrada por Warren Buffett.
+              </p>
+              <p>
+                <span className="font-mono text-primary">BRK-B</span> — 1/1.500 de uma BRK-A
+                (~US$400). Voto proporcional. Criada para democratizar o acesso.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 space-y-2">
+          <p className="text-sm font-semibold text-foreground">Dividendos vs Buybacks</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Como dividendos são tributados em 30% na fonte para estrangeiros (e também para
+            americanos como renda ordinária), grandes empresas americanas preferem{' '}
+            <strong className="text-foreground">recomprar suas próprias ações</strong> (buyback) em
+            vez de distribuir proventos. O buyback valoriza a ação ao reduzir o número de papéis em
+            circulação — beneficia o investidor sem gerar tributação imediata.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Por isso empresas como Apple, Google e Microsoft pagam dividendos baixos ou nulos, mas
+            fazem bilhões em recompras anualmente. Isso explica também por que os{' '}
+            <strong className="text-foreground">Dividend Aristocrats</strong> são raros: manter 25+
+            anos de dividendos crescentes é muito difícil nesse ambiente tributário.
+          </p>
         </Card>
 
         <Card className="p-4 space-y-2">
@@ -232,12 +387,6 @@ export const Exterior = () => (
             badge: 'Imobiliário',
           },
           {
-            ticker: 'EWZ',
-            name: 'iShares MSCI Brazil ETF',
-            desc: 'Curiosidade: as principais empresas brasileiras estão listadas neste ETF americano. Petrobras, Vale, Itaú. Permite que estrangeiros invistam no Brasil.',
-            badge: 'Brasil',
-          },
-          {
             ticker: 'CQQQ',
             name: 'Invesco China Technology ETF',
             desc: 'Empresas de tecnologia chinesas: Alibaba, Tencent, Baidu. Exposição à China sem abrir conta no mercado asiático.',
@@ -382,7 +531,10 @@ export const Exterior = () => (
         </div>
         <p className="text-xs text-muted-foreground">
           <strong className="text-foreground">Exemplos de REITs conhecidos:</strong> AMT (torres de
-          telecom), PSA (armazenagem), DOC (consultórios médicos), VNQ (ETF de REITs diversificado).
+          telecom), PSA (armazenagem), EPR (entretenimento e educação), DOC (consultórios médicos),
+          VNQ (ETF de REITs diversificado). Pesquise em{' '}
+          <span className="font-mono text-primary">reit.com</span> para rankings e métricas
+          completas.
         </p>
       </Card>
     </Section>

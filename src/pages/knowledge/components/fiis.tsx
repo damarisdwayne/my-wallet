@@ -6,16 +6,30 @@ export const Fiis = () => (
   <div className="space-y-8">
     <Section title="O que é um FII?">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Fundos de Investimento Imobiliário (FIIs) são fundos que investem no mercado imobiliário — seja comprando imóveis físicos, papéis de crédito imobiliário ou cotas de outros fundos. Ao comprar cotas na bolsa, você se torna cotista e recebe a distribuição dos rendimentos, geralmente mensalmente.
+        Fundos de Investimento Imobiliário (FIIs) são fundos que investem no mercado imobiliário —
+        seja comprando imóveis físicos, papéis de crédito imobiliário ou cotas de outros fundos. Ao
+        comprar cotas na bolsa, você se torna cotista e recebe a distribuição dos rendimentos,
+        geralmente mensalmente.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <strong className="text-foreground">Por que FIIs pagam todo mês:</strong> por lei, FIIs são obrigados a distribuir no mínimo <strong className="text-foreground">95% do lucro caixa semestral</strong> — na prática, a maioria paga mensalmente. Isso os torna máquinas de renda passiva: ao contrário de ações (que podem reter lucro para crescer), o FII não tem escolha a não ser repassar quase tudo ao cotista.
+        <strong className="text-foreground">Por que FIIs pagam todo mês:</strong> por lei, FIIs são
+        obrigados a distribuir no mínimo{' '}
+        <strong className="text-foreground">95% do lucro caixa semestral</strong> — na prática, a
+        maioria paga mensalmente. Isso os torna máquinas de renda passiva: ao contrário de ações
+        (que podem reter lucro para crescer), o FII não tem escolha a não ser repassar quase tudo ao
+        cotista.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <strong className="text-foreground">Vantagem tributária:</strong> Para pessoa física com menos de 10% das cotas e com o fundo tendo mais de 50 cotistas e listado em bolsa, os rendimentos são <strong className="text-foreground">isentos de Imposto de Renda</strong>. O ganho de capital na venda das cotas é tributado a 20%.
+        <strong className="text-foreground">Vantagem tributária:</strong> Para pessoa física com
+        menos de 10% das cotas e com o fundo tendo mais de 50 cotistas e listado em bolsa, os
+        rendimentos são <strong className="text-foreground">isentos de Imposto de Renda</strong>. O
+        ganho de capital na venda das cotas é tributado a 20%.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <strong className="text-foreground">IFIX</strong> é o índice de referência dos FIIs na B3 — equivalente ao Ibovespa para fundos imobiliários. Reúne os principais FIIs ponderados por liquidez. Use-o como benchmark: se sua carteira de FIIs rende consistentemente menos que o IFIX, vale revisar a seleção de fundos.
+        <strong className="text-foreground">IFIX</strong> é o índice de referência dos FIIs na B3 —
+        equivalente ao Ibovespa para fundos imobiliários. Reúne os principais FIIs ponderados por
+        liquidez. Use-o como benchmark: se sua carteira de FIIs rende consistentemente menos que o
+        IFIX, vale revisar a seleção de fundos.
       </p>
     </Section>
 
@@ -158,11 +172,15 @@ export const Fiis = () => (
     <Section title="Reajuste de Contratos — IGPM vs IPCA">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Contratos de aluguel em FIIs de tijolo são reajustados anualmente por um índice. A escolha do índice afeta diretamente o rendimento e a sustentabilidade do fundo — e já causou crises reais.
+          Contratos de aluguel em FIIs de tijolo são reajustados anualmente por um índice. A escolha
+          do índice afeta diretamente o rendimento e a sustentabilidade do fundo — e já causou
+          crises reais.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">IPCA (preferível)</p>
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              IPCA (preferível)
+            </p>
             <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
               <li>• Reflete a inflação do consumidor</li>
               <li>• Historicamente mais estável (3-10% ao ano)</li>
@@ -181,7 +199,9 @@ export const Fiis = () => (
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">O que verificar:</strong> no relatório mensal, confira o índice de reajuste dos contratos do fundo. Fundos com muitos contratos IGP-M têm risco latente se esse índice disparar novamente. Prefira fundos que migraram para IPCA.
+          <strong className="text-foreground">O que verificar:</strong> no relatório mensal, confira
+          o índice de reajuste dos contratos do fundo. Fundos com muitos contratos IGP-M têm risco
+          latente se esse índice disparar novamente. Prefira fundos que migraram para IPCA.
         </p>
       </Card>
     </Section>
@@ -189,20 +209,75 @@ export const Fiis = () => (
     <Section title="Rendimento vs Amortização de Cota">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Nem toda distribuição mensal de um FII é igual. É fundamental distinguir o que você está recebendo:
+          Nem toda distribuição mensal de um FII é igual. É fundamental distinguir o que você está
+          recebendo:
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">Rendimento (isento de IR)</p>
-            <p className="text-sm text-green-700 dark:text-green-400 mt-1">Vem dos aluguéis, juros dos CRIs ou dividendos dos ativos do fundo. É geração de caixa operacional — o patrimônio do fundo não diminui. Isento de IR para PF nas condições normais.</p>
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              Rendimento (isento de IR)
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+              Vem dos aluguéis, juros dos CRIs ou dividendos dos ativos do fundo. É geração de caixa
+              operacional — o patrimônio do fundo não diminui. Isento de IR para PF nas condições
+              normais.
+            </p>
           </div>
           <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Amortização de cota (não isenta de IR)</p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">O fundo devolve parte do capital investido — como se "desfizesse" parte do fundo. O valor patrimonial por cota cai. Tributado como ganho de capital (20%). Não é renda — é devolução do seu próprio dinheiro.</p>
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              Amortização de cota (não isenta de IR)
+            </p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+              O fundo devolve parte do capital investido — como se "desfizesse" parte do fundo. O
+              valor patrimonial por cota cai. Tributado como ganho de capital (20%). Não é renda — é
+              devolução do seu próprio dinheiro.
+            </p>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Atenção ao DY inflado por amortização:</strong> se um FII distribui R$ 2/cota de rendimento + R$ 1/cota de amortização, o DY "real" é menor. Verifique sempre o relatório mensal para identificar a origem da distribuição.
+          <strong className="text-foreground">Atenção ao DY inflado por amortização:</strong> se um
+          FII distribui R$ 2/cota de rendimento + R$ 1/cota de amortização, o DY "real" é menor.
+          Verifique sempre o relatório mensal para identificar a origem da distribuição.
+        </p>
+      </Card>
+    </Section>
+
+    <Section title="Emissão de Cotas — Follow-On">
+      <Card className="p-4 space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Quando um FII quer comprar novos imóveis ou ampliar seu portfólio, ele precisa captar
+          dinheiro — e faz isso emitindo novas cotas. Esse processo é chamado de{' '}
+          <strong className="text-foreground">follow-on</strong> (ou oferta subsequente). Como
+          cotista existente, você recebe direito de preferência para comprar as novas cotas antes do
+          mercado geral.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 space-y-1">
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              Se participar do follow-on
+            </p>
+            <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
+              <li>• Compra novas cotas geralmente com desconto sobre o mercado</li>
+              <li>• Mantém sua participação proporcional no fundo</li>
+              <li>• Só vale a pena se os novos ativos são de qualidade</li>
+            </ul>
+          </div>
+          <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded p-3 space-y-1">
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              Se não participar
+            </p>
+            <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
+              <li>• Sua participação relativa no fundo diminui (diluição)</li>
+              <li>• Dependendo do preço de emissão, pode ser negativo para o P/VPA</li>
+              <li>• Fique atento ao anúncio (fato relevante) — tem prazo curto para decidir</li>
+            </ul>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Como avaliar:</strong> analise para que o fundo vai
+          usar o capital captado. Aquisição de imóvel prime com cap rate atrativo = positivo.
+          Captação sem destino definido ou para quitar dívidas = sinal de alerta. O histórico de
+          emissões anteriores diz muito sobre a qualidade da gestão.
         </p>
       </Card>
     </Section>
@@ -225,39 +300,17 @@ export const Fiis = () => (
           mês você compra R$ 1.500 de cotas — acelerando o crescimento patrimonial.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Atenção ao relatório mensal:</strong> Todo FII publica relatório mensal. O que analisar: (1) vacância física e financeira — subiu ou caiu? (2) origem da distribuição — rendimento operacional ou amortização? (3) contratos a vencer — há risco de queda de receita? (4) pipeline de aquisições — o gestor está alocando bem? (5) comentários de gestão — tom otimista ou cauteloso?
+          <strong className="text-foreground">Atenção ao relatório mensal:</strong> Todo FII publica
+          relatório mensal. O que analisar: (1) vacância física e financeira — subiu ou caiu? (2)
+          origem da distribuição — rendimento operacional ou amortização? (3) contratos a vencer —
+          há risco de queda de receita? (4) pipeline de aquisições — o gestor está alocando bem? (5)
+          comentários de gestão — tom otimista ou cauteloso?
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Sites para pesquisa:</strong> Funds Explorer (fundsexplorer.com.br), Status Invest (statusinvest.com.br) e FIIs.com.br oferecem histórico de DY, P/VPA, vacância e relatórios consolidados. Use-os para triagem inicial antes de ler o relatório do fundo.
-        </p>
-      </Card>
-    </Section>
-
-    <Section title="Emissão de Cotas — Follow-On">
-      <Card className="p-4 space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Quando um FII quer comprar novos imóveis ou ampliar seu portfólio, ele precisa captar dinheiro — e faz isso emitindo novas cotas. Esse processo é chamado de <strong className="text-foreground">follow-on</strong> (ou oferta subsequente). Como cotista existente, você recebe direito de preferência para comprar as novas cotas antes do mercado geral.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">Se participar do follow-on</p>
-            <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
-              <li>• Compra novas cotas geralmente com desconto sobre o mercado</li>
-              <li>• Mantém sua participação proporcional no fundo</li>
-              <li>• Só vale a pena se os novos ativos são de qualidade</li>
-            </ul>
-          </div>
-          <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Se não participar</p>
-            <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
-              <li>• Sua participação relativa no fundo diminui (diluição)</li>
-              <li>• Dependendo do preço de emissão, pode ser negativo para o P/VPA</li>
-              <li>• Fique atento ao anúncio (fato relevante) — tem prazo curto para decidir</li>
-            </ul>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Como avaliar:</strong> analise para que o fundo vai usar o capital captado. Aquisição de imóvel prime com cap rate atrativo = positivo. Captação sem destino definido ou para quitar dívidas = sinal de alerta. O histórico de emissões anteriores diz muito sobre a qualidade da gestão.
+          <strong className="text-foreground">Sites para pesquisa:</strong> Funds Explorer
+          (fundsexplorer.com.br), Status Invest (statusinvest.com.br) e FIIs.com.br oferecem
+          histórico de DY, P/VPA, vacância e relatórios consolidados. Use-os para triagem inicial
+          antes de ler o relatório do fundo.
         </p>
       </Card>
     </Section>

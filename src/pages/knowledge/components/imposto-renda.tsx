@@ -85,6 +85,23 @@ export const ImpostoRenda = () => (
       </div>
     </Section>
 
+    <Section title="Dividendos de Ações">
+      <Card className="p-4 space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Atualmente no Brasil, os dividendos de ações são{' '}
+          <strong className="text-foreground">isentos de IR para pessoa física</strong>. A empresa
+          já paga o imposto sobre o lucro antes de distribuir os dividendos (via IRPJ/CSLL). O
+          investidor recebe o valor líquido sem tributação adicional.
+        </p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          <strong className="text-foreground">Juros sobre Capital Próprio (JCP):</strong> Diferente
+          dos dividendos, o JCP tem retenção de 15% na fonte. É um crédito tributário para a
+          empresa, então ela opta por distribuir JCP para reduzir seu imposto. Para o investidor, o
+          JCP já chega líquido (com o IR descontado).
+        </p>
+      </Card>
+    </Section>
+
     <Section title="FIIs — Tributação">
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="p-4 space-y-2">
@@ -113,23 +130,6 @@ export const ImpostoRenda = () => (
           </p>
         </Card>
       </div>
-    </Section>
-
-    <Section title="Dividendos de Ações">
-      <Card className="p-4 space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Atualmente no Brasil, os dividendos de ações são{' '}
-          <strong className="text-foreground">isentos de IR para pessoa física</strong>. A empresa
-          já paga o imposto sobre o lucro antes de distribuir os dividendos (via IRPJ/CSLL). O
-          investidor recebe o valor líquido sem tributação adicional.
-        </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Juros sobre Capital Próprio (JCP):</strong> Diferente
-          dos dividendos, o JCP tem retenção de 15% na fonte. É um crédito tributário para a
-          empresa, então ela opta por distribuir JCP para reduzir seu imposto. Para o investidor, o
-          JCP já chega líquido (com o IR descontado).
-        </p>
-      </Card>
     </Section>
 
     <Section title="Como Calcular e Pagar o DARF">

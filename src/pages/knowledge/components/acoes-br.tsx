@@ -6,31 +6,57 @@ export const AcoesBr = () => (
   <div className="space-y-8">
     <Section title="O que é uma ação?">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Uma ação representa uma fração do capital social de uma empresa. Ao comprar ações, você se torna sócio do negócio — com direito a participar dos lucros (dividendos) e da valorização patrimonial. O objetivo é escolher empresas que gerem valor real ao longo do tempo, não especular no curto prazo.
+        Uma ação representa uma fração do capital social de uma empresa. Ao comprar ações, você se
+        torna sócio do negócio — com direito a participar dos lucros (dividendos) e da valorização
+        patrimonial. O objetivo é escolher empresas que gerem valor real ao longo do tempo, não
+        especular no curto prazo.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Existem dois tipos principais: <strong className="text-foreground">ON (Ordinária)</strong> — dá direito a voto nas assembleias; e <strong className="text-foreground">PN (Preferencial)</strong> — prioridade no recebimento de dividendos, sem voto. No Brasil, ações terminadas em 3 são ON; em 4, 11 são PN ou units.
+        Existem dois tipos principais: <strong className="text-foreground">ON (Ordinária)</strong> —
+        dá direito a voto nas assembleias; e{' '}
+        <strong className="text-foreground">PN (Preferencial)</strong> — prioridade no recebimento
+        de dividendos, sem voto. No Brasil, ações terminadas em 3 são ON; em 4, 11 são PN ou units.
       </p>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        <strong className="text-foreground">Ibovespa</strong> é o índice de referência das ações brasileiras — equivalente ao IFIX para FIIs. Reúne as ações mais negociadas da B3 ponderadas por volume. Use-o como benchmark: se sua carteira de ações perder consistentemente para o Ibovespa no longo prazo, vale revisar a estratégia (ou considerar ETFs que replicam o índice).
+        <strong className="text-foreground">Ibovespa</strong> é o índice de referência das ações
+        brasileiras — equivalente ao IFIX para FIIs. Reúne as ações mais negociadas da B3 ponderadas
+        por volume. Use-o como benchmark: se sua carteira de ações perder consistentemente para o
+        Ibovespa no longo prazo, vale revisar a estratégia (ou considerar ETFs que replicam o
+        índice).
       </p>
     </Section>
 
     <Section title="ETFs — Alternativa ao Stock Picking">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Se você não quer (ou não tem tempo) para analisar empresas individualmente, ETFs de ações são uma alternativa legítima. Um ETF replica automaticamente um índice — ao comprar uma cota, você compra uma fatia de todas as empresas do índice de uma vez.
+          Se você não quer (ou não tem tempo) para analisar empresas individualmente, ETFs de ações
+          são uma alternativa legítima. Um ETF replica automaticamente um índice — ao comprar uma
+          cota, você compra uma fatia de todas as empresas do índice de uma vez.
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
           {[
-            { ticker: 'BOVA11', desc: 'Replica o Ibovespa (~80 maiores empresas da B3). A forma mais simples de ter exposição à bolsa brasileira.', badge: 'Principal referência' },
-            { ticker: 'IVVB11', desc: 'Replica o S&P 500 americano em reais. Exposição às 500 maiores empresas dos EUA + proteção cambial (dólar).', badge: 'EUA em BRL' },
-            { ticker: 'SMAL11', desc: 'Replica um índice de small caps brasileiras. Maior potencial de crescimento, mais risco e volatilidade.', badge: 'Small caps BR' },
+            {
+              ticker: 'BOVA11',
+              desc: 'Replica o Ibovespa (~80 maiores empresas da B3). A forma mais simples de ter exposição à bolsa brasileira.',
+              badge: 'Principal referência',
+            },
+            {
+              ticker: 'IVVB11',
+              desc: 'Replica o S&P 500 americano em reais. Exposição às 500 maiores empresas dos EUA + proteção cambial (dólar).',
+              badge: 'EUA em BRL',
+            },
+            {
+              ticker: 'SMAL11',
+              desc: 'Replica um índice de small caps brasileiras. Maior potencial de crescimento, mais risco e volatilidade.',
+              badge: 'Small caps BR',
+            },
           ].map((etf) => (
             <Card key={etf.ticker} className="p-3 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-sm text-foreground">{etf.ticker}</span>
-                <Badge variant="outline" className="text-xs">{etf.badge}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {etf.badge}
+                </Badge>
               </div>
               <p className="text-xs text-muted-foreground">{etf.desc}</p>
             </Card>
@@ -38,7 +64,9 @@ export const AcoesBr = () => (
         </div>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <div className="bg-green-50 dark:bg-green-950/30 rounded p-3">
-            <p className="font-medium text-green-800 dark:text-green-300 text-sm">Vantagens do ETF</p>
+            <p className="font-medium text-green-800 dark:text-green-300 text-sm">
+              Vantagens do ETF
+            </p>
             <ul className="text-sm text-green-700 dark:text-green-400 space-y-0.5 mt-1">
               <li>• Diversificação instantânea (dezenas de empresas)</li>
               <li>• Sem necessidade de analisar cada ação</li>
@@ -57,7 +85,9 @@ export const AcoesBr = () => (
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Para iniciantes:</strong> começar por BOVA11 ou IVVB11 enquanto aprende análise fundamentalista é uma estratégia sensata. Ao ganhar confiança, migrar gradualmente para stock picking em empresas que você realmente entende.
+          <strong className="text-foreground">Para iniciantes:</strong> começar por BOVA11 ou IVVB11
+          enquanto aprende análise fundamentalista é uma estratégia sensata. Ao ganhar confiança,
+          migrar gradualmente para stock picking em empresas que você realmente entende.
         </p>
       </Card>
     </Section>
@@ -66,15 +96,30 @@ export const AcoesBr = () => (
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4 space-y-2 border-blue-300 dark:border-blue-800">
           <p className="font-semibold text-sm text-foreground">Value Investing</p>
-          <p className="text-sm text-muted-foreground">Busca empresas boas vendidas abaixo do valor intrínseco — comprar "R$1 por R$0,60". Fundado por Benjamin Graham e popularizado por Warren Buffett. Foco em margem de segurança: quanto maior o desconto em relação ao valor justo, menor o risco de perda. Filosofia base do curso.</p>
+          <p className="text-sm text-muted-foreground">
+            Busca empresas boas vendidas abaixo do valor intrínseco — comprar "R$1 por R$0,60".
+            Fundado por Benjamin Graham e popularizado por Warren Buffett. Foco em margem de
+            segurança: quanto maior o desconto em relação ao valor justo, menor o risco de perda.
+            Filosofia base do curso.
+          </p>
         </Card>
         <Card className="p-4 space-y-2 border-green-300 dark:border-green-800">
           <p className="font-semibold text-sm text-foreground">Buy and Hold</p>
-          <p className="text-sm text-muted-foreground">Comprar empresas de qualidade e manter por anos ou décadas, independentemente das oscilações de curto prazo. A convicção é que negócios excelentes crescem e remuneram o sócio ao longo do tempo. Reduz custos de transação, IR e o erro emocional de comprar caro e vender barato.</p>
+          <p className="text-sm text-muted-foreground">
+            Comprar empresas de qualidade e manter por anos ou décadas, independentemente das
+            oscilações de curto prazo. A convicção é que negócios excelentes crescem e remuneram o
+            sócio ao longo do tempo. Reduz custos de transação, IR e o erro emocional de comprar
+            caro e vender barato.
+          </p>
         </Card>
         <Card className="p-4 space-y-2 border-purple-300 dark:border-purple-800">
           <p className="font-semibold text-sm text-foreground">Análise Fundamentalista</p>
-          <p className="text-sm text-muted-foreground">Avalia o valor real do negócio por trás da ação — balanços, lucro, dívida, gestão, setor. Em contraste com a análise técnica (gráficos e preços). O curso é integralmente baseado em fundamentos: o preço oscila no curto prazo, mas o valor do negócio é o que determina o resultado no longo prazo.</p>
+          <p className="text-sm text-muted-foreground">
+            Avalia o valor real do negócio por trás da ação — balanços, lucro, dívida, gestão,
+            setor. Em contraste com a análise técnica (gráficos e preços). O curso é integralmente
+            baseado em fundamentos: o preço oscila no curto prazo, mas o valor do negócio é o que
+            determina o resultado no longo prazo.
+          </p>
         </Card>
       </div>
     </Section>
@@ -181,16 +226,26 @@ export const AcoesBr = () => (
           conservadora, criada para o mercado americano dos anos 70.
         </p>
         <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded">
-          ⚠️ Não use para bancos, seguradoras, empresas com LPA negativo ou crescimento muito acelerado. É um ponto de partida, não uma verdade absoluta.
+          ⚠️ Não use para bancos, seguradoras, empresas com LPA negativo ou crescimento muito
+          acelerado. É um ponto de partida, não uma verdade absoluta.
         </p>
       </Card>
       <Card className="p-4 space-y-2">
         <p className="text-sm font-semibold text-foreground">Margem de Segurança</p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Conceito central do Value Investing: <strong className="text-foreground">nunca pague o preço justo — compre com desconto</strong>. Se você calcula que uma ação vale R$ 40, só compre se estiver abaixo de R$ 28-30 (margem de 25-30%). Esse desconto protege contra erros na análise, surpresas negativas e deterioração temporária do negócio.
+          Conceito central do Value Investing:{' '}
+          <strong className="text-foreground">
+            nunca pague o preço justo — compre com desconto
+          </strong>
+          . Se você calcula que uma ação vale R$ 40, só compre se estiver abaixo de R$ 28-30 (margem
+          de 25-30%). Esse desconto protege contra erros na análise, surpresas negativas e
+          deterioração temporária do negócio.
         </p>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Graham dizia:</strong> "A margem de segurança é o segredo do investimento bem-sucedido." Quanto maior a incerteza sobre o negócio, maior deve ser a margem exigida — 30-40% para empresas menores, 15-20% para blue chips consolidadas.
+          <strong className="text-foreground">Graham dizia:</strong> "A margem de segurança é o
+          segredo do investimento bem-sucedido." Quanto maior a incerteza sobre o negócio, maior
+          deve ser a margem exigida — 30-40% para empresas menores, 15-20% para blue chips
+          consolidadas.
         </p>
       </Card>
     </Section>
@@ -228,98 +283,13 @@ export const AcoesBr = () => (
       </div>
     </Section>
 
-    <Section title="Governança Corporativa e Tag Along">
-      <div className="space-y-3">
-        <Card className="p-4 space-y-3">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            A B3 possui segmentos de listagem com exigências crescentes de transparência e proteção ao acionista minoritário. Quanto mais alto o nível, mais garantias você tem como sócio.
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {[
-              {
-                nivel: 'Novo Mercado',
-                cor: 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-800',
-                regras: ['Apenas ações ON (todos têm direito a voto)', 'Tag along de 100%', 'Free float mínimo de 25%', 'Conselho com mínimo 5 membros independentes', 'Demonstrações em IFRS'],
-              },
-              {
-                nivel: 'Nível 2 (N2)',
-                cor: 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800',
-                regras: ['Pode ter ações PN com tag along de 100%', 'Direito de voto em matérias relevantes para PN', 'Free float mínimo de 25%', 'Arbitra conflitos na Câmara de Arbitragem'],
-              },
-              {
-                nivel: 'Nível 1 (N1)',
-                cor: 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 dark:border-yellow-800',
-                regras: ['Tag along de 80% para ON', 'Free float mínimo de 25%', 'Menor exigência de transparência', 'PN sem direito a voto'],
-              },
-              {
-                nivel: 'Mercado Tradicional',
-                cor: 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800',
-                regras: ['Tag along mínimo legal: 80% para ON, 0% para PN', 'Sem exigências especiais de free float', 'Menor proteção ao minoritário', 'Evite salvo tiver análise profunda'],
-              },
-            ].map((item) => (
-              <Card key={item.nivel} className={`p-3 border ${item.cor} space-y-2`}>
-                <p className="text-sm font-semibold text-foreground">{item.nivel}</p>
-                <ul className="space-y-0.5">
-                  {item.regras.map((r) => (
-                    <li key={r} className="text-xs text-muted-foreground">• {r}</li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
-          </div>
-        </Card>
-        <Card className="p-4 space-y-2">
-          <p className="text-sm font-semibold text-foreground">Tag Along — Sua Proteção na Venda da Empresa</p>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Tag along é o direito do acionista minoritário de vender suas ações pelo mesmo preço (ou percentual do preço) que o controlador recebeu em caso de troca de controle da empresa. Sem tag along, o controlador pode vender sua fatia com prêmio e você fica preso com ações de uma empresa sob novo controle desconhecido.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Exemplo:</strong> Empresa com tag along 100% — controlador vende a R$ 50/ação. Você tem o direito de vender também a R$ 50. Com tag along 80% — você tem direito a R$ 40. Sem tag along — você não tem direito nenhum e fica à mercê do novo dono.
-          </p>
-        </Card>
-      </div>
-    </Section>
-
-    <Section title="Quando NÃO comprar uma ação">
-      <div className="grid gap-2 sm:grid-cols-2">
-        {[
-          {
-            label: 'Lucro decrescente há 3+ anos',
-            desc: 'Tendência de piora estrutural, não apenas cíclica.',
-          },
-          {
-            label: 'Dívida fora de controle',
-            desc: 'Dívida Líquida/EBITDA > 3-4x sem perspectiva de melhora.',
-          },
-          {
-            label: 'Gestão com histórico ruim',
-            desc: 'Destruição de valor, promessas não cumpridas, escândalos.',
-          },
-          {
-            label: 'Setor em declínio estrutural',
-            desc: 'Negócio sendo substituído por tecnologia ou mudança de comportamento.',
-          },
-          {
-            label: 'Governança fraca',
-            desc: 'Empresa fora do Novo Mercado, sem tag along ou com controle familiar abusivo.',
-          },
-          {
-            label: 'Preço muito acima do justo',
-            desc: 'Margem de segurança negativa — todo crescimento já está no preço.',
-          },
-        ].map((item) => (
-          <Card key={item.label} className="p-3 border-destructive/30">
-            <p className="text-sm font-medium text-foreground">{item.label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
-          </Card>
-        ))}
-      </div>
-    </Section>
-
     <Section title="Diagrama do Cerrado">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          O Diagrama do Cerrado é um método de triagem de ações que avalia cada empresa em múltiplos critérios objetivos, classificando cada um como verde (atende), amarelo (aceitável) ou vermelho (não atende). Quanto mais critérios verdes, mais a ação merece entrar na carteira.
+          O Diagrama do Cerrado é um método de triagem de ações que avalia cada empresa em múltiplos
+          critérios objetivos, classificando cada um como verde (atende), amarelo (aceitável) ou
+          vermelho (não atende). Quanto mais critérios verdes, mais a ação merece entrar na
+          carteira.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {[
@@ -328,22 +298,193 @@ export const AcoesBr = () => (
             { criterio: 'ROE', verde: '> 15%', amarelo: '10–15%', vermelho: '< 10%' },
             { criterio: 'Dívida/EBITDA', verde: '< 2x', amarelo: '2–3x', vermelho: '> 3x' },
             { criterio: 'Dividend Yield', verde: '> 5%', amarelo: '3–5%', vermelho: '< 3%' },
-            { criterio: 'Crescimento de lucro', verde: 'Crescente há 5+ anos', amarelo: 'Estável', vermelho: 'Decrescente' },
-            { criterio: 'Margem líquida', verde: 'Estável ou crescendo', amarelo: 'Levemente caindo', vermelho: 'Em queda consistente' },
-            { criterio: 'Governança', verde: 'Novo Mercado / N2', amarelo: 'N1 / Bovespa Mais', vermelho: 'Mercado Tradicional' },
+            {
+              criterio: 'Crescimento de lucro',
+              verde: 'Crescente há 5+ anos',
+              amarelo: 'Estável',
+              vermelho: 'Decrescente',
+            },
+            {
+              criterio: 'Margem líquida',
+              verde: 'Estável ou crescendo',
+              amarelo: 'Levemente caindo',
+              vermelho: 'Em queda consistente',
+            },
+            {
+              criterio: 'Governança',
+              verde: 'Novo Mercado / N2',
+              amarelo: 'N1 / Bovespa Mais',
+              vermelho: 'Mercado Tradicional',
+            },
           ].map((item) => (
             <div key={item.criterio} className="rounded border overflow-hidden text-xs">
-              <div className="bg-muted px-3 py-1.5 font-medium text-foreground">{item.criterio}</div>
+              <div className="bg-muted px-3 py-1.5 font-medium text-foreground">
+                {item.criterio}
+              </div>
               <div className="grid grid-cols-3 divide-x">
-                <div className="px-2 py-1.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400">{item.verde}</div>
-                <div className="px-2 py-1.5 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400">{item.amarelo}</div>
-                <div className="px-2 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400">{item.vermelho}</div>
+                <div className="px-2 py-1.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400">
+                  {item.verde}
+                </div>
+                <div className="px-2 py-1.5 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400">
+                  {item.amarelo}
+                </div>
+                <div className="px-2 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400">
+                  {item.vermelho}
+                </div>
               </div>
             </div>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Regra prática:</strong> maioria verde = candidata à compra. Qualquer critério vermelho que não tenha justificativa clara = descarte ou adiamento. Os limiares são referências, não dogmas — ajuste conforme o setor.
+          <strong className="text-foreground">Regra prática:</strong> maioria verde = candidata à
+          compra. Qualquer critério vermelho que não tenha justificativa clara = descarte ou
+          adiamento. Os limiares são referências, não dogmas — ajuste conforme o setor.
+        </p>
+      </Card>
+    </Section>
+
+    <Section title="Governança Corporativa e Tag Along">
+      <div className="space-y-3">
+        <Card className="p-4 space-y-3">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            A B3 possui segmentos de listagem com exigências crescentes de transparência e proteção
+            ao acionista minoritário. Quanto mais alto o nível, mais garantias você tem como sócio.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              {
+                nivel: 'Novo Mercado',
+                cor: 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-800',
+                regras: [
+                  'Apenas ações ON (todos têm direito a voto)',
+                  'Tag along de 100%',
+                  'Free float mínimo de 25%',
+                  'Conselho com mínimo 5 membros independentes',
+                  'Demonstrações em IFRS',
+                ],
+              },
+              {
+                nivel: 'Nível 2 (N2)',
+                cor: 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800',
+                regras: [
+                  'Pode ter ações PN com tag along de 100%',
+                  'Direito de voto em matérias relevantes para PN',
+                  'Free float mínimo de 25%',
+                  'Arbitra conflitos na Câmara de Arbitragem',
+                ],
+              },
+              {
+                nivel: 'Nível 1 (N1)',
+                cor: 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 dark:border-yellow-800',
+                regras: [
+                  'Tag along de 80% para ON',
+                  'Free float mínimo de 25%',
+                  'Menor exigência de transparência',
+                  'PN sem direito a voto',
+                ],
+              },
+              {
+                nivel: 'Mercado Tradicional',
+                cor: 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800',
+                regras: [
+                  'Tag along mínimo legal: 80% para ON, 0% para PN',
+                  'Sem exigências especiais de free float',
+                  'Menor proteção ao minoritário',
+                  'Evite salvo tiver análise profunda',
+                ],
+              },
+            ].map((item) => (
+              <Card key={item.nivel} className={`p-3 border ${item.cor} space-y-2`}>
+                <p className="text-sm font-semibold text-foreground">{item.nivel}</p>
+                <ul className="space-y-0.5">
+                  {item.regras.map((r) => (
+                    <li key={r} className="text-xs text-muted-foreground">
+                      • {r}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))}
+          </div>
+        </Card>
+        <Card className="p-4 space-y-2">
+          <p className="text-sm font-semibold text-foreground">
+            Tag Along — Sua Proteção na Venda da Empresa
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tag along é o direito do acionista minoritário de vender suas ações pelo mesmo preço (ou
+            percentual do preço) que o controlador recebeu em caso de troca de controle da empresa.
+            Sem tag along, o controlador pode vender sua fatia com prêmio e você fica preso com
+            ações de uma empresa sob novo controle desconhecido.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Exemplo:</strong> Empresa com tag along 100% —
+            controlador vende a R$ 50/ação. Você tem o direito de vender também a R$ 50. Com tag
+            along 80% — você tem direito a R$ 40. Sem tag along — você não tem direito nenhum e fica
+            à mercê do novo dono.
+          </p>
+        </Card>
+      </div>
+    </Section>
+
+    <Section title="Setores — Defensivos vs Cíclicos">
+      <Card className="p-4 space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Empresas se comportam diferente conforme o momento econômico. Entender o setor é
+          fundamental para saber quando comprar e qual parte da carteira triangular cada ação ocupa.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+              Setores Defensivos
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Receita previsível independente da economia. As pessoas continuam usando energia,
+              saneamento, remédios e alimentos mesmo em crise.
+            </p>
+            {[
+              { setor: 'Energia Elétrica / Saneamento', ex: 'TAEE11, SAPR11, EGIE3' },
+              { setor: 'Saúde / Farmácia', ex: 'RADL3, FLRY3, HAPV3' },
+              { setor: 'Alimentos', ex: 'BEEF3, MRFG3' },
+              { setor: 'Telecomunicações', ex: 'VIVT3, TIMS3' },
+            ].map((s) => (
+              <div
+                key={s.setor}
+                className="bg-green-50 dark:bg-green-950/30 rounded px-3 py-2 text-xs"
+              >
+                <span className="font-medium text-foreground">{s.setor}</span>
+                <span className="text-muted-foreground ml-2">{s.ex}</span>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+              Setores Cíclicos
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Receita varia com a economia. Quando o PIB cresce, lucram mais. Em recessão, sofrem.
+              Exigem análise do ciclo econômico para o momento de compra.
+            </p>
+            {[
+              { setor: 'Bancos / Financeiro', ex: 'ITUB4, BBAS3, BBDC4' },
+              { setor: 'Varejo', ex: 'MGLU3, LREN3, AMER3' },
+              { setor: 'Construção Civil', ex: 'CYRE3, MRVE3, EZTC3' },
+              { setor: 'Commodities (minério, petróleo)', ex: 'VALE3, PETR4, PRIO3' },
+            ].map((s) => (
+              <div
+                key={s.setor}
+                className="bg-orange-50 dark:bg-orange-950/30 rounded px-3 py-2 text-xs"
+              >
+                <span className="font-medium text-foreground">{s.setor}</span>
+                <span className="text-muted-foreground ml-2">{s.ex}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Regra prática:</strong> a base da carteira triangular
+          deve ser majoritariamente defensiva. Setores cíclicos podem ir no meio e no topo — mas
+          exigem atenção ao momento do ciclo e maior margem de segurança.
         </p>
       </Card>
     </Section>
@@ -351,7 +492,9 @@ export const AcoesBr = () => (
     <Section title="Carteira Triangular">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          A carteira triangular organiza as ações em três camadas com objetivos e perfis de risco distintos. A base sustenta a carteira, o meio equilibra e o topo arrisca com potencial maior.
+          A carteira triangular organiza as ações em três camadas com objetivos e perfis de risco
+          distintos. A base sustenta a carteira, o meio equilibra e o topo arrisca com potencial
+          maior.
         </p>
         <div className="space-y-2">
           {[
@@ -415,7 +558,9 @@ export const AcoesBr = () => (
           <Card key={item.tipo} className={`p-4 space-y-2 border ${item.cor}`}>
             <div className="flex items-start justify-between gap-2 flex-wrap">
               <span className="font-semibold text-sm text-foreground">{item.tipo}</span>
-              <Badge variant="outline" className="text-xs shrink-0">{item.badge}</Badge>
+              <Badge variant="outline" className="text-xs shrink-0">
+                {item.badge}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground">{item.desc}</p>
           </Card>
@@ -426,11 +571,15 @@ export const AcoesBr = () => (
     <Section title="Aluguel de Ações (BTC — Banco de Títulos)">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Investidores de longo prazo podem emprestar suas ações para outros participantes do mercado (geralmente vendedores a descoberto) e receber uma taxa de aluguel. O processo é intermediado pela B3 através do BTC — Banco de Títulos CBLC.
+          Investidores de longo prazo podem emprestar suas ações para outros participantes do
+          mercado (geralmente vendedores a descoberto) e receber uma taxa de aluguel. O processo é
+          intermediado pela B3 através do BTC — Banco de Títulos CBLC.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="bg-green-50 dark:bg-green-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">Para quem empresta (doador)</p>
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              Para quem empresta (doador)
+            </p>
             <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
               <li>• Renda extra sem vender as ações</li>
               <li>• Continua recebendo dividendos e JCP</li>
@@ -439,7 +588,9 @@ export const AcoesBr = () => (
             </ul>
           </div>
           <div className="bg-blue-50 dark:bg-blue-950/30 rounded p-3 space-y-1">
-            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Como funciona na prática</p>
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+              Como funciona na prática
+            </p>
             <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
               <li>• Habilite o aluguel na sua corretora (geralmente gratuito)</li>
               <li>• A B3 garante o contrato — risco de crédito é mínimo</li>
@@ -449,7 +600,9 @@ export const AcoesBr = () => (
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Dica:</strong> ideal para quem já tem carteira consolidada e não pretende vender no curto prazo. É renda extra sobre ativos que já fazem parte da estratégia de longo prazo.
+          <strong className="text-foreground">Dica:</strong> ideal para quem já tem carteira
+          consolidada e não pretende vender no curto prazo. É renda extra sobre ativos que já fazem
+          parte da estratégia de longo prazo.
         </p>
       </Card>
     </Section>
@@ -458,83 +611,103 @@ export const AcoesBr = () => (
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="p-4 space-y-2">
           <p className="font-semibold text-sm text-foreground">Desdobramento (Split)</p>
-          <p className="text-sm text-muted-foreground">A empresa aumenta o número de ações, reduzindo proporcionalmente o preço. Ex: split 1:10 — quem tinha 1 ação de R$ 100 passa a ter 10 ações de R$ 10. O patrimônio não muda. Objetivo: aumentar liquidez e tornar a ação mais acessível.</p>
+          <p className="text-sm text-muted-foreground">
+            A empresa aumenta o número de ações, reduzindo proporcionalmente o preço. Ex: split 1:10
+            — quem tinha 1 ação de R$ 100 passa a ter 10 ações de R$ 10. O patrimônio não muda.
+            Objetivo: aumentar liquidez e tornar a ação mais acessível.
+          </p>
         </Card>
         <Card className="p-4 space-y-2">
           <p className="font-semibold text-sm text-foreground">Agrupamento (Inplit)</p>
-          <p className="text-sm text-muted-foreground">O oposto do split: reduz o número de ações aumentando o preço proporcionalmente. Ex: inplit 10:1 — quem tinha 10 ações de R$ 1 passa a ter 1 ação de R$ 10. Geralmente sinaliza que o preço caiu demais — não altera o valor total.</p>
+          <p className="text-sm text-muted-foreground">
+            O oposto do split: reduz o número de ações aumentando o preço proporcionalmente. Ex:
+            inplit 10:1 — quem tinha 10 ações de R$ 1 passa a ter 1 ação de R$ 10. Geralmente
+            sinaliza que o preço caiu demais — não altera o valor total.
+          </p>
         </Card>
         <Card className="p-4 space-y-2 sm:col-span-2">
           <p className="font-semibold text-sm text-foreground">Preço Médio</p>
           <p className="text-sm text-muted-foreground">
-            Quando você compra a mesma ação em momentos diferentes, o custo médio é calculado por: <span className="font-mono bg-muted px-1 rounded text-xs">(Qtd anterior × PM anterior + Qtd nova × Preço novo) ÷ Qtd total</span>. O preço médio é o que determina se você teve lucro ou prejuízo na venda — e é a base de cálculo do IR.
+            Quando você compra a mesma ação em momentos diferentes, o custo médio é calculado por:{' '}
+            <span className="font-mono bg-muted px-1 rounded text-xs">
+              (Qtd anterior × PM anterior + Qtd nova × Preço novo) ÷ Qtd total
+            </span>
+            . O preço médio é o que determina se você teve lucro ou prejuízo na venda — e é a base
+            de cálculo do IR.
           </p>
           <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Exemplo:</strong> comprou 100 ações a R$ 20 (PM = R$ 20). Comprou mais 100 a R$ 16. Novo PM = (100×20 + 100×16) ÷ 200 = R$ 18. Se vender acima de R$ 18, há lucro tributável.
+            <strong className="text-foreground">Exemplo:</strong> comprou 100 ações a R$ 20 (PM = R$
+            20). Comprou mais 100 a R$ 16. Novo PM = (100×20 + 100×16) ÷ 200 = R$ 18. Se vender
+            acima de R$ 18, há lucro tributável.
           </p>
         </Card>
       </div>
     </Section>
 
-    <Section title="Setores — Defensivos vs Cíclicos">
-      <Card className="p-4 space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Empresas se comportam diferente conforme o momento econômico. Entender o setor é fundamental para saber quando comprar e qual parte da carteira triangular cada ação ocupa.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-green-700 dark:text-green-400">Setores Defensivos</p>
-            <p className="text-sm text-muted-foreground">Receita previsível independente da economia. As pessoas continuam usando energia, saneamento, remédios e alimentos mesmo em crise.</p>
-            {[
-              { setor: 'Energia Elétrica / Saneamento', ex: 'TAEE11, SAPR11, EGIE3' },
-              { setor: 'Saúde / Farmácia', ex: 'RADL3, FLRY3, HAPV3' },
-              { setor: 'Alimentos', ex: 'BEEF3, MRFG3' },
-              { setor: 'Telecomunicações', ex: 'VIVT3, TIMS3' },
-            ].map((s) => (
-              <div key={s.setor} className="bg-green-50 dark:bg-green-950/30 rounded px-3 py-2 text-xs">
-                <span className="font-medium text-foreground">{s.setor}</span>
-                <span className="text-muted-foreground ml-2">{s.ex}</span>
-              </div>
-            ))}
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">Setores Cíclicos</p>
-            <p className="text-sm text-muted-foreground">Receita varia com a economia. Quando o PIB cresce, lucram mais. Em recessão, sofrem. Exigem análise do ciclo econômico para o momento de compra.</p>
-            {[
-              { setor: 'Bancos / Financeiro', ex: 'ITUB4, BBAS3, BBDC4' },
-              { setor: 'Varejo', ex: 'MGLU3, LREN3, AMER3' },
-              { setor: 'Construção Civil', ex: 'CYRE3, MRVE3, EZTC3' },
-              { setor: 'Commodities (minério, petróleo)', ex: 'VALE3, PETR4, PRIO3' },
-            ].map((s) => (
-              <div key={s.setor} className="bg-orange-50 dark:bg-orange-950/30 rounded px-3 py-2 text-xs">
-                <span className="font-medium text-foreground">{s.setor}</span>
-                <span className="text-muted-foreground ml-2">{s.ex}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Regra prática:</strong> a base da carteira triangular deve ser majoritariamente defensiva. Setores cíclicos podem ir no meio e no topo — mas exigem atenção ao momento do ciclo e maior margem de segurança.
-        </p>
-      </Card>
+    <Section title="Quando NÃO comprar uma ação">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {[
+          {
+            label: 'Lucro decrescente há 3+ anos',
+            desc: 'Tendência de piora estrutural, não apenas cíclica.',
+          },
+          {
+            label: 'Dívida fora de controle',
+            desc: 'Dívida Líquida/EBITDA > 3-4x sem perspectiva de melhora.',
+          },
+          {
+            label: 'Gestão com histórico ruim',
+            desc: 'Destruição de valor, promessas não cumpridas, escândalos.',
+          },
+          {
+            label: 'Setor em declínio estrutural',
+            desc: 'Negócio sendo substituído por tecnologia ou mudança de comportamento.',
+          },
+          {
+            label: 'Governança fraca',
+            desc: 'Empresa fora do Novo Mercado, sem tag along ou com controle familiar abusivo.',
+          },
+          {
+            label: 'Preço muito acima do justo',
+            desc: 'Margem de segurança negativa — todo crescimento já está no preço.',
+          },
+        ].map((item) => (
+          <Card key={item.label} className="p-3 border-destructive/30">
+            <p className="text-sm font-medium text-foreground">{item.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+          </Card>
+        ))}
+      </div>
     </Section>
 
     <Section title="Estratégia Geral">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Método Burro (DCA):</strong> aporte um valor fixo todos os meses, independente do preço. Quando o mercado cai, você compra mais ações com o mesmo dinheiro. Quando sobe, compra menos. Com o tempo, o preço médio tende a ser melhor do que tentar acertar o momento certo — e elimina a paralisia emocional de "esperar o fundo".
+          <strong className="text-foreground">Método Burro (DCA):</strong> aporte um valor fixo
+          todos os meses, independente do preço. Quando o mercado cai, você compra mais ações com o
+          mesmo dinheiro. Quando sobe, compra menos. Com o tempo, o preço médio tende a ser melhor
+          do que tentar acertar o momento certo — e elimina a paralisia emocional de "esperar o
+          fundo".
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Preço de entrada importa.</strong> A melhor empresa comprada no preço errado pode dar prejuízo por anos. Sempre calcule uma margem de segurança — compre com desconto em relação ao seu valor estimado.
+          <strong className="text-foreground">Preço de entrada importa.</strong> A melhor empresa
+          comprada no preço errado pode dar prejuízo por anos. Sempre calcule uma margem de
+          segurança — compre com desconto em relação ao seu valor estimado.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Diversifique com critério.</strong> 10 a 15 ações bem analisadas são suficientes. Carteiras com 30+ ativos frequentemente têm desempenho medíocre — você não consegue acompanhar tudo.
+          <strong className="text-foreground">Diversifique com critério.</strong> 10 a 15 ações bem
+          analisadas são suficientes. Carteiras com 30+ ativos frequentemente têm desempenho
+          medíocre — você não consegue acompanhar tudo.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Pense como dono.</strong> Antes de comprar, pergunte: "Eu compraria esse negócio inteiro se pudesse?" Se a resposta for não, não compre nem uma ação.
+          <strong className="text-foreground">Pense como dono.</strong> Antes de comprar, pergunte:
+          "Eu compraria esse negócio inteiro se pudesse?" Se a resposta for não, não compre nem uma
+          ação.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Revisão periódica.</strong> A cada trimestre, releia os balanços das empresas que você tem. Os fundamentos mudaram? O motivo pelo qual você comprou ainda existe?
+          <strong className="text-foreground">Revisão periódica.</strong> A cada trimestre, releia
+          os balanços das empresas que você tem. Os fundamentos mudaram? O motivo pelo qual você
+          comprou ainda existe?
         </p>
       </Card>
     </Section>

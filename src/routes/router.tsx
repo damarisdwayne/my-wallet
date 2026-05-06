@@ -22,6 +22,9 @@ const SalesPage = lazy(() => import('@/pages/sales').then((m) => ({ default: m.S
 const CalculatorsPage = lazy(() =>
   import('@/pages/calculators').then((m) => ({ default: m.CalculatorsPage })),
 )
+const KnowledgePage = lazy(() =>
+  import('@/pages/knowledge').then((m) => ({ default: m.KnowledgePage })),
+)
 
 export const Router = () => {
   const { user } = useAuth()
@@ -39,6 +42,7 @@ export const Router = () => {
           <Route path="/tax" element={<TaxPage />} />
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/calculators" element={<CalculatorsPage />} />
+          <Route path="/knowledge" element={<KnowledgePage />} />
         </Route>
       </Route>
 

@@ -143,6 +143,80 @@ export const Fiis = () => (
       </div>
     </Section>
 
+    <Section title="Valuation pelo Rendimento — Preço Teto">
+      <Card className="p-4 space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          A forma mais prática de calcular o preço justo de um FII é definir o{' '}
+          <strong className="text-foreground">DY mínimo que você aceita</strong> e calcular quanto
+          pagaria pelo rendimento atual do fundo. Se a cota estiver abaixo desse preço, é candidata
+          à compra.
+        </p>
+        <div className="bg-muted rounded px-4 py-3 text-center font-mono text-sm text-foreground">
+          Preço Teto = (Rendimento mensal × 12) ÷ DY alvo
+        </div>
+        <div className="bg-muted/50 rounded p-3 space-y-1 text-sm">
+          <p className="font-medium text-foreground">Exemplo:</p>
+          <ul className="text-muted-foreground space-y-1 text-xs">
+            <li>• FII distribui R$ 0,80/cota por mês → R$ 9,60/ano</li>
+            <li>• Você exige DY mínimo de 9% ao ano</li>
+            <li>
+              • Preço teto = R$ 9,60 ÷ 0,09 = <strong className="text-foreground">R$ 106,67</strong>
+            </li>
+            <li>• Cota abaixo de R$ 106,67 → dentro da margem de compra</li>
+          </ul>
+        </div>
+      </Card>
+
+      <Card className="p-4 space-y-3">
+        <p className="text-sm font-semibold text-foreground">Como definir o DY alvo</p>
+        <p className="text-sm text-muted-foreground">
+          O DY alvo deve compensar o risco do FII em relação à renda fixa. Use a Selic como base e
+          adicione um prêmio pelo risco de vacância, iliquidez e gestão:
+        </p>
+        <div className="grid gap-2 sm:grid-cols-3 text-sm">
+          {[
+            {
+              tipo: 'FII de Papel',
+              premio: 'Selic + 2 a 3%',
+              razao: 'Risco de crédito dos CRIs, menor que imóvel físico.',
+              cor: 'bg-blue-50 dark:bg-blue-950/30',
+            },
+            {
+              tipo: 'FII de Tijolo',
+              premio: 'Selic + 3 a 4%',
+              razao: 'Risco de vacância, renovação de contratos e valorização física.',
+              cor: 'bg-green-50 dark:bg-green-950/30',
+            },
+            {
+              tipo: 'FII de FOF',
+              premio: 'Selic + 2 a 3%',
+              razao: 'Dupla taxa de administração e concentração em outros fundos.',
+              cor: 'bg-yellow-50 dark:bg-yellow-950/30',
+            },
+          ].map((item) => (
+            <div key={item.tipo} className={`rounded p-3 space-y-1 ${item.cor}`}>
+              <p className="font-medium text-foreground text-xs">{item.tipo}</p>
+              <p className="font-mono text-xs text-primary">{item.premio}</p>
+              <p className="text-xs text-muted-foreground">{item.razao}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Exemplo com Selic a 13,75%:</strong> DY alvo para FII
+          de tijolo = 13,75% + 4% = 17,75%. Esse prêmio compensa o risco de vacância e liquidez em
+          relação ao Tesouro Direto.
+        </p>
+      </Card>
+
+      <Card className="p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800">
+        <p className="text-sm text-amber-800 dark:text-amber-300">
+          ⚠️ O preço teto é uma referência, não uma verdade absoluta. Rendimento passado pode não se
+          repetir — vacância alta, inadimplência ou renegociação de contratos podem reduzir o
+          provento. Sempre analise a origem e a sustentabilidade do rendimento antes de comprar.
+        </p>
+      </Card>
+    </Section>
+
     <Section title="Ciclo Imobiliário e Taxa de Juros">
       <Card className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground leading-relaxed">

@@ -84,9 +84,8 @@ export const Exterior = () => (
         <p className="text-sm font-semibold text-foreground">Como interpretar o ticker de um BDR</p>
         <p className="text-sm text-muted-foreground">
           Tickers têm sempre <strong className="text-foreground">4 letras + 2 números</strong>. Os
-          dois números finais indicam o nível:{' '}
-          <strong className="text-foreground">11</strong> = ETFs,{' '}
-          <strong className="text-foreground">32/33</strong> = BDR patrocinado,{' '}
+          dois números finais indicam o nível: <strong className="text-foreground">11</strong> =
+          ETFs, <strong className="text-foreground">32/33</strong> = BDR patrocinado,{' '}
           <strong className="text-foreground">34/35</strong> = BDR não-patrocinado.
         </p>
         <p className="text-xs text-muted-foreground">
@@ -153,8 +152,8 @@ export const Exterior = () => (
       <Card className="p-3 bg-muted/50">
         <p className="text-xs text-muted-foreground">
           <strong className="text-foreground">Limitação:</strong> empresas dolarizadas ainda têm
-          risco-Brasil (política, tributação, governança local). São um complemento, não
-          substituto, para diversificação real no exterior.
+          risco-Brasil (política, tributação, governança local). São um complemento, não substituto,
+          para diversificação real no exterior.
         </p>
       </Card>
     </Section>

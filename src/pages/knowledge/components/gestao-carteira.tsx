@@ -438,15 +438,15 @@ export const GestaoCarteira = () => (
         <p className="text-xs text-muted-foreground italic">
           * Retorno calculado reinvestindo os dividendos. IPCA subiu ~7× no mesmo período.
         </p>
-        <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
-          <p className="text-sm text-blue-800 dark:text-blue-300">
+        <Card className="p-3 bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800">
+          <p className="text-sm text-purple-800 dark:text-purple-300">
             <strong>WEG3:</strong> quem comprou em 2000 e vendeu com lucro de 200× em 2011 perdeu a
             valorização total de <strong>21.969%</strong>. R$ 10.000 se tornaram R$ 2.467.666 para
             quem ficou. O lucro imediato nunca permitiria reposicionamento na mesma empresa.
           </p>
         </Card>
-        <Card className="p-3 bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800">
-          <p className="text-sm text-purple-800 dark:text-purple-300">
+        <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
             <strong>Magazine Luiza:</strong> chegou às beiras da ruína, quase fechou o capital — e
             depois de 5 anos galgou <strong>77.733%</strong> de alavancagem.
           </p>

@@ -4,7 +4,7 @@ import { MarketIndicators } from '@/components/market-indicators'
 import { useDashboard } from '@/hooks/use-dashboard'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { usePrivacy } from '@/store/privacy'
-import { AllocationBar, PatrimonyChartComponent, StatCard } from './components'
+import { PatrimonyChartComponent, StatCard } from './components'
 
 export const DashboardPage = () => {
   const {
@@ -19,7 +19,6 @@ export const DashboardPage = () => {
     last12Dividends,
     monthlyExpenses,
     patrimonyHistory,
-    allocation,
   } = useDashboard()
 
   const { hideValues } = usePrivacy()
@@ -86,8 +85,6 @@ export const DashboardPage = () => {
           icon={<TrendingDown size={16} />}
         />
       </div>
-
-      <AllocationBar allocation={allocation} loading={loading} />
 
       <PatrimonyChartComponent
         patrimonyHistory={patrimonyHistory}

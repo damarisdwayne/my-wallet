@@ -3,15 +3,11 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { Header } from '@/components/layout/header'
 import { Sidebar } from '@/components/layout/sidebar'
+import { ChatAssistant } from '@/components/chat-assistant'
 import { useNotifications } from '@/hooks/use-notifications'
 import { usePriceAlerts } from '@/hooks/use-price-alerts'
 import { useAuth } from '@/store/auth'
-
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-  </div>
-)
+import { PageLoader } from '@/components'
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -59,6 +55,7 @@ export const AppLayout = () => {
           </ErrorBoundary>
         </main>
       </div>
+      <ChatAssistant />
     </div>
   )
 }

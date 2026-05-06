@@ -2,6 +2,54 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY ?? '')
 
+export interface ChatMessage {
+  role: 'user' | 'model'
+  text: string
+}
+
+const ASSISTANT_SYSTEM_PROMPT = (context: string) =>
+  `Você é um assistente pessoal de investimentos integrado ao app de carteira do usuário.
+Você tem acesso aos dados reais da carteira abaixo. Use-os para responder perguntas específicas sobre a carteira do usuário.
+Para perguntas gerais sobre investimentos, responda com base no seu conhecimento.
+
+DADOS DA CARTEIRA:
+${context}
+
+Regras:
+- Responda sempre em português
+- Seja objetivo e direto
+- Use os dados reais da carteira quando relevante
+- Não invente dados que não estão no contexto
+- Formate valores em R$ quando falar de dinheiro`
+
+export const chatWithAssistant = async (
+  message: string,
+  history: ChatMessage[],
+  portfolioContext: string,
+): Promise<string> => {
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+
+  const chat = model.startChat({
+    history: [
+      {
+        role: 'user',
+        parts: [{ text: ASSISTANT_SYSTEM_PROMPT(portfolioContext) }],
+      },
+      {
+        role: 'model',
+        parts: [{ text: 'Entendido! Estou pronto para ajudar com sua carteira de investimentos.' }],
+      },
+      ...history.map((m) => ({
+        role: m.role,
+        parts: [{ text: m.text }],
+      })),
+    ],
+  })
+
+  const result = await chat.sendMessage(message)
+  return result.response.text()
+}
+
 const FII_PROMPT = (ticker: string) =>
   `Você é um analista especializado em Fundos de Investimento Imobiliário (FIIs) brasileiros.
 Analise o relatório gerencial a seguir e forneça uma análise estruturada.

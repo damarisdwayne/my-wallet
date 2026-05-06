@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { PortfolioSkeleton } from '@/skeleton'
+import { PageLoader } from '@/components'
 
 const OverviewTab = lazy(() =>
   import('./components/tabs/overview').then((m) => ({ default: m.OverviewTab })),
@@ -23,7 +24,6 @@ const ImportsTab = lazy(() =>
 const AnalysisTab = lazy(() =>
   import('./components/tabs/analysis').then((m) => ({ default: m.AnalysisTab })),
 )
-
 const tabs = [
   'Visão Geral',
   'Alocação',
@@ -94,7 +94,7 @@ export const PortfolioPage = () => {
         ))}
       </div>
 
-      <Suspense fallback={<PortfolioSkeleton />}>
+      <Suspense fallback={<PageLoader />}>
         {activeTab === 0 && (
           <OverviewTab
             assets={assets}

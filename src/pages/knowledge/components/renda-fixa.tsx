@@ -163,7 +163,7 @@ export const RendaFixa = () => (
           {[
             {
               cenario: 'Investimento rende 12%, inflação 10%',
-              real: '1,8% real',
+              real: '1.8% real',
               cor: 'text-yellow-600 dark:text-yellow-400',
             },
             {

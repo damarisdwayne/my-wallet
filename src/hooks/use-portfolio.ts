@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSetAtom } from 'jotai'
+import { portfolioContextAtom } from '@/store/portfolio-context'
+import type { PortfolioContextData } from '@/store/portfolio-context'
 import {
   addAsset as addAssetService,
   deleteAsset as deleteAssetService,
@@ -100,11 +103,54 @@ export const usePortfolio = () => {
   const [answersLoaded, setAnswersLoaded] = useState(false)
   const [importsLoaded, setImportsLoaded] = useState(false)
 
+  const setPortfolioContext = useSetAtom(portfolioContextAtom)
+
   useEffect(() => {
     if (assetsHook.loaded && categoriesLoaded && diagramsLoaded && answersLoaded && importsLoaded) {
       setLoading(false)
     }
   }, [assetsHook.loaded, categoriesLoaded, diagramsLoaded, answersLoaded, importsLoaded])
+
+  useEffect(() => {
+    if (loading || assets.length === 0) return
+    const totalValue = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+    const totalInvested = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
+    const returnPercent =
+      totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0
+
+    const contextData: PortfolioContextData = {
+      totalValue,
+      totalInvested,
+      returnPercent,
+      assets: assets.map((a) => ({
+        ticker: a.ticker,
+        name: a.name,
+        type: a.type,
+        currentPrice: a.currentPrice,
+        quantity: a.quantity,
+        avgPrice: a.avgPrice,
+        totalValue: a.currentPrice * a.quantity,
+        returnPercent: a.avgPrice > 0 ? ((a.currentPrice - a.avgPrice) / a.avgPrice) * 100 : 0,
+        maturityDate: a.maturityDate,
+        fixedIncomeType: a.fixedIncomeType,
+        institution: a.institution,
+        rateType: a.rateType,
+        indexerRate: a.indexerRate,
+        prefixedRate: a.prefixedRate,
+      })),
+      categories: categories.map((c) => {
+        const catAssets = assets.filter((a) => a.categoryId === c.id)
+        const currentValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+        return {
+          name: c.name,
+          targetPercent: c.targetPercent,
+          currentValue,
+          currentPercent: totalValue > 0 ? (currentValue / totalValue) * 100 : 0,
+        }
+      }),
+    }
+    setPortfolioContext(contextData)
+  }, [loading, assets, categories, setPortfolioContext])
 
   useEffect(() => {
     if (!uid) return

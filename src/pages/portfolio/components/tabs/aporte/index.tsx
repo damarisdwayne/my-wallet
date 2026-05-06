@@ -78,20 +78,22 @@ export const AporteTab = ({
 
       {aporte > 0 && distribution && distribution.length > 0 && (
         <div className="space-y-2">
-          {distribution.map((allocation) => {
-            const isFixedIncome = allocation.cat.assetTypes.some(
-              (t) => t === 'fixed_income' || t === 'tesouro',
-            )
-            const isOpen = !isFixedIncome && expanded.has(allocation.cat.id)
-            return (
-              <CategoryRow
-                key={allocation.cat.id}
-                allocation={allocation}
-                isOpen={isOpen}
-                onToggle={() => toggle(allocation.cat.id)}
-              />
-            )
-          })}
+          {distribution
+            .filter((a) => a.catAporte > 0)
+            .map((allocation) => {
+              const isFixedIncome = allocation.cat.assetTypes.some(
+                (t) => t === 'fixed_income' || t === 'tesouro',
+              )
+              const isOpen = !isFixedIncome && expanded.has(allocation.cat.id)
+              return (
+                <CategoryRow
+                  key={allocation.cat.id}
+                  allocation={allocation}
+                  isOpen={isOpen}
+                  onToggle={() => toggle(allocation.cat.id)}
+                />
+              )
+            })}
 
           <div className="flex justify-between items-center pt-3 border-t border-border">
             <span className="text-sm text-muted-foreground">Total distribuído</span>

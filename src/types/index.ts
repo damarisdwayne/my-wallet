@@ -322,7 +322,7 @@ export interface Trade {
   date: string // YYYY-MM-DD
   source: 'b3_import' | 'inter_import' | 'manual'
   importId?: string
-  label?: string // e.g. 'bonificacao', 'amortizacao'
+  label?: 'bonificacao' | 'amortizacao' | 'desdobramento' | 'grupamento' | 'vencimento'
 }
 
 /* ─── Sales ─────────────────────────────────────────────────────── */

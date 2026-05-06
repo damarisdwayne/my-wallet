@@ -9,13 +9,29 @@ import {
 } from '@/services/assets'
 import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
+import { addTrade } from '@/services/trades'
 import { clearTesouroBondsCache } from '@/services/tesouro'
 import { freshPricesAtom } from '@/store/prices'
 import type { Asset } from '@/types'
 import { toast } from 'sonner'
 
 const deleteExpiredAssets = async (uid: string, assets: Asset[]) => {
-  await Promise.all(assets.map((a) => deleteAssetService(uid, a.id)))
+  await Promise.all(
+    assets.map(async (a) => {
+      const total = a.quantity * a.currentPrice
+      await addTrade(uid, {
+        ticker: a.ticker,
+        type: 'sell',
+        quantity: a.quantity,
+        price: a.currentPrice,
+        total,
+        date: a.maturityDate ?? '',
+        source: 'manual',
+        label: 'vencimento',
+      })
+      await deleteAssetService(uid, a.id)
+    }),
+  )
 }
 
 export const useAssets = (uid: string | null) => {

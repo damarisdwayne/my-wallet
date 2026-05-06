@@ -5,6 +5,7 @@ export const tradeLabel = (t: Trade) => {
   if (t.label === 'amortizacao') return 'Amortização'
   if (t.label === 'desdobramento') return 'Desdobramento'
   if (t.label === 'grupamento') return 'Grupamento'
+  if (t.label === 'vencimento') return 'Vencimento'
   return t.type === 'buy' ? 'Compra' : 'Venda'
 }
 

@@ -1,4 +1,5 @@
-import type { Asset, AssetType, Dividend, Trade } from '@/types'
+import type { Asset, AssetType, Dividend, FiiInfo, StockInfo, Trade } from '@/types'
+import { getFiLabel } from '@/lib/fi'
 
 /* ── types ── */
 
@@ -11,6 +12,8 @@ export interface IrPosition {
   totalCost: number
   dirpfGroup: string
   dirpfCode: string
+  description: string
+  cnpj?: string
 }
 
 export interface RealizedGain {
@@ -77,8 +80,8 @@ const DIRPF: Record<AssetType, { group: string; code: string }> = {
   tesouro: { group: '04', code: '02' },
   fixed_income: { group: '04', code: '01' },
   crypto: { group: '08', code: '01' },
-  stock_us: { group: '03', code: '04' },
-  etf_us: { group: '07', code: '09' },
+  stock_us: { group: '07', code: '99' },
+  etf_us: { group: '07', code: '99' },
   other: { group: '99', code: '99' },
 }
 
@@ -133,6 +136,69 @@ export const inferAssetType = (ticker: string, sets?: TickerSets): AssetType => 
   return 'other'
 }
 
+const fmtBr = (v: number, decimals = 4) =>
+  v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: decimals })
+
+const fmtQty = (v: number, decimals = 8) =>
+  Number.isInteger(v) ? String(v) : fmtBr(v, decimals)
+
+interface DescriptionCtx {
+  asset?: Asset
+  fiiInfo?: FiiInfo
+  stockInfo?: StockInfo
+}
+
+const buildDescription = (
+  ticker: string,
+  assetType: AssetType,
+  quantity: number,
+  avgCost: number,
+  totalCost: number,
+  ctx: DescriptionCtx = {},
+): string => {
+  const { asset, fiiInfo, stockInfo } = ctx
+  switch (assetType) {
+    case 'fii': {
+      const name = fiiInfo?.longName ? ` ${fiiInfo.longName}` : ''
+      const cnpjPart = fiiInfo?.cnpj ? `. CNPJ: ${fiiInfo.cnpj}` : ''
+      const admin = fiiInfo?.adminName ? `, Administradora do Fundo: ${fiiInfo.adminName}` : ''
+      return `${ticker} - ${fmtQty(quantity)} Cotas do fundo imobiliário${name}, código de negociação na B3: ${ticker}${cnpjPart}${admin}. Custo médio unitário de R$ ${fmtBr(avgCost)}`
+    }
+    case 'stock': {
+      const name = stockInfo?.companyName ? ` da empresa ${stockInfo.companyName}` : ''
+      const cnpj = stockInfo?.cnpj ?? asset?.cnpj
+      const cnpjPart = cnpj ? `. CNPJ: ${cnpj}` : ''
+      return `${ticker} - ${fmtQty(quantity)} Ações${name}, código de negociação na B3: ${ticker}${cnpjPart}. Custo médio unitário de R$ ${fmtBr(avgCost)}`
+    }
+    case 'bdr': {
+      const name = stockInfo?.companyName ? ` da empresa ${stockInfo.companyName}` : ''
+      const cnpjPart = asset?.cnpj ? `. CNPJ: ${asset.cnpj}` : ''
+      return `${ticker} - ${fmtQty(quantity)} BDRs${name}, código de negociação na B3: ${ticker}${cnpjPart}. Custo médio unitário de R$ ${fmtBr(avgCost)}`
+    }
+    case 'etf': {
+      const name = fiiInfo?.longName ? ` ${fiiInfo.longName}` : ''
+      const admin = fiiInfo?.adminName ? `, Administradora do Fundo: ${fiiInfo.adminName}` : ''
+      return `${ticker} - ${fmtQty(quantity)} Cotas do ETF${name}, código de negociação na B3: ${ticker}${admin}. Custo médio unitário de R$ ${fmtBr(avgCost)}`
+    }
+    case 'stock_us':
+    case 'etf_us':
+      return `${ticker} - ${fmtQty(quantity)} Cotas do fundo ETF negociadas na Bolsa do país Estados Unidos através do código: ${ticker}. Custo médio de aquisição: R$ ${fmtBr(avgCost)}`
+    case 'tesouro':
+      return `${ticker} - ${fmtQty(quantity)} títulos do Tesouro Direto. Custo médio unitário de R$ ${fmtBr(avgCost)}`
+    case 'fixed_income': {
+      const maturity = asset?.maturityDate
+        ? `. Vencimento: ${new Date(asset.maturityDate + 'T12:00:00').toLocaleDateString('pt-BR')}`
+        : ''
+      const institution = asset?.institution ? `, ${asset.institution}` : ''
+      return `${ticker}${institution}. Total aplicado: R$ ${fmtBr(totalCost, 2)}${maturity}`
+    }
+    case 'crypto':
+      return `${ticker} - ${fmtQty(quantity)} unidades de criptoativo. Custo médio de aquisição: R$ ${fmtBr(avgCost)}`
+    default:
+      return `${ticker}. Custo de aquisição: R$ ${fmtBr(totalCost, 2)}`
+  }
+}
+
 type PositionMap = Record<string, { quantity: number; avgCost: number; totalCost: number }>
 
 const applyTrade = (map: PositionMap, trade: Trade) => {
@@ -166,9 +232,21 @@ export const buildPositions = (
   endDate: string,
   assets: Asset[],
   sets?: TickerSets,
+  fiiInfoMap?: Record<string, FiiInfo>,
+  stockInfoMap?: Record<string, StockInfo>,
 ): IrPosition[] => {
   const assetMap = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
   const map: PositionMap = {}
+
+  // Build alias map: oldTicker → currentTicker (for renamed assets)
+  const tickerAliasMap: Record<string, string> = {}
+  for (const a of assets) {
+    if (a.previousTickers) {
+      for (const old of a.previousTickers) {
+        tickerAliasMap[old.toUpperCase()] = a.ticker.toUpperCase()
+      }
+    }
+  }
 
   // Exclude fixed income tickers from trade accumulation — handled separately below
   const flatIncomeTickers = new Set(
@@ -176,9 +254,15 @@ export const buildPositions = (
   )
 
   trades
-    .filter((t) => t.date <= endDate && !flatIncomeTickers.has(t.ticker.toUpperCase()))
+    .filter((t) => {
+      const resolved = tickerAliasMap[t.ticker.toUpperCase()] ?? t.ticker.toUpperCase()
+      return t.date <= endDate && !flatIncomeTickers.has(resolved)
+    })
     .sort((a, b) => a.date.localeCompare(b.date))
-    .forEach((t) => applyTrade(map, t))
+    .forEach((t) => {
+      const resolved = tickerAliasMap[t.ticker.toUpperCase()]
+      applyTrade(map, resolved ? { ...t, ticker: resolved } : t)
+    })
 
   const tradePositions: IrPosition[] = Object.entries(map)
     .filter(([, p]) => p.quantity > 0.0001)
@@ -194,22 +278,33 @@ export const buildPositions = (
         totalCost: p.totalCost,
         dirpfGroup: DIRPF[type].group,
         dirpfCode: DIRPF[type].code,
+        description: buildDescription(ticker, type, p.quantity, p.avgCost, p.totalCost, {
+          asset,
+          fiiInfo: fiiInfoMap?.[ticker],
+          stockInfo: stockInfoMap?.[ticker],
+        }),
+        cnpj: fiiInfoMap?.[ticker]?.cnpj ?? stockInfoMap?.[ticker]?.cnpj ?? asset?.cnpj,
       }
     })
 
   // One entry per portfolio asset for fixed income / tesouro (preserves distinct products)
   const flatIncomePositions: IrPosition[] = assets
     .filter((a) => FLAT_INCOME_TYPES.has(a.type) && a.quantity > 0)
-    .map((a) => ({
-      ticker: a.name, // use name as display key so distinct products show separately
-      assetName: a.name,
-      assetType: a.type,
-      quantity: a.quantity,
-      avgCost: a.currentPrice,
-      totalCost: a.currentPrice * a.quantity,
-      dirpfGroup: DIRPF[a.type].group,
-      dirpfCode: DIRPF[a.type].code,
-    }))
+    .map((a) => {
+      const label = getFiLabel(a)
+      return {
+        ticker: label,
+        assetName: label,
+        assetType: a.type,
+        quantity: a.quantity,
+        avgCost: a.currentPrice,
+        totalCost: a.currentPrice * a.quantity,
+        dirpfGroup: DIRPF[a.type].group,
+        dirpfCode: DIRPF[a.type].code,
+        description: buildDescription(label, a.type, a.quantity, a.currentPrice, a.currentPrice * a.quantity, { asset: a }),
+        cnpj: a.cnpj,
+      }
+    })
 
   return [...tradePositions, ...flatIncomePositions].sort((a, b) =>
     a.ticker.localeCompare(b.ticker),

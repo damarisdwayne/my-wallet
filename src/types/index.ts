@@ -128,6 +128,8 @@ export interface Asset {
   currentPrice: number
   targetPercent: number
   score?: number
+  cnpj?: string
+  previousTickers?: string[]
   // Fixed income optional fields
   institution?: string
   fixedIncomeType?: FixedIncomeType
@@ -281,6 +283,7 @@ export interface FiiInfo {
 export interface StockInfo {
   ticker: string
   companyName: string
+  cnpj?: string
   sector: string
   subsector: string
   about: string

@@ -5,6 +5,7 @@ import { subscribeToTrades } from '@/services/trades'
 import { fetchTickerSets, fetchUsdBrlRate } from '@/services/quotes'
 import type { TickerSets } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
+import { useFundamentals } from '@/hooks/use-fundamentals'
 import {
   availableYears,
   calcMonthlyRV,
@@ -35,6 +36,7 @@ export const TaxPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>('bens')
   const [usdRate, setUsdRate] = useState(0)
   const [tickerSets, setTickerSets] = useState<TickerSets | undefined>()
+  const { fiiInfo, stockInfo } = useFundamentals(user?.uid ?? null)
 
   useEffect(() => {
     fetchUsdBrlRate()
@@ -102,7 +104,14 @@ export const TaxPage = () => {
       <TabBar activeTab={activeTab} onSelect={setActiveTab} />
 
       {activeTab === 'bens' && (
-        <AssetsSection year={effectiveYear} trades={trades} assets={assets} sets={tickerSets} />
+        <AssetsSection
+          year={effectiveYear}
+          trades={trades}
+          assets={assets}
+          sets={tickerSets}
+          fiiInfoMap={fiiInfo}
+          stockInfoMap={stockInfo}
+        />
       )}
       {activeTab === 'isentos' && (
         <ExemptIncomeSection year={effectiveYear} dividends={dividends} />

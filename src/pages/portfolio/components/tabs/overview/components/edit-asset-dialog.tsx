@@ -33,6 +33,7 @@ export const EditAssetDialog = ({
   const [editQty, setEditQty] = useState('')
   const [editAvgPrice, setEditAvgPrice] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
+  const [previousTickers, setPreviousTickers] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export const EditAssetDialog = ({
       setEditQty(String(asset.quantity))
       setEditAvgPrice(String(asset.avgPrice))
       setSplitRatio('')
+      setPreviousTickers(asset.previousTickers?.join(', ') ?? '')
     }
   }, [asset])
 
@@ -79,12 +81,17 @@ export const EditAssetDialog = ({
         await editAsset(duplicate.id, { quantity: mergedQty, avgPrice: mergedAvg })
         await deleteAsset(asset.id)
       } else {
+        const prev = previousTickers
+          .split(',')
+          .map((t) => t.trim().toUpperCase())
+          .filter(Boolean)
         const updates: Partial<Asset> = {
           categoryId: editCategoryId,
           ticker: newTicker,
           name: editName.trim(),
           quantity: srcQty,
           avgPrice: srcAvg,
+          previousTickers: prev.length > 0 ? prev : undefined,
         }
         await editAsset(asset.id, updates)
       }
@@ -172,6 +179,19 @@ export const EditAssetDialog = ({
                 onChange={(e) => setEditAvgPrice(e.target.value)}
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="edit-prev-tickers" className="text-xs text-muted-foreground mb-1 block">
+              Tickers anteriores{' '}
+              <span className="text-muted-foreground/60">(separados por vírgula)</span>
+            </label>
+            <input
+              id="edit-prev-tickers"
+              className={inputClass}
+              placeholder="Ex: MALL11, IRDM11"
+              value={previousTickers}
+              onChange={(e) => setPreviousTickers(e.target.value)}
+            />
           </div>
           <div>
             <label htmlFor="edit-split" className="text-xs text-muted-foreground mb-1 block">

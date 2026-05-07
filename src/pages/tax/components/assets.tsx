@@ -1,27 +1,46 @@
 import { useState } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Check, Copy } from 'lucide-react'
 import { buildPositions } from '@/lib/ir-calc'
-import { formatCurrency, formatQuantity } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import type { TickerSets } from '@/services/quotes'
-import type { Asset, Trade } from '@/types'
-import { assetTypeLabel } from '../constants'
+import type { Asset, FiiInfo, StockInfo, Trade } from '@/types'
 import { AmountBadge, EmptyRow, Section, Td, Th, TypeFilterChips } from './ui'
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copiar discriminação"
+      className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+    </button>
+  )
+}
 
 type Props = {
   year: number
   trades: Trade[]
   assets: Asset[]
   sets?: TickerSets
+  fiiInfoMap?: Record<string, FiiInfo>
+  stockInfoMap?: Record<string, StockInfo>
 }
 
-export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
+export const AssetsSection = ({ year, trades, assets, sets, fiiInfoMap, stockInfoMap }: Props) => {
   const [filterType, setFilterType] = useState<string | null>(null)
 
   const currentDate = `${year}-12-31`
   const priorDate = `${year - 1}-12-31`
 
-  const current = buildPositions(trades, currentDate, assets, sets)
-  const prior = buildPositions(trades, priorDate, assets, sets)
+  const current = buildPositions(trades, currentDate, assets, sets, fiiInfoMap, stockInfoMap)
+  const prior = buildPositions(trades, priorDate, assets, sets, fiiInfoMap, stockInfoMap)
 
   const priorMap = Object.fromEntries(prior.map((p) => [p.ticker, p.totalCost]))
 
@@ -35,7 +54,9 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
   }
   allRows.sort((a, b) => a.ticker.localeCompare(b.ticker))
 
-  const availableTypes = [...new Set(allRows.map((r) => r.assetType))].sort()
+  const availableTypes = [...new Set(allRows.map((r) => r.assetType))].sort((a, b) =>
+    a.localeCompare(b),
+  )
   const rows = filterType ? allRows.filter((r) => r.assetType === filterType) : allRows
 
   const totalCurrent = rows.reduce((s, r) => s + r.totalCost, 0)
@@ -61,9 +82,8 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
             <tr className="bg-muted/30">
               <Th>Grupo/Código</Th>
               <Th>Ticker</Th>
-              <Th>Tipo</Th>
-              <Th right>Qtd.</Th>
-              <Th right>PM Custo</Th>
+              <Th>CNPJ</Th>
+              <Th>Discriminação</Th>
               <Th right>{`31/12/${year - 1}`}</Th>
               <Th right>{`31/12/${year}`}</Th>
             </tr>
@@ -78,17 +98,21 @@ export const AssetsSection = ({ year, trades, assets, sets }: Props) => {
                   className="border-t border-border/50 hover:bg-muted/20"
                 >
                   <Td className="text-muted-foreground">
-                    {r.dirpfGroup}/{r.dirpfCode}
+                    {r.dirpfGroup}.{r.dirpfCode}
                   </Td>
                   <Td className="font-semibold text-foreground">{r.ticker}</Td>
+                  <Td className="text-muted-foreground font-mono text-xs whitespace-nowrap">{r.cnpj ?? '—'}</Td>
                   <Td>
-                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                      {assetTypeLabel[r.assetType] ?? r.assetType}
-                    </span>
-                  </Td>
-                  <Td right>{r.quantity > 0 ? formatQuantity(r.quantity) : '—'}</Td>
-                  <Td right className="text-muted-foreground">
-                    {r.avgCost > 0 ? formatCurrency(r.avgCost) : '—'}
+                    {r.description ? (
+                      <div className="flex items-start gap-2 min-w-0">
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 min-w-0">
+                          {r.description}
+                        </p>
+                        <CopyButton text={r.description} />
+                      </div>
+                    ) : (
+                      '—'
+                    )}
                   </Td>
                   <Td right>{r.priorCost > 0 ? formatCurrency(r.priorCost) : '—'}</Td>
                   <Td

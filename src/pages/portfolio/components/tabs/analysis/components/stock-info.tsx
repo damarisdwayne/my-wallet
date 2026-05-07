@@ -20,6 +20,7 @@ export const StockInfoDialog = ({
 }) => {
   const empty: Omit<StockInfo, 'ticker' | 'updatedAt'> = {
     companyName: '',
+    cnpj: '',
     sector: '',
     subsector: '',
     about: '',
@@ -34,6 +35,7 @@ export const StockInfoDialog = ({
 
   const fromExisting = (e: StockInfo): Omit<StockInfo, 'ticker' | 'updatedAt'> => ({
     companyName: e.companyName,
+    cnpj: e.cnpj ?? '',
     sector: e.sector,
     subsector: e.subsector,
     about: e.about,
@@ -130,6 +132,7 @@ export const StockInfoSection = ({
   const fields: { label: string; value: string }[] = info
     ? [
         { label: 'Nome da Empresa', value: info.companyName },
+        { label: 'CNPJ', value: info.cnpj ?? '' },
         { label: 'Setor', value: info.sector },
         { label: 'Subsetor / Segmento', value: info.subsector },
         { label: 'Fundação', value: info.foundedYear },

@@ -13,6 +13,7 @@ export const OverviewTab = ({
   answers,
   totalValue,
   addAsset,
+  recordTrade,
   addManualTrade,
   editAsset,
   deleteAsset,
@@ -222,6 +223,7 @@ export const OverviewTab = ({
         categories={categories}
         assets={assets}
         onAdd={addAsset}
+        onRecordTrade={recordTrade}
         onAddTrade={addManualTrade}
       />
 

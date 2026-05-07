@@ -254,10 +254,10 @@ export const FixedIncomeForm = ({
           } else {
             const invested = Number.parseFloat(form.totalInvested)
             const suffix = form.institution ? `-${form.institution.slice(0, 8).toUpperCase()}` : ''
-            const ticker = `${form.fixedIncomeType}${suffix}`
+            const shortName = `${form.fixedIncomeType}${suffix}`
             onSave({
-              ticker,
-              name: buildFiName(form),
+              ticker: buildFiName(form),
+              name: shortName,
               type: 'fixed_income',
               categoryId: form.categoryId,
               quantity: 1,

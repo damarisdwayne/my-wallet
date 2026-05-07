@@ -32,19 +32,53 @@ export const TradesTab = ({
     }
   }
 
-  const tickerToCatId = useMemo(
-    () => Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.categoryId])),
-    [assets],
-  )
+  // Prefixes used to identify fixed income / tesouro tickers when the asset was already deleted
+  const FI_PREFIXES = [
+    'CDB',
+    'LC',
+    'LCI',
+    'LCA',
+    'LCE',
+    'CRI',
+    'CRA',
+    'DEBENTURE',
+    'OUTROS',
+    'TESOURO',
+  ]
+  const isFiTicker = (t: string) => FI_PREFIXES.some((p) => t === p || t.startsWith(p + ' '))
 
-  const tickerToAsset = useMemo(
-    () => Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a])),
-    [assets],
-  )
+  const tickerToCatId = useMemo(() => {
+    const byName = Object.fromEntries(assets.map((a) => [a.name.toUpperCase(), a.categoryId]))
+    const byTicker = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a.categoryId]))
+    const map: Record<string, string> = { ...byName, ...byTicker }
+
+    // For trades from deleted fixed income assets, infer category by ticker prefix
+    const fiCatId = categories.find((c) =>
+      c.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro'),
+    )?.id
+    if (fiCatId) {
+      for (const t of trades) {
+        const key = t.ticker.toUpperCase()
+        if (!map[key] && isFiTicker(key)) map[key] = fiCatId
+      }
+    }
+    return map
+  }, [assets, categories, trades])
+
+  const tickerToAsset = useMemo(() => {
+    const byName = Object.fromEntries(assets.map((a) => [a.name.toUpperCase(), a]))
+    const byTicker = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
+    return { ...byName, ...byTicker }
+  }, [assets])
 
   const activeCategories = useMemo(
-    () => categories.filter((c) => assets.some((a) => a.categoryId === c.id)),
-    [categories, assets],
+    () =>
+      categories.filter(
+        (c) =>
+          assets.some((a) => a.categoryId === c.id) ||
+          trades.some((t) => tickerToCatId[t.ticker.toUpperCase()] === c.id),
+      ),
+    [categories, assets, trades, tickerToCatId],
   )
 
   const filteredTrades = useMemo(

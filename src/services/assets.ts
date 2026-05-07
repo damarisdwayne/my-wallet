@@ -1,6 +1,7 @@
 import { collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Asset } from '@/types'
+import { getFiLabel } from '@/lib/fi'
 
 export const subscribeToAssets = (userId: string, cb: (assets: Asset[]) => void) =>
   onSnapshot(collection(db, 'users', userId, 'assets'), (snap) => {
@@ -10,6 +11,18 @@ export const subscribeToAssets = (userId: string, cb: (assets: Asset[]) => void)
       if (a.type === 'fixed_income' && a.ticker.toUpperCase().startsWith('TESOURO')) {
         void updateDoc(doc(db, 'users', userId, 'assets', a.id), { type: 'tesouro' })
         a.type = 'tesouro'
+      }
+    })
+    // Migrate fixed_income to descriptive ticker (e.g. "CDB Pré 15% Omni" instead of "CDB-XP")
+    assets.forEach((a) => {
+      if (a.type === 'fixed_income' && a.fixedIncomeType && !a.ticker.includes(' ')) {
+        const descriptiveTicker = getFiLabel(a)
+        void updateDoc(doc(db, 'users', userId, 'assets', a.id), {
+          ticker: descriptiveTicker,
+          name: a.ticker,
+        })
+        a.name = a.ticker
+        a.ticker = descriptiveTicker
       }
     })
     cb(assets)

@@ -306,6 +306,10 @@ export const usePortfolio = () => {
     }
   }
 
+  const recordTrade = async (trade: Omit<Trade, 'id' | 'source'>): Promise<void> => {
+    if (uid) await addTrades(uid, [{ ...trade, source: 'manual' as const }])
+  }
+
   const addManualTrade = async (trade: Omit<Trade, 'id' | 'source'>) => {
     if (!uid) return
     try {
@@ -411,6 +415,7 @@ export const usePortfolio = () => {
     importRecords,
     trades,
     addAsset: assetsHook.addAsset,
+    recordTrade,
     addManualTrade,
     deleteTrade: (tradeId: string) => (uid ? deleteTradeService(uid, tradeId) : Promise.resolve()),
     importFromB3,

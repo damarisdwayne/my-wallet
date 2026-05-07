@@ -26,6 +26,7 @@ export interface OverviewTabProps {
   answers: Record<string, AssetAnswers>
   totalValue: number
   addAsset: (asset: Asset) => Promise<void>
+  recordTrade: (trade: Omit<import('@/types').Trade, 'id' | 'source'>) => Promise<void>
   addManualTrade: (trade: Omit<import('@/types').Trade, 'id' | 'source'>) => Promise<void>
   editAsset: (assetId: string, data: Partial<Asset>) => Promise<void>
   deleteAsset: (assetId: string) => Promise<void>

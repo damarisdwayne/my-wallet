@@ -25,6 +25,7 @@ interface Props {
   categories: PortfolioCategory[]
   assets: Asset[]
   onAdd: (asset: Asset) => Promise<void>
+  onRecordTrade: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
   onAddTrade: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
 }
 
@@ -34,6 +35,7 @@ export const AddAssetDialog = ({
   categories,
   assets,
   onAdd,
+  onRecordTrade,
   onAddTrade,
 }: Props) => {
   const [opMode, setOpMode] = useState<OpMode | null>(null)
@@ -70,7 +72,7 @@ export const AddAssetDialog = ({
       }
       await onAdd(asset)
       if (asset.avgPrice > 0 && asset.quantity > 0) {
-        await onAddTrade({
+        await onRecordTrade({
           ticker: asset.ticker,
           type: 'buy',
           quantity: asset.quantity,

@@ -50,7 +50,8 @@ export const EditAssetDialog = ({
     if (!asset) return
     setSaving(true)
     try {
-      const newTicker = editTicker.trim().toUpperCase()
+      const newTicker =
+        asset.type === 'fixed_income' ? editTicker.trim() : editTicker.trim().toUpperCase()
       const ratio = splitRatio ? Number(splitRatio) : null
       const directQty = Number(editQty)
       const directAvg = Number(editAvgPrice)

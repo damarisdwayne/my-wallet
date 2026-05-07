@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToAllDividends } from '@/services/dividends'
 import {
@@ -6,9 +6,10 @@ import {
   savePatrimonySnapshot,
   type PatrimonyPoint,
 } from '@/services/patrimony'
+import { subscribeToTrades } from '@/services/trades'
 import { useExpenses } from '@/hooks/use-expenses'
 import { useAuth } from '@/store/auth'
-import type { Asset, AssetType, Dividend } from '@/types'
+import type { Asset, AssetType, Dividend, Trade } from '@/types'
 
 export const CURRENT_MONTH = new Date().toISOString().slice(0, 7)
 const CURRENT_YEAR = new Date().getFullYear().toString()
@@ -38,10 +39,13 @@ export const useDashboard = () => {
   const { user } = useAuth()
   const [assets, setAssets] = useState<Asset[]>([])
   const [dividends, setDividends] = useState<Dividend[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
   const [patrimonyHistory, setPatrimonyHistory] = useState<PatrimonyPoint[]>([])
   const [assetsLoading, setAssetsLoading] = useState(true)
   const [dividendsLoading, setDividendsLoading] = useState(true)
+  const [tradesLoading, setTradesLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(true)
+  const backfilledRef = useRef(false)
 
   // useExpenses already handles fixed + installment subscriptions
   const { expenses, salaryByMonth, getRecurringForMonth, loading: expensesLoading } = useExpenses()
@@ -61,11 +65,15 @@ export const useDashboard = () => {
         setPatrimonyHistory(data)
         setHistoryLoading(false)
       }),
+      subscribeToTrades(user.uid, (data) => {
+        setTrades(data)
+        setTradesLoading(false)
+      }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [user])
 
-  const loading = assetsLoading || dividendsLoading || historyLoading || expensesLoading
+  const loading = assetsLoading || dividendsLoading || historyLoading || tradesLoading || expensesLoading
 
   /* ── portfolio numbers ── */
   const totalPatrimony = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
@@ -75,6 +83,37 @@ export const useDashboard = () => {
     if (loading || totalPatrimony === 0 || !user) return
     savePatrimonySnapshot(user.uid, CURRENT_MONTH, totalPatrimony)
   }, [loading, totalPatrimony, user])
+
+  // Backfill patrimony history from trades for months without a saved snapshot
+  useEffect(() => {
+    if (loading || backfilledRef.current || !user || trades.length === 0) return
+    const monthsInHistory = new Set(patrimonyHistory.map((p) => p.month))
+    const sorted = [...trades]
+      .filter((t) => t.date && t.date.slice(0, 7) < CURRENT_MONTH)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    const allMonths = [...new Set(sorted.map((t) => t.date.slice(0, 7)))].filter(
+      (m) => !monthsInHistory.has(m),
+    )
+    if (allMonths.length === 0) return
+    backfilledRef.current = true
+
+    const saves = allMonths.map((targetMonth) => {
+      const portfolio = new Map<string, { qty: number; cost: number }>()
+      for (const t of sorted.filter((t) => t.date.slice(0, 7) <= targetMonth)) {
+        const pos = portfolio.get(t.ticker) ?? { qty: 0, cost: 0 }
+        if (t.type === 'buy') {
+          portfolio.set(t.ticker, { qty: pos.qty + t.quantity, cost: pos.cost + t.total })
+        } else {
+          const remaining = Math.max(0, pos.qty - t.quantity)
+          const ratio = pos.qty > 0 ? remaining / pos.qty : 0
+          portfolio.set(t.ticker, { qty: remaining, cost: pos.cost * ratio })
+        }
+      }
+      const value = [...portfolio.values()].reduce((s, p) => s + p.cost, 0)
+      return savePatrimonySnapshot(user.uid, targetMonth, value)
+    })
+    Promise.all(saves).catch(console.error)
+  }, [loading, trades, patrimonyHistory, user])
   const totalCost = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
   const totalReturn = totalCost > 0 ? ((totalPatrimony - totalCost) / totalCost) * 100 : 0
   const totalGain = totalPatrimony - totalCost

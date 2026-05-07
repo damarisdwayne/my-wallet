@@ -8,6 +8,7 @@ import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
 import type { Asset, PortfolioCategory } from '@/types'
 import { isFlatFixedIncome } from '../utils'
+import { getFiLabel } from '@/lib/fi'
 
 interface AssetsTableProps {
   tableRows: TableRow[]
@@ -148,7 +149,9 @@ export const AssetsTable = memo(
                   className={`border-b border-border last:border-0 transition-colors ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'}`}
                 >
                   <td className="py-3 pl-3">
-                    <p className="font-semibold text-foreground">{a.name}</p>
+                    <p className="font-semibold text-foreground">
+                      {a.type === 'fixed_income' ? getFiLabel(a) : a.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {isFlatFixedIncome(a) ? (a.institution ?? a.ticker) : a.ticker}
                       {a.maturityDate && (

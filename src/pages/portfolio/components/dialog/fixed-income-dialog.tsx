@@ -96,11 +96,11 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
     setSaving(true)
     try {
       const suffix = form.institution ? `-${form.institution.toUpperCase().slice(0, 8)}` : ''
-      const ticker = `${form.fixedIncomeType}${suffix}`
+      const shortName = `${form.fixedIncomeType}${suffix}`
       const asset: Asset = {
         id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        ticker,
-        name: buildName(form),
+        ticker: buildName(form),
+        name: shortName,
         type: 'fixed_income',
         categoryId: form.categoryId,
         quantity: 1,

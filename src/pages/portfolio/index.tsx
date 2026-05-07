@@ -43,6 +43,7 @@ export const PortfolioPage = () => {
     importRecords,
     trades,
     addAsset,
+    recordTrade,
     addManualTrade,
     deleteTrade,
     syncMissingTrades,
@@ -103,6 +104,7 @@ export const PortfolioPage = () => {
             answers={answers}
             totalValue={totalValue}
             addAsset={addAsset}
+            recordTrade={recordTrade}
             addManualTrade={addManualTrade}
             editAsset={editAsset}
             deleteAsset={deleteAsset}

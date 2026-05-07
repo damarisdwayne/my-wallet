@@ -3,6 +3,7 @@ import { ChevronDown, Trash2 } from 'lucide-react'
 import { cn, formatCurrency, formatQuantity } from '@/lib/utils'
 import type { Asset, Trade } from '@/types'
 import { tradeLabel, tradeColor, sourceLabel } from '../utils'
+import { getFiLabel } from '@/lib/fi'
 
 interface Props {
   ticker: string
@@ -30,7 +31,7 @@ export const TickerRow = ({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const isFixedIncome = asset?.type === 'fixed_income'
-  const displayName = isFixedIncome && asset?.name ? asset.name : ticker
+  const displayName = isFixedIncome && asset ? getFiLabel(asset) : ticker
 
   return (
     <>

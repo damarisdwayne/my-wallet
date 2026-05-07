@@ -154,6 +154,9 @@ export interface B3RawTrade {
   total: number
   date: string // YYYY-MM-DD or '' if column not present
   label?: 'bonificacao' | 'desdobramento' | 'grupamento'
+  priceUsd?: number
+  totalUsd?: number
+  usdRateAtTrade?: number
 }
 
 export interface B3ParseResult {

@@ -101,7 +101,9 @@ export const AssetsSection = ({ year, trades, assets, sets, fiiInfoMap, stockInf
                     {r.dirpfGroup}.{r.dirpfCode}
                   </Td>
                   <Td className="font-semibold text-foreground">{r.ticker}</Td>
-                  <Td className="text-muted-foreground font-mono text-xs whitespace-nowrap">{r.cnpj ?? '—'}</Td>
+                  <Td className="text-muted-foreground font-mono text-xs whitespace-nowrap">
+                    {r.cnpj ?? '—'}
+                  </Td>
                   <Td>
                     {r.description ? (
                       <div className="flex items-start gap-2 min-w-0">

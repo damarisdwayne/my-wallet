@@ -265,13 +265,17 @@ export async function parseInterPdf(buffer: ArrayBuffer): Promise<B3ParseResult>
 
   const trades: B3RawTrade[] = rows.map((r) => {
     const priceBrl = round(r.price * usdRate, 2)
+    const totalBrl = round(r.quantity * priceBrl, 2)
     return {
       ticker: r.ticker,
       type: r.action,
       quantity: r.quantity,
       price: priceBrl,
-      total: round(r.quantity * priceBrl, 2),
+      total: totalBrl,
       date: r.date ?? '',
+      priceUsd: r.price,
+      totalUsd: round(r.quantity * r.price, 2),
+      usdRateAtTrade: usdRate,
     }
   })
 

@@ -320,12 +320,16 @@ export interface Trade {
   ticker: string
   type: 'buy' | 'sell'
   quantity: number
-  price: number
-  total: number
+  price: number // BRL
+  total: number // BRL
   date: string // YYYY-MM-DD
   source: 'b3_import' | 'inter_import' | 'manual'
   importId?: string
   label?: 'bonificacao' | 'amortizacao' | 'desdobramento' | 'grupamento' | 'vencimento'
+  // USD fields — only set for Inter USA imports
+  priceUsd?: number
+  totalUsd?: number
+  usdRateAtTrade?: number
 }
 
 /* ─── Sales ─────────────────────────────────────────────────────── */

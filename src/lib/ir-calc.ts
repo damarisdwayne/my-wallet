@@ -10,6 +10,7 @@ export interface IrPosition {
   quantity: number
   avgCost: number
   totalCost: number
+  totalCostUsd?: number
   dirpfGroup: string
   dirpfCode: string
   description: string
@@ -139,13 +140,13 @@ export const inferAssetType = (ticker: string, sets?: TickerSets): AssetType => 
 const fmtBr = (v: number, decimals = 4) =>
   v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: decimals })
 
-const fmtQty = (v: number, decimals = 8) =>
-  Number.isInteger(v) ? String(v) : fmtBr(v, decimals)
+const fmtQty = (v: number, decimals = 8) => (Number.isInteger(v) ? String(v) : fmtBr(v, decimals))
 
 interface DescriptionCtx {
   asset?: Asset
   fiiInfo?: FiiInfo
   stockInfo?: StockInfo
+  totalCostUsd?: number
 }
 
 const buildDescription = (
@@ -156,7 +157,7 @@ const buildDescription = (
   totalCost: number,
   ctx: DescriptionCtx = {},
 ): string => {
-  const { asset, fiiInfo, stockInfo } = ctx
+  const { asset, fiiInfo, stockInfo, totalCostUsd } = ctx
   switch (assetType) {
     case 'fii': {
       const name = fiiInfo?.longName ? ` ${fiiInfo.longName}` : ''
@@ -181,8 +182,11 @@ const buildDescription = (
       return `${ticker} - ${fmtQty(quantity)} Cotas do ETF${name}, código de negociação na B3: ${ticker}${admin}. Custo médio unitário de R$ ${fmtBr(avgCost)}`
     }
     case 'stock_us':
-    case 'etf_us':
-      return `${ticker} - ${fmtQty(quantity)} Cotas do fundo ETF negociadas na Bolsa do país Estados Unidos através do código: ${ticker}. Custo médio de aquisição: R$ ${fmtBr(avgCost)}`
+    case 'etf_us': {
+      const usdPart =
+        totalCostUsd == null ? '' : `. Valor de custo em dólar: US$ ${fmtBr(totalCostUsd, 2)}`
+      return `${ticker} - ${fmtQty(quantity)} Cotas do fundo ETF negociadas na Bolsa do país Estados Unidos através do código: ${ticker}. Custo médio de aquisição: R$ ${fmtBr(avgCost)}${usdPart}`
+    }
     case 'tesouro':
       return `${ticker} - ${fmtQty(quantity)} títulos do Tesouro Direto. Custo médio unitário de R$ ${fmtBr(avgCost)}`
     case 'fixed_income': {
@@ -199,7 +203,10 @@ const buildDescription = (
   }
 }
 
-type PositionMap = Record<string, { quantity: number; avgCost: number; totalCost: number }>
+type PositionMap = Record<
+  string,
+  { quantity: number; avgCost: number; totalCost: number; totalCostUsd?: number }
+>
 
 const applyTrade = (map: PositionMap, trade: Trade) => {
   const key = posKey(trade.ticker)
@@ -212,10 +219,15 @@ const applyTrade = (map: PositionMap, trade: Trade) => {
     pos.avgCost = newQty > 0 ? newTotal / newQty : 0
     pos.quantity = newQty
     pos.totalCost = newTotal
+    if (trade.totalUsd != null) {
+      pos.totalCostUsd = (pos.totalCostUsd ?? 0) + trade.totalUsd
+    }
   } else if (trade.type === 'sell') {
     const soldQty = Math.min(trade.quantity, pos.quantity)
+    const ratio = pos.quantity > 0 ? (pos.quantity - soldQty) / pos.quantity : 0
     pos.quantity = Math.max(0, pos.quantity - soldQty)
     pos.totalCost = pos.avgCost * pos.quantity
+    if (pos.totalCostUsd != null) pos.totalCostUsd = pos.totalCostUsd * ratio
   }
 }
 
@@ -276,12 +288,14 @@ export const buildPositions = (
         quantity: p.quantity,
         avgCost: p.avgCost,
         totalCost: p.totalCost,
+        totalCostUsd: p.totalCostUsd,
         dirpfGroup: DIRPF[type].group,
         dirpfCode: DIRPF[type].code,
         description: buildDescription(ticker, type, p.quantity, p.avgCost, p.totalCost, {
           asset,
           fiiInfo: fiiInfoMap?.[ticker],
           stockInfo: stockInfoMap?.[ticker],
+          totalCostUsd: p.totalCostUsd,
         }),
         cnpj: fiiInfoMap?.[ticker]?.cnpj ?? stockInfoMap?.[ticker]?.cnpj ?? asset?.cnpj,
       }
@@ -301,7 +315,14 @@ export const buildPositions = (
         totalCost: a.currentPrice * a.quantity,
         dirpfGroup: DIRPF[a.type].group,
         dirpfCode: DIRPF[a.type].code,
-        description: buildDescription(label, a.type, a.quantity, a.currentPrice, a.currentPrice * a.quantity, { asset: a }),
+        description: buildDescription(
+          label,
+          a.type,
+          a.quantity,
+          a.currentPrice,
+          a.currentPrice * a.quantity,
+          { asset: a },
+        ),
         cnpj: a.cnpj,
       }
     })

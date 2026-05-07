@@ -73,7 +73,8 @@ export const useDashboard = () => {
     return () => unsubs.forEach((u) => u())
   }, [user])
 
-  const loading = assetsLoading || dividendsLoading || historyLoading || tradesLoading || expensesLoading
+  const loading =
+    assetsLoading || dividendsLoading || historyLoading || tradesLoading || expensesLoading
 
   /* ── portfolio numbers ── */
   const totalPatrimony = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)

@@ -56,20 +56,16 @@ export const PatrimonyChart = memo(({ history, currentValue, currentMonth, hidde
     )
   }
 
-  const first = data[0].value
-  const last = data.at(-1)?.value ?? 0
-  const pctChange = first > 0 ? ((last - first) / first) * 100 : 0
-  const positive = pctChange >= 0
   const lineColor = 'hsl(142 71% 45%)'
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-baseline gap-2">
-          <span className={`text-xl font-bold ${positive ? 'text-success' : 'text-destructive'}`}>
-            {hidden ? MASK : `${positive ? '+' : ''}${pctChange.toFixed(2)}%`}
+          <span className="text-xl font-bold text-foreground">
+            {hidden ? MASK : formatCurrency(currentValue)}
           </span>
-          <span className="text-xs text-muted-foreground">no período</span>
+          <span className="text-xs text-muted-foreground">patrimônio atual</span>
         </div>
         <div className="flex rounded-md border border-border overflow-hidden text-xs">
           {RANGES.map((r) => (

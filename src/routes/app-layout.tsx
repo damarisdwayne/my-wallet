@@ -17,6 +17,7 @@ const pageTitles: Record<string, string> = {
   '/tax': 'Imposto de Renda',
   '/sales': 'Vendas',
   '/calculators': 'Calculadoras',
+  '/knowledge': 'Conhecimento',
 }
 
 export const AppLayout = () => {

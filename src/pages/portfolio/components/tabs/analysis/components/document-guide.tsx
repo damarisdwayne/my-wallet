@@ -60,35 +60,31 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                 Qual documento priorizar
               </p>
-              {[
-                {
-                  tipo: 'Empresa operacional',
-                  doc: 'Release de Resultados',
-                  reason: 'O lucro vem da operação — receita, margem, crescimento',
-                },
-                {
-                  tipo: 'Empresa regulada',
-                  doc: 'Relatório da Administração',
-                  reason: 'O lucro vem de decisões regulatórias, não do mercado',
-                },
-                {
-                  tipo: 'Holding',
-                  doc: 'Demonstrações Contábeis',
-                  reason: 'O valor vem das participações, não de operação própria',
-                },
-              ].map((row) => (
-                <div key={row.tipo} className="flex gap-2 rounded-md px-2.5 py-2 bg-muted/20">
-                  <div className="min-w-27.5 shrink-0">
-                    <p className="text-[11px] text-muted-foreground">{row.tipo}</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    tipo: 'Empresa operacional',
+                    doc: 'Release de Resultados',
+                    reason: 'O lucro vem da operação — receita, margem, crescimento',
+                  },
+                  {
+                    tipo: 'Empresa regulada',
+                    doc: 'Relatório da Administração',
+                    reason: 'O lucro vem de decisões regulatórias, não do mercado',
+                  },
+                  {
+                    tipo: 'Holding',
+                    doc: 'Demonstrações Contábeis',
+                    reason: 'O valor vem das participações, não de operação própria',
+                  },
+                ].map((row) => (
+                  <div key={row.tipo} className="rounded-md px-2.5 py-2.5 bg-muted/20 space-y-1">
+                    <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">{row.tipo}</p>
+                    <p className="text-[11px] font-semibold text-foreground leading-tight">{row.doc}</p>
+                    <p className="text-[10px] text-muted-foreground/60 leading-snug">{row.reason}</p>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground">{row.doc}</p>
-                    <p className="text-[10px] text-muted-foreground/70 leading-snug">
-                      {row.reason}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">

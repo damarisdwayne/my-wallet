@@ -42,7 +42,7 @@ export const EditAssetDialog = ({
       setEditTicker(asset.ticker)
       setEditName(asset.name)
       setEditQty(String(asset.quantity))
-      setEditAvgPrice(String(asset.avgPrice))
+      setEditAvgPrice(String(Math.ceil(asset.avgPrice * 100) / 100))
       setSplitRatio('')
       setPreviousTickers(asset.previousTickers?.join(', ') ?? '')
     }

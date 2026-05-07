@@ -89,24 +89,28 @@ Todas as coleções ficam dentro de `users/{uid}/`:
 
 **`assets`**
 ```
-id, ticker, name, type (stock|fii|etf|bdr|fixed_income|crypto|stock_us|other),
-categoryId, quantity, avgPrice, currentPrice, targetPercent,
+id, ticker, name, type (stock|fii|etf|bdr|fixed_income|tesouro|crypto|stock_us|etf_us|other),
+categoryId, quantity, avgPrice, currentPrice, targetPercent, score?,
+cnpj?, previousTickers? (string[]),
 operationDate (YYYY-MM-DD), maturityDate (YYYY-MM-DD),
-rateType (pos_cdi|ipca_plus|prefixado|...), indexerRate, prefixedRate,
-institution, issuer, fixedIncomeType
+rateType (pos_cdi|ipca_plus|prefixado|igpm_plus|pos_selic), indexerRate?, prefixedRate?,
+institution?, issuer?, fixedIncomeType?
 ```
 
 **`trades`**
 ```
-id, ticker, type (buy|sell), quantity, price, total,
-date (YYYY-MM-DD), source (b3_import|inter_import|manual), importId?
+id, ticker, type (buy|sell), quantity, price (BRL), total (BRL),
+date (YYYY-MM-DD), source (b3_import|inter_import|manual), importId?,
+label? (bonificacao|amortizacao|desdobramento|grupamento|vencimento),
+priceUsd?, totalUsd?, usdRateAtTrade?  ← apenas Inter USA
 ```
 
 **`dividends`**
 ```
 id (ticker-paymentDate-type), ticker, amount (BRL), paymentDate,
 type (dividendo|jcp|rendimento|dividendo_ext),
-ir?, currency? (USD), amountUsd?, irUsd?
+ir?, currency? (USD), amountUsd?, irUsd?,
+amountBrl?, irBrl?, usdRateAtPayment?  ← apenas dividendos em USD
 ```
 
 **`expenses`**
@@ -261,6 +265,80 @@ Ficam no arquivo `.env` na raiz do projeto (não sobe pro GitHub):
 
 ---
 
+## Como um ativo entra na carteira — dois caminhos
+
+Existem duas formas de um ativo aparecer em `users/{uid}/assets`, e elas têm consequências diferentes na aba de IR:
+
+### Caminho 1 — Via importação (B3 Excel ou Inter PDF)
+
+```
+Arquivo importado
+  → parseB3Excel() / parseInterPdf()
+  → importFromB3(userId, parsed)
+      ├── Para cada ativo do arquivo:
+      │     ├── Se não existe → addAsset() com quantity + avgPrice calculados
+      │     └── Se já existe  → updateAsset() mesclando qty/avgPrice (média ponderada)
+      └── Para cada trade do arquivo:
+            └── addTrade() → salva em users/{uid}/trades
+```
+
+- Ativo em `assets` **e** trades em `trades` — IR funciona automaticamente.
+- O `avgPrice` em `assets` é calculado a partir dos trades do próprio arquivo.
+- Importações Inter USA gravam também `priceUsd`, `totalUsd`, `usdRateAtTrade` em cada trade.
+
+### Caminho 2 — Adição/edição manual
+
+```
+Usuário preenche formulário ou edita ativo existente
+  → addAsset() / updateAsset()
+      └── Salva/atualiza apenas em users/{uid}/assets
+          (NÃO cria nenhum registro em trades)
+```
+
+- Ativo aparece na carteira normalmente (preços, patrimônio, diagrama).
+- **Mas não aparece na aba IR**, pois `buildPositions` lê somente `trades`.
+- Isso acontece com ativos do exterior adicionados manualmente, bonificações editadas direto no qty, etc.
+
+### Como corrigir ativos sem histórico de trades — Sincronizar
+
+O botão **"Sincronizar ativos existentes"** na aba Movimentações chama `syncMissingTrades()`:
+
+```
+Para cada ativo em assets:
+  Se não existe nenhum trade com esse ticker em trades:
+    → addTrade({
+        ticker, type: 'buy',
+        quantity: asset.quantity,
+        price: asset.avgPrice,
+        total: asset.quantity * asset.avgPrice,
+        date: asset.operationDate ?? hoje,
+        source: 'manual'
+      })
+```
+
+- Cria **um único trade sintético de compra** com a posição atual do ativo.
+- Após sincronizar, o ativo passa a aparecer no IR com o custo correto.
+- Não duplica se já existir algum trade para o ticker.
+
+### Por que `buildPositions` usa trades e não assets diretamente
+
+A aba IR (`src/lib/ir-calc.ts`) reconstrói a posição de cada ativo **cronologicamente** a partir dos trades:
+
+```
+buildPositions(trades, endDate, assets, ...)
+  → Ordena trades por date ASC
+  → Para cada trade até endDate:
+      buy  → soma qty, recalcula custo médio ponderado, acumula totalCostUsd (USD)
+      sell → reduz qty, reduz custo proporcionalmente
+  → Resultado: posição em 31/12 com qty, avgCost, totalCostUsd
+```
+
+Isso garante que o custo médio e a quantidade declarada no IR reflitam o histórico real de operações, não só o estado atual do ativo. O `assets` é usado apenas para metadados (tipo, nome, cnpj, previousTickers) — nunca para qty ou avgPrice no IR.
+
+**`previousTickers`** no ativo cria um mapa de alias `{ MALL11 → PMLL11 }` para que trades antigos com o ticker original sejam contabilizados na posição do ticker atual.
+
+---
+
 ## Portfólio — Metas (Alocação)
 
 **Arquivo:** `src/pages/portfolio/components/tabs/allocation/index.tsx`
@@ -289,7 +367,7 @@ Ficam no arquivo `.env` na raiz do projeto (não sobe pro GitHub):
 
 ---
 
-## Portfólio — Aporte
+## Portfólio — Simular Aporte
 
 **Arquivo:** `src/pages/portfolio/components/tabs/aporte/index.tsx`
 

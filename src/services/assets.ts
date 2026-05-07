@@ -38,7 +38,7 @@ export const updateAssetPrice = (userId: string, assetId: string, price: number)
   updateDoc(doc(db, 'users', userId, 'assets', assetId), { currentPrice: price })
 
 export const updateAsset = (userId: string, assetId: string, data: Partial<Asset>) =>
-  updateDoc(doc(db, 'users', userId, 'assets', assetId), data)
+  updateDoc(doc(db, 'users', userId, 'assets', assetId), stripUndefined(data))
 
 export const deleteAsset = (userId: string, assetId: string) =>
   deleteDoc(doc(db, 'users', userId, 'assets', assetId))

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clock, HelpCircle, TrendingDown, TrendingUp } from 'lucide-react'
+import { Clock, HelpCircle, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import type { FundamentalSnapshot } from '@/types'
 import type { IndicatorDef } from '../types'
 import { fmtDate } from '../utils'
@@ -54,9 +54,11 @@ export const HistoryDialog = ({
 export const IndicatorHistoryContent = ({
   snapshots,
   def,
+  onDeleteSnapshot,
 }: {
   snapshots: FundamentalSnapshot[]
   def: IndicatorDef
+  onDeleteSnapshot?: (fetchedAt: string) => Promise<void>
 }) => {
   const entries = [...snapshots]
     .reverse()
@@ -78,22 +80,32 @@ export const IndicatorHistoryContent = ({
         return (
           <div
             key={s.fetchedAt}
-            className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0"
+            className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0 group"
           >
             <span className="text-muted-foreground">{fmtDate(s.fetchedAt)}</span>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-foreground">{def.format(val)}</span>
-              {delta !== null &&
-                Math.abs(delta) > 0.0001 &&
-                def.format(Math.abs(delta)) !== def.format(0) && (
-                  <span
-                    className={`flex items-center gap-0.5 ${isGood === null ? 'text-muted-foreground' : isGood ? 'text-success' : 'text-destructive'}`}
-                  >
-                    <TrendIcon isIncrease={isIncrease ?? false} isGood={isGood} />
-                    {delta > 0 ? '+' : ''}
-                    {def.format(delta)}
-                  </span>
-                )}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-foreground">{def.format(val)}</span>
+                {delta !== null &&
+                  Math.abs(delta) > 0.0001 &&
+                  def.format(Math.abs(delta)) !== def.format(0) && (
+                    <span
+                      className={`flex items-center gap-0.5 ${isGood === null ? 'text-muted-foreground' : isGood ? 'text-success' : 'text-destructive'}`}
+                    >
+                      <TrendIcon isIncrease={isIncrease ?? false} isGood={isGood} />
+                      {delta > 0 ? '+' : ''}
+                      {def.format(delta)}
+                    </span>
+                  )}
+              </div>
+              {onDeleteSnapshot && (
+                <button
+                  onClick={() => onDeleteSnapshot(s.fetchedAt)}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all"
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
             </div>
           </div>
         )
@@ -105,18 +117,20 @@ export const IndicatorHistoryContent = ({
 export const IndicatorCard = ({
   def,
   snapshots,
+  onDeleteSnapshot,
 }: {
   def: IndicatorDef
   snapshots: FundamentalSnapshot[]
+  onDeleteSnapshot?: (fetchedAt: string) => Promise<void>
 }) => {
   const [histOpen, setHistOpen] = useState(false)
-  const current = snapshots.at(-1)
-  const val = current != null ? ((current[def.key] as number | null | undefined) ?? null) : null
-  if (val == null && snapshots.every((s) => (s[def.key] as number | null | undefined) == null))
-    return null
+  const withValue = [...snapshots]
+    .reverse()
+    .filter((s) => (s[def.key] as number | null | undefined) != null)
+  const val = withValue.length > 0 ? (withValue[0][def.key] as number) : null
+  if (val == null && withValue.length === 0) return null
 
-  const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null
-  const prevVal = prev != null ? ((prev[def.key] as number | null | undefined) ?? null) : null
+  const prevVal = withValue.length >= 2 ? (withValue[1][def.key] as number | null) : null
   const delta = val != null && prevVal != null ? val - prevVal : null
   const isIncrease = delta !== null ? delta > 0 : null
   const isGood =
@@ -196,7 +210,11 @@ export const IndicatorCard = ({
 
         {hasHistory && (
           <HistoryDialog title={def.label} open={histOpen} onOpenChange={setHistOpen}>
-            <IndicatorHistoryContent snapshots={snapshots} def={def} />
+            <IndicatorHistoryContent
+              snapshots={snapshots}
+              def={def}
+              onDeleteSnapshot={onDeleteSnapshot}
+            />
           </HistoryDialog>
         )}
       </>

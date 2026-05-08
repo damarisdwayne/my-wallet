@@ -19,21 +19,29 @@ export function formatPercent(value: number, decimals = 2): string {
 
 /** Returns the dividend amount in BRL. Prefers amountBrl (fixed at payment date PTAX) when available. */
 export const getDividendBrl = (
-  d: { amount: number; currency?: 'USD'; amountUsd?: number; amountBrl?: number },
+  d: {
+    amount: number
+    currency?: 'USD'
+    amountUsd?: number
+    amountBrl?: number
+    usdRateAtPayment?: number
+  },
   usdRate: number,
 ) => {
   if (d.currency !== 'USD') return d.amount
   if (d.amountBrl != null && d.amountBrl > 0) return d.amountBrl
+  if (d.usdRateAtPayment != null && d.amountUsd != null) return d.amountUsd * d.usdRateAtPayment
   return (d.amountUsd ?? 0) * usdRate
 }
 
 /** Returns the IR amount in BRL for a dividend. Prefers irBrl (fixed at payment date PTAX) when available. */
 export const getDividendIrBrl = (
-  d: { ir?: number; currency?: 'USD'; irUsd?: number; irBrl?: number },
+  d: { ir?: number; currency?: 'USD'; irUsd?: number; irBrl?: number; usdRateAtPayment?: number },
   usdRate: number,
 ) => {
   if (d.currency !== 'USD') return d.ir ?? 0
   if (d.irBrl != null && d.irBrl > 0) return d.irBrl
+  if (d.usdRateAtPayment != null && d.irUsd != null) return d.irUsd * d.usdRateAtPayment
   return (d.irUsd ?? 0) * usdRate
 }
 

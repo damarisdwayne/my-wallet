@@ -4,6 +4,7 @@ export interface Props {
   assets: Asset[]
   fundamentals: Record<string, FundamentalRecord>
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
+  deleteSnapshot: (ticker: string, fetchedAt: string) => Promise<void>
   fiiInfo: Record<string, FiiInfo>
   saveFiiInfo: (data: FiiInfo) => Promise<void>
   stockInfo: Record<string, StockInfo>

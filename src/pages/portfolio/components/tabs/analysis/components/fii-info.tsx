@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import type { FiiInfo } from '@/types'
+import { fetchMfinanceFiiInfo } from '@/services/fundamentals'
 import { inputClass } from '../utils'
 import { FII_INFO_FIELDS } from '../constants'
 
@@ -82,9 +83,9 @@ export const FiiInfoDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base">
-            Informações do Fundo
-            <span className="ml-2 text-xs font-normal text-muted-foreground">{ticker}</span>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <span>Informações do Fundo</span>
+            <span className="text-xs font-normal text-muted-foreground">{ticker}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -123,24 +124,58 @@ export const FiiInfoDialog = ({
 }
 
 export const FiiInfoSection = ({
+  ticker,
+  previousTickers,
   info,
   onEdit,
+  onAutoSave,
 }: {
+  ticker: string
+  previousTickers?: string[]
   info: FiiInfo | undefined
   onEdit: () => void
+  onAutoSave?: (data: FiiInfo) => Promise<void>
 }) => {
-  const fields: { label: string; value: string }[] = info
-    ? [
-        { label: 'Nome do Fundo', value: info.longName },
-        { label: 'CNPJ', value: info.cnpj },
-        { label: 'Início', value: info.startDate },
-        { label: 'Segmento', value: info.segment },
-        { label: 'Valor de Mercado', value: info.marketCap },
-        { label: 'Administradora / Gestora', value: info.adminName },
-        { label: 'Taxa de Adm.', value: info.adminFee },
-        { label: 'Taxa de Performance', value: info.performanceFee },
-      ].filter((f) => f.value.trim() !== '')
-    : []
+  const [apiData, setApiData] = useState<Partial<{ name: string; segment: string }>>({})
+
+  useEffect(() => {
+    fetchMfinanceFiiInfo(ticker, previousTickers ?? [])
+      .then((data) => {
+        setApiData(data)
+        if (!info && onAutoSave && (data.name || data.segment)) {
+          onAutoSave({
+            ticker,
+            longName: data.name ?? '',
+            segment: data.segment ?? '',
+            cnpj: '',
+            startDate: '',
+            marketCap: '',
+            adminName: '',
+            adminFee: '',
+            performanceFee: '',
+            updatedAt: new Date().toISOString(),
+          }).catch(() => null)
+        }
+      })
+      .catch(() => null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticker])
+
+  const v = (apiVal: string | undefined, savedVal: string | undefined) => {
+    const api = apiVal?.trim()
+    return api && !api.startsWith('#') ? api : savedVal?.trim() || ''
+  }
+
+  const fields: { label: string; value: string }[] = [
+    { label: 'Nome do Fundo', value: v(apiData.name, info?.longName) },
+    { label: 'CNPJ', value: info?.cnpj ?? '' },
+    { label: 'Início', value: info?.startDate ?? '' },
+    { label: 'Segmento', value: v(apiData.segment, info?.segment) },
+    { label: 'Valor de Mercado', value: info?.marketCap ?? '' },
+    { label: 'Administradora / Gestora', value: info?.adminName ?? '' },
+    { label: 'Taxa de Adm.', value: info?.adminFee ?? '' },
+    { label: 'Taxa de Performance', value: info?.performanceFee ?? '' },
+  ].filter((f) => f.value.trim() !== '')
 
   return (
     <div>

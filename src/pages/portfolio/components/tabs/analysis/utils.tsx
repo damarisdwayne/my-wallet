@@ -7,6 +7,23 @@ export const num1 = (v: number) => v.toFixed(1) + 'x'
 
 export { formatDateShort as fmtDate } from '@/lib/utils'
 
+import type { FundamentalSnapshot } from '@/types'
+
+// Builds a virtual snapshot using the most recent non-null value per field across all snapshots.
+// Prevents sparse newer snapshots from hiding data recorded in earlier months.
+export const mergeSnapshots = (snapshots: FundamentalSnapshot[]): FundamentalSnapshot | null => {
+  if (snapshots.length === 0) return null
+  const result = { ...snapshots[0] }
+  for (const snap of snapshots.slice(1)) {
+    for (const [k, v] of Object.entries(snap)) {
+      if (v != null && v !== '') {
+        ;(result as Record<string, unknown>)[k] = v
+      }
+    }
+  }
+  return result
+}
+
 export const renderInline = (text: string) => {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
   return parts.map((part, i) =>

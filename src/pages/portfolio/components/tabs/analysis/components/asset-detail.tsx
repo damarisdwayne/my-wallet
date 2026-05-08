@@ -20,6 +20,7 @@ import { ManualSnapshotDialog } from './snapshot-form'
 import { StockInfoDialog, StockInfoSection } from './stock-info'
 import { TextIndicatorCard } from './text-indicator-card'
 import { FiiValuation, StockValuation } from './valuation-section'
+import { mergeSnapshots } from '../utils'
 
 export const AssetDetailView = ({
   asset,
@@ -29,6 +30,7 @@ export const AssetDetailView = ({
   stockInfoData,
   onBack,
   onSaveSnapshot,
+  onDeleteSnapshot,
   onSaveFiiInfo,
   onSaveStockInfo,
 }: {
@@ -39,6 +41,7 @@ export const AssetDetailView = ({
   stockInfoData: StockInfo | undefined
   onBack: () => void
   onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
+  onDeleteSnapshot: (fetchedAt: string) => Promise<void>
   onSaveFiiInfo: (data: FiiInfo) => Promise<void>
   onSaveStockInfo: (data: StockInfo) => Promise<void>
 }) => {
@@ -54,7 +57,7 @@ export const AssetDetailView = ({
   }, [user, asset.ticker])
 
   const snapshots = record?.snapshots ?? []
-  const current = snapshots.at(-1) ?? null
+  const current = mergeSnapshots(snapshots)
   const indicators = STOCK_INDICATORS
 
   return (
@@ -103,16 +106,32 @@ export const AssetDetailView = ({
 
         {/* Valuation — compact chips */}
         {isFii ? (
-          <FiiValuation currentPrice={asset.currentPrice} snapshot={snapshots.at(-1) ?? null} />
+          <FiiValuation currentPrice={asset.currentPrice} snapshot={current} />
         ) : (
-          <StockValuation currentPrice={asset.currentPrice} snapshot={snapshots.at(-1) ?? null} />
+          <StockValuation currentPrice={asset.currentPrice} snapshot={current} />
         )}
 
         {/* FII fund info */}
-        {isFii && <FiiInfoSection info={fiiInfoData} onEdit={() => setFiiInfoOpen(true)} />}
+        {isFii && (
+          <FiiInfoSection
+            ticker={asset.ticker}
+            previousTickers={asset.previousTickers}
+            info={fiiInfoData}
+            onEdit={() => setFiiInfoOpen(true)}
+            onAutoSave={onSaveFiiInfo}
+          />
+        )}
 
         {/* Stock company info */}
-        {!isFii && <StockInfoSection info={stockInfoData} onEdit={() => setStockInfoOpen(true)} />}
+        {!isFii && (
+          <StockInfoSection
+            ticker={asset.ticker}
+            previousTickers={asset.previousTickers}
+            info={stockInfoData}
+            onEdit={() => setStockInfoOpen(true)}
+            onAutoSave={onSaveStockInfo}
+          />
+        )}
 
         {/* Indicators */}
         <div>
@@ -132,7 +151,12 @@ export const AssetDetailView = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {[...FII_COMMON, ...FII_TIJOLO, ...FII_PAPEL].map((def) =>
                 def.type === 'number' ? (
-                  <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                  <IndicatorCard
+                    key={def.key as string}
+                    def={def}
+                    snapshots={snapshots}
+                    onDeleteSnapshot={onDeleteSnapshot}
+                  />
                 ) : (
                   <TextIndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
                 ),
@@ -172,6 +196,7 @@ export const AssetDetailView = ({
 
       <ManualSnapshotDialog
         ticker={asset.ticker}
+        previousTickers={asset.previousTickers}
         isFii={isFii}
         open={registerOpen}
         onOpenChange={setRegisterOpen}

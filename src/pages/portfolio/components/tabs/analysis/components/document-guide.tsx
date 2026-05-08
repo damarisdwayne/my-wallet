@@ -79,9 +79,15 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
                   },
                 ].map((row) => (
                   <div key={row.tipo} className="rounded-md px-2.5 py-2.5 bg-muted/20 space-y-1">
-                    <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">{row.tipo}</p>
-                    <p className="text-[11px] font-semibold text-foreground leading-tight">{row.doc}</p>
-                    <p className="text-[10px] text-muted-foreground/60 leading-snug">{row.reason}</p>
+                    <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">
+                      {row.tipo}
+                    </p>
+                    <p className="text-[11px] font-semibold text-foreground leading-tight">
+                      {row.doc}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/60 leading-snug">
+                      {row.reason}
+                    </p>
                   </div>
                 ))}
               </div>

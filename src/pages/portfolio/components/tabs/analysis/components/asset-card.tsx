@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/utils'
 import type { Asset, FundamentalRecord, FundamentalSnapshot } from '@/types'
 import { FII_COMMON, STOCK_INDICATORS } from '../constants'
 import type { FiiNumericDef } from '../types'
+import { mergeSnapshots } from '../utils'
 import { ValuationBadge } from './valuation-section'
 
 export const AssetCompactCard = ({
@@ -19,7 +20,7 @@ export const AssetCompactCard = ({
   onClick: () => void
 }) => {
   const snapshots = record?.snapshots ?? []
-  const current = snapshots.at(-1) ?? null
+  const current = mergeSnapshots(snapshots)
 
   const keyDefs: {
     key: keyof FundamentalSnapshot
@@ -29,7 +30,9 @@ export const AssetCompactCard = ({
     ? (FII_COMMON.filter(
         (d) => d.key === 'dividendYield' || d.key === 'priceToBook',
       ) as FiiNumericDef[])
-    : STOCK_INDICATORS.filter((d) => d.key === 'priceEarnings' || d.key === 'dividendYield')
+    : STOCK_INDICATORS.filter(
+        (d) => d.key === 'priceEarnings' || d.key === 'dividendYield' || d.key === 'priceToBook',
+      )
 
   return (
     <Card

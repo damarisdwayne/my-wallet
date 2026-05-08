@@ -11,6 +11,150 @@ import type {
 
 const MAX_MONTHS = 12
 
+/* ─── mfinance – stock indicators (free, no key) ───────────────── */
+
+interface MfinanceIndicator {
+  name: string
+  value: number
+}
+
+interface MfinanceIndicatorsResp {
+  priceToBookValue?: MfinanceIndicator // P/L
+  priceEarningsRatio?: MfinanceIndicator // P/VP
+  returnOnEquity?: MfinanceIndicator // ROE %
+  returnOnInvestedCapital?: MfinanceIndicator // ROIC %
+  returnOnAssets?: MfinanceIndicator // ROA %
+  netMargin?: MfinanceIndicator // Mg. Líquida %
+  grossMargin?: MfinanceIndicator // Mg. Bruta %
+  ebitdaMargin?: MfinanceIndicator // Mg. EBITDA %
+  enterpriseValueEbitda?: MfinanceIndicator // EV/EBITDA
+  netDebtToEbitda?: MfinanceIndicator // Dív. Líq./EBITDA
+  netDebtToAssets?: MfinanceIndicator // Dívida/PL proxy
+  cagrRecipesFiveYears?: MfinanceIndicator // Cresc. Receita
+  cagrProfitsFiveYears?: MfinanceIndicator // Cresc. Lucro
+}
+
+interface MfinanceStockResp {
+  dividendYield?: number
+  pe?: number
+  name?: string
+  sector?: string
+  subSector?: string
+}
+
+interface MfinanceFiiResp {
+  dividendYield?: number
+  name?: string
+  segment?: string
+}
+
+export type MfinanceStockIndicators = Partial<{
+  priceEarnings: number
+  priceToBook: number
+  dividendYield: number
+  profitMargins: number
+  grossMargins: number
+  ebitdaMargins: number
+  evToEbitda: number
+  returnOnEquity: number
+  roic: number
+  returnOnAssets: number
+  debtToEquity: number
+  netDebtToEbitda: number
+  revenueGrowth: number
+  earningsGrowth: number
+}>
+
+const tryTickers = async (
+  urls: (ticker: string) => string[],
+  candidates: string[],
+): Promise<Response | null> => {
+  for (const ticker of candidates) {
+    const res = await fetch(urls(ticker)[0]).catch(() => null)
+    if (res?.ok) return res
+  }
+  return null
+}
+
+export const fetchMfinanceFiiIndicators = async (
+  ticker: string,
+  previousTickers: string[] = [],
+): Promise<Partial<{ dividendYield: number; priceToBook: number }>> => {
+  const candidates = [ticker, ...previousTickers]
+  const res = await tryTickers((t) => [`https://mfinance.com.br/api/v1/fiis/${t}`], candidates)
+  if (!res) return {}
+  const data = (await res.json()) as MfinanceFiiResp
+  return { dividendYield: data.dividendYield }
+}
+
+export const fetchMfinanceFiiInfo = async (
+  ticker: string,
+  previousTickers: string[] = [],
+): Promise<Partial<{ name: string; segment: string }>> => {
+  const candidates = [ticker, ...previousTickers]
+  const res = await tryTickers((t) => [`https://mfinance.com.br/api/v1/fiis/${t}`], candidates)
+  if (!res) return {}
+  const data = (await res.json()) as MfinanceFiiResp
+  return { name: data.name, segment: data.segment }
+}
+
+export const fetchMfinanceStockInfo = async (
+  ticker: string,
+  previousTickers: string[] = [],
+): Promise<Partial<{ name: string; sector: string; subSector: string }>> => {
+  const candidates = [ticker, ...previousTickers]
+  for (const t of candidates) {
+    const res = await fetch(`https://mfinance.com.br/api/v1/stocks/${t}`).catch(() => null)
+    if (res?.ok) {
+      const data = (await res.json()) as MfinanceStockResp
+      return { name: data.name, sector: data.sector, subSector: data.subSector }
+    }
+  }
+  return {}
+}
+
+export const fetchMfinanceStockIndicators = async (
+  ticker: string,
+  previousTickers: string[] = [],
+): Promise<MfinanceStockIndicators> => {
+  const candidates = [ticker, ...previousTickers]
+
+  const findWorking = async (path: (t: string) => string) => {
+    for (const t of candidates) {
+      const res = await fetch(path(t)).catch(() => null)
+      if (res?.ok) return res
+    }
+    return null
+  }
+
+  const [indRes, stockRes] = await Promise.all([
+    findWorking((t) => `https://mfinance.com.br/api/v1/stocks/indicators/${t}`),
+    findWorking((t) => `https://mfinance.com.br/api/v1/stocks/${t}`),
+  ])
+
+  const ind = indRes?.ok ? ((await indRes.json()) as MfinanceIndicatorsResp) : {}
+  const stock = stockRes?.ok ? ((await stockRes.json()) as MfinanceStockResp) : {}
+
+  const n = (v?: MfinanceIndicator) => v?.value ?? undefined
+
+  return {
+    priceEarnings: n(ind.priceToBookValue) ?? stock.pe, // their "P/L"
+    priceToBook: n(ind.priceEarningsRatio), // their "P/VP"
+    dividendYield: stock.dividendYield,
+    profitMargins: n(ind.netMargin),
+    grossMargins: n(ind.grossMargin),
+    ebitdaMargins: n(ind.ebitdaMargin),
+    evToEbitda: n(ind.enterpriseValueEbitda),
+    returnOnEquity: n(ind.returnOnEquity),
+    roic: n(ind.returnOnInvestedCapital),
+    returnOnAssets: n(ind.returnOnAssets),
+    debtToEquity: n(ind.netDebtToAssets),
+    netDebtToEbitda: n(ind.netDebtToEbitda),
+    revenueGrowth: n(ind.cagrRecipesFiveYears),
+    earningsGrowth: n(ind.cagrProfitsFiveYears),
+  }
+}
+
 /* ─── brapi – sector/industry + P/L (free) ─────────────────────── */
 
 interface BrapiResult {
@@ -135,6 +279,17 @@ export const upsertMonthlySnapshot = (
     priceHistory,
   }
 
+  return setDoc(doc(db, 'users', userId, 'fundamentals', ticker.toUpperCase()), record)
+}
+
+export const deleteSnapshotFromRecord = (
+  userId: string,
+  ticker: string,
+  fetchedAt: string,
+  existing: FundamentalRecord,
+) => {
+  const snapshots = existing.snapshots.filter((s) => s.fetchedAt !== fetchedAt)
+  const record: FundamentalRecord = { ...existing, snapshots, updatedAt: new Date().toISOString() }
   return setDoc(doc(db, 'users', userId, 'fundamentals', ticker.toUpperCase()), record)
 }
 

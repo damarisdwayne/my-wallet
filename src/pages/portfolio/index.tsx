@@ -61,6 +61,7 @@ export const PortfolioPage = () => {
     priceError,
     fundamentals,
     saveManualSnapshot,
+    deleteSnapshot,
     fiiInfo,
     saveFiiInfo,
     stockInfo,
@@ -164,6 +165,7 @@ export const PortfolioPage = () => {
             assets={assets}
             fundamentals={fundamentals}
             saveManualSnapshot={saveManualSnapshot}
+            deleteSnapshot={deleteSnapshot}
             fiiInfo={fiiInfo}
             saveFiiInfo={saveFiiInfo}
             stockInfo={stockInfo}

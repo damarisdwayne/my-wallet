@@ -286,7 +286,7 @@ export interface HistoricalPoint {
 }
 
 const HIST_CACHE_KEY = 'mw_hist_v1'
-const HIST_TTL_MS = 60 * 60 * 1000
+const HIST_TTL_MS = 48 * 60 * 60 * 1000
 
 const loadHistCache = (ticker: string): HistoricalPoint[] | null => {
   try {

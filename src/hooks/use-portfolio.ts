@@ -440,6 +440,7 @@ export const usePortfolio = () => {
     fundamentalErrors: fundamentalsHook.fundamentalErrors,
     refreshFundamentals,
     saveManualSnapshot,
+    deleteSnapshot: fundamentalsHook.deleteSnapshot,
     saveFiiManual: fundamentalsHook.saveFiiManual,
     syncMissingTrades,
   }

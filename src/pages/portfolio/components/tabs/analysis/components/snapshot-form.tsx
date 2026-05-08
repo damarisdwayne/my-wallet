@@ -1,18 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components'
 import type { FundamentalSnapshot } from '@/types'
+import { fetchMfinanceFiiIndicators, fetchMfinanceStockIndicators } from '@/services/fundamentals'
 import type { FiiIndicatorDef } from '../types'
 import { inputClass } from '../utils'
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
 
 export const ManualSnapshotDialog = ({
   ticker,
+  previousTickers,
   isFii,
   open,
   onOpenChange,
   onSave,
 }: {
   ticker: string
+  previousTickers?: string[]
   isFii: boolean
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -20,6 +24,28 @@ export const ManualSnapshotDialog = ({
 }) => {
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [fetching, setFetching] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+
+    setForm({})
+    setFetching(true)
+    const fetchFn = isFii
+      ? fetchMfinanceFiiIndicators(ticker, previousTickers ?? [])
+      : fetchMfinanceStockIndicators(ticker, previousTickers ?? [])
+
+    fetchFn
+      .then((data) => {
+        const filled: Record<string, string> = {}
+        for (const [key, val] of Object.entries(data)) {
+          if (val != null) filled[key] = String(val)
+        }
+        setForm(filled)
+      })
+      .catch(() => null)
+      .finally(() => setFetching(false))
+  }, [open, isFii, ticker])
 
   const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
 
@@ -98,10 +124,15 @@ export const ManualSnapshotDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Registrar indicadores — {ticker}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Registrar indicadores — {ticker}
+            {fetching && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+          </DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground -mt-1">
-          Salva os dados do mês atual. Deixe em branco para não alterar.
+          {fetching
+            ? 'Buscando dados automaticamente...'
+            : 'Salva os dados do mês atual. Deixe em branco para não alterar.'}
         </p>
 
         {isFii ? (

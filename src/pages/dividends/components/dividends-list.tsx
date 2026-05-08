@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components'
 import { formatCurrency, formatDate, getDividendBrl, getDividendIrBrl } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
 
 import type { Dividend } from '@/types'
+
+const PAGE_SIZE = 10
 
 type Props = {
   yearDividends: Dividend[]
@@ -26,6 +29,10 @@ export const DividendsList = ({
 }: Props) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+  const [showAll, setShowAll] = useState(false)
+
+  const visible = showAll ? yearDividends : yearDividends.slice(0, PAGE_SIZE)
+  const hidden = yearDividends.length - PAGE_SIZE
 
   return (
     <Card>
@@ -36,7 +43,10 @@ export const DividendsList = ({
             {years.map((y) => (
               <button
                 key={y}
-                onClick={() => onSelectYear(y)}
+                onClick={() => {
+                  onSelectYear(y)
+                  setShowAll(false)
+                }}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${selectedYear === y ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
               >
                 {y}
@@ -58,7 +68,7 @@ export const DividendsList = ({
           </p>
         ) : (
           <div>
-            {yearDividends.map((d) => (
+            {visible.map((d) => (
               <div
                 key={d.id}
                 className="group flex items-center justify-between py-2.5 border-b border-border/50 last:border-0 hover:bg-muted/20 -mx-1 px-1 rounded transition-colors"
@@ -101,6 +111,22 @@ export const DividendsList = ({
                 </div>
               </div>
             ))}
+            {!showAll && hidden > 0 && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="w-full mt-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Ver mais {hidden} {hidden === 1 ? 'registro' : 'registros'}
+              </button>
+            )}
+            {showAll && yearDividends.length > PAGE_SIZE && (
+              <button
+                onClick={() => setShowAll(false)}
+                className="w-full mt-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Ver menos
+              </button>
+            )}
           </div>
         )}
       </CardContent>

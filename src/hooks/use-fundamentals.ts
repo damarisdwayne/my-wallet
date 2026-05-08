@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  deleteSnapshotFromRecord,
   fetchBrapiSummary,
   saveFiiInfo as saveFiiInfoService,
   saveFiiManualData,
@@ -90,6 +91,13 @@ export const useFundamentals = (uid: string | null) => {
   const saveStockInfo = (data: StockInfo) =>
     uid ? saveStockInfoService(uid, data) : Promise.resolve()
 
+  const deleteSnapshot = (ticker: string, fetchedAt: string) => {
+    if (!uid) return Promise.resolve()
+    const existing = fundamentals[ticker.toUpperCase()]
+    if (!existing) return Promise.resolve()
+    return deleteSnapshotFromRecord(uid, ticker, fetchedAt, existing)
+  }
+
   return {
     fundamentals,
     fiiManual,
@@ -102,5 +110,6 @@ export const useFundamentals = (uid: string | null) => {
     saveFiiManual,
     saveFiiInfo,
     saveStockInfo,
+    deleteSnapshot,
   }
 }

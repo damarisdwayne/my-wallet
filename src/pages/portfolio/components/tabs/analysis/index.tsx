@@ -7,6 +7,7 @@ export const AnalysisTab = ({
   assets,
   fundamentals,
   saveManualSnapshot,
+  deleteSnapshot,
   fiiInfo,
   saveFiiInfo,
   stockInfo,
@@ -29,6 +30,7 @@ export const AnalysisTab = ({
         stockInfoData={stockInfo[selectedAsset.ticker.toUpperCase()]}
         onBack={() => setSelectedTicker(null)}
         onSaveSnapshot={saveManualSnapshot}
+        onDeleteSnapshot={(fetchedAt) => deleteSnapshot(selectedAsset.ticker, fetchedAt)}
         onSaveFiiInfo={saveFiiInfo}
         onSaveStockInfo={saveStockInfo}
       />

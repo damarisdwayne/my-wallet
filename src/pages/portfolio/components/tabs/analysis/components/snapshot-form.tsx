@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components'
 import type { FundamentalSnapshot } from '@/types'
-import { fetchMfinanceFiiIndicators, fetchMfinanceStockIndicators } from '@/services/fundamentals'
+import {
+  fetchInvestidor10FiiIndicators,
+  fetchInvestidor10StockIndicators,
+} from '@/services/investidor10'
 import type { FiiIndicatorDef } from '../types'
 import { inputClass } from '../utils'
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
@@ -32,14 +35,14 @@ export const ManualSnapshotDialog = ({
     setForm({})
     setFetching(true)
     const fetchFn = isFii
-      ? fetchMfinanceFiiIndicators(ticker, previousTickers ?? [])
-      : fetchMfinanceStockIndicators(ticker, previousTickers ?? [])
+      ? fetchInvestidor10FiiIndicators(ticker, previousTickers ?? [])
+      : fetchInvestidor10StockIndicators(ticker, previousTickers ?? [])
 
     fetchFn
       .then((data) => {
         const filled: Record<string, string> = {}
         for (const [key, val] of Object.entries(data)) {
-          if (val != null) filled[key] = String(val)
+          if (val != null && typeof val === 'number') filled[key] = String(val)
         }
         setForm(filled)
       })

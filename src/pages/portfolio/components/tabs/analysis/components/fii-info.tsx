@@ -6,9 +6,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+  Skeleton,
+} from '@/components'
 import type { FiiInfo } from '@/types'
-import { fetchMfinanceFiiInfo } from '@/services/fundamentals'
+import {
+  fetchInvestidor10FiiInfo,
+  type Investidor10FiiInfo,
+} from '@/services/investidor10'
 import { inputClass } from '../utils'
 import { FII_INFO_FIELDS } from '../constants'
 
@@ -136,10 +140,12 @@ export const FiiInfoSection = ({
   onEdit: () => void
   onAutoSave?: (data: FiiInfo) => Promise<void>
 }) => {
-  const [apiData, setApiData] = useState<Partial<{ name: string; segment: string }>>({})
+  const [apiData, setApiData] = useState<Investidor10FiiInfo>({})
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
-    fetchMfinanceFiiInfo(ticker, previousTickers ?? [])
+    setFetching(true)
+    fetchInvestidor10FiiInfo(ticker, previousTickers ?? [])
       .then((data) => {
         setApiData(data)
         if (!info && onAutoSave && (data.name || data.segment)) {
@@ -149,31 +155,30 @@ export const FiiInfoSection = ({
             segment: data.segment ?? '',
             cnpj: '',
             startDate: '',
-            marketCap: '',
+            marketCap: data.marketCap ?? '',
             adminName: '',
-            adminFee: '',
+            adminFee: data.adminFee ?? '',
             performanceFee: '',
             updatedAt: new Date().toISOString(),
           }).catch(() => null)
         }
       })
       .catch(() => null)
+      .finally(() => setFetching(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker])
 
-  const v = (apiVal: string | undefined, savedVal: string | undefined) => {
-    const api = apiVal?.trim()
-    return api && !api.startsWith('#') ? api : savedVal?.trim() || ''
-  }
+  const v = (apiVal: string | undefined, savedVal: string | undefined) =>
+    apiVal?.trim() || savedVal?.trim() || ''
 
   const fields: { label: string; value: string }[] = [
     { label: 'Nome do Fundo', value: v(apiData.name, info?.longName) },
     { label: 'CNPJ', value: info?.cnpj ?? '' },
     { label: 'Início', value: info?.startDate ?? '' },
     { label: 'Segmento', value: v(apiData.segment, info?.segment) },
-    { label: 'Valor de Mercado', value: info?.marketCap ?? '' },
+    { label: 'Valor de Mercado', value: v(apiData.marketCap, info?.marketCap) },
     { label: 'Administradora / Gestora', value: info?.adminName ?? '' },
-    { label: 'Taxa de Adm.', value: info?.adminFee ?? '' },
+    { label: 'Taxa de Adm.', value: v(apiData.adminFee, info?.adminFee) },
     { label: 'Taxa de Performance', value: info?.performanceFee ?? '' },
   ].filter((f) => f.value.trim() !== '')
 
@@ -191,7 +196,16 @@ export const FiiInfoSection = ({
           {info ? 'Editar' : 'Preencher'}
         </button>
       </div>
-      {fields.length > 0 ? (
+      {fetching ? (
+        <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+          {['n','c','i','s','vm','a','ta','tp'].map((k) => (
+            <div key={k} className="space-y-1">
+              <Skeleton className="h-2.5 w-20" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          ))}
+        </div>
+      ) : fields.length > 0 ? (
         <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
           {fields.map((f) => (
             <div key={f.label} className="min-w-0">

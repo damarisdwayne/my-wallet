@@ -61,6 +61,12 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
           headers: { 'User-Agent': 'Mozilla/5.0' },
         },
+        '/api/investidor10': {
+          target: 'https://investidor10.com.br',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/investidor10/, ''),
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+        },
         '/api/tesouro': {
           target: 'https://www.tesourotransparente.gov.br',
           changeOrigin: true,

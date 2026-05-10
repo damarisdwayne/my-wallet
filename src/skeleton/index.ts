@@ -1,3 +1,4 @@
+export * from './analysis-detail'
 export * from './dividends'
 export * from './expenses'
 export * from './portfolio'

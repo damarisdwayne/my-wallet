@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  BarChart3,
   BookOpen,
   Calculator,
   Home,
@@ -17,7 +16,6 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
   { to: '/expenses', label: 'Gastos', icon: <Receipt size={20} /> },
   { to: '/portfolio', label: 'Carteira', icon: <TrendingUp size={20} /> },
-  { to: '/dividends', label: 'Proventos', icon: <BarChart3 size={20} /> },
   { to: '/tax', label: 'Imposto de Renda', icon: <Home size={20} /> },
   // { to: '/sales', label: 'Vendas', icon: <ShoppingBag size={20} /> },
   { to: '/calculators', label: 'Calculadoras', icon: <Calculator size={20} /> },

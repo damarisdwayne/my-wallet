@@ -67,6 +67,24 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api\/investidor10/, ''),
           headers: { 'User-Agent': 'Mozilla/5.0' },
         },
+        '/api/statusinvest': {
+          target: 'https://statusinvest.com.br',
+          changeOrigin: true,
+          rewrite: (path) => {
+            const qs = path.split('?')[1] ?? ''
+            const p = new URLSearchParams(qs)
+            const type = p.get('type') ?? 'acao'
+            const start = p.get('start') ?? ''
+            const end = p.get('end') ?? ''
+            const category = type === 'fii' ? 2 : 1
+            return `/${type}/getearnings?Start=${start}&End=${end}&category=${category}`
+          },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://statusinvest.com.br/acoes/proventos',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+          },
+        },
         '/api/tesouro': {
           target: 'https://www.tesourotransparente.gov.br',
           changeOrigin: true,

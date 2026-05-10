@@ -1,21 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components'
 import { deleteDividend, subscribeToAllDividends } from '@/services/dividends'
-import { subscribeToAssets } from '@/services/assets'
 import { fetchUsdBrlRate } from '@/services/quotes'
 import { fetchUpcomingDividends, type UpcomingDividend } from '@/services/statusinvest'
 import { useAuth } from '@/store/auth'
 import { getDividendBrl } from '@/lib/utils'
 import { DividendsSkeleton } from '@/skeleton'
 import type { Asset, Dividend } from '@/types'
-import { CURRENT_MONTH, THIS_YEAR } from './constants'
-import { buildLast12Months, type MonthBreakdown } from './utils'
-import { DividendsList, MonthlyChart, SummaryCards } from './components'
+import { CURRENT_MONTH, THIS_YEAR } from '@/pages/dividends/constants'
+import { buildLast12Months, type MonthBreakdown } from '@/pages/dividends/utils'
+import {
+  DividendsList,
+  MonthlyChart,
+  SummaryCards,
+} from '@/pages/dividends/components'
 
-export const DividendsPage = () => {
+type Props = {
+  assets: Asset[]
+}
+
+export const DividendsTab = ({ assets }: Props) => {
   const { user } = useAuth()
   const [dividends, setDividends] = useState<Dividend[]>([])
-  const [assets, setAssets] = useState<Asset[]>([])
   const [selectedYear, setSelectedYear] = useState(THIS_YEAR)
   const [loading, setLoading] = useState(true)
   const [usdRate, setUsdRate] = useState(0)
@@ -29,21 +35,10 @@ export const DividendsPage = () => {
 
   useEffect(() => {
     if (!user) return
-    let resolved = 0
-    const onLoad = () => {
-      if (++resolved === 2) setLoading(false)
-    }
-    const unsubs = [
-      subscribeToAllDividends(user.uid, (data) => {
-        setDividends(data)
-        onLoad()
-      }),
-      subscribeToAssets(user.uid, (data) => {
-        setAssets(data)
-        onLoad()
-      }),
-    ]
-    return () => unsubs.forEach((u) => u())
+    return subscribeToAllDividends(user.uid, (data) => {
+      setDividends(data)
+      setLoading(false)
+    })
   }, [user])
 
   useEffect(() => {
@@ -137,8 +132,7 @@ export const DividendsPage = () => {
   if (loading) return <DividendsSkeleton />
 
   return (
-    <div className="p-6 space-y-6">
-      {/* KPIs — 12m, média, mês atual com donut */}
+    <div className="space-y-6">
       <SummaryCards
         total12={total12}
         avg12={avg12}
@@ -147,7 +141,6 @@ export const DividendsPage = () => {
         prevMonthTotal={prevMonthTotal}
       />
 
-      {/* Evolução histórica */}
       <Card>
         <CardHeader>
           <CardTitle>Evolução — últimos 12 meses</CardTitle>
@@ -157,7 +150,6 @@ export const DividendsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Histórico importado */}
       <DividendsList
         yearDividends={yearDividends}
         yearTotal={yearTotal}

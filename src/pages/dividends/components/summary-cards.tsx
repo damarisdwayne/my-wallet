@@ -1,14 +1,23 @@
 import { Card, CardHeader, CardTitle, CardValue } from '@/components'
 import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
+import { MonthDonutCard } from './upcoming-dividends'
 
 type Props = {
   total12: number
   avg12: number
-  totalCurrentMonth: number
+  paidCurrentMonth: number
+  provisionedCurrentMonth: number
+  prevMonthTotal: number
 }
 
-export const SummaryCards = ({ total12, avg12, totalCurrentMonth }: Props) => {
+export const SummaryCards = ({
+  total12,
+  avg12,
+  paidCurrentMonth,
+  provisionedCurrentMonth,
+  prevMonthTotal,
+}: Props) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
 
@@ -26,12 +35,11 @@ export const SummaryCards = ({ total12, avg12, totalCurrentMonth }: Props) => {
           <CardValue>{fmt(avg12)}</CardValue>
         </CardHeader>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Mês atual</CardTitle>
-          <CardValue>{fmt(totalCurrentMonth)}</CardValue>
-        </CardHeader>
-      </Card>
+      <MonthDonutCard
+        paid={paidCurrentMonth}
+        provisioned={provisionedCurrentMonth}
+        prevMonth={prevMonthTotal}
+      />
     </div>
   )
 }

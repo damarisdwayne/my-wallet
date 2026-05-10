@@ -12,8 +12,8 @@ const AllocationTab = lazy(() =>
 const AporteTab = lazy(() =>
   import('./components/tabs/aporte').then((m) => ({ default: m.AporteTab })),
 )
-const RebalanceTab = lazy(() =>
-  import('./components/tabs/rebalance').then((m) => ({ default: m.RebalanceTab })),
+const DividendsTab = lazy(() =>
+  import('./components/tabs/dividends').then((m) => ({ default: m.DividendsTab })),
 )
 const TradesTab = lazy(() =>
   import('./components/tabs/trades').then((m) => ({ default: m.TradesTab })),
@@ -28,10 +28,10 @@ const tabs = [
   'Visão Geral',
   'Alocação',
   'Simular Aporte',
-  'Rebalancear',
+  'Proventos',
+  'Análises',
   'Movimentações',
   'Importações',
-  'Análises',
 ]
 
 export const PortfolioPage = () => {
@@ -141,26 +141,8 @@ export const PortfolioPage = () => {
             refreshingPrices={refreshingPrices}
           />
         )}
-        {activeTab === 3 && (
-          <RebalanceTab
-            assets={assets}
-            categories={categories}
-            diagrams={diagrams}
-            answers={answers}
-            totalValue={totalValue}
-          />
-        )}
+        {activeTab === 3 && <DividendsTab assets={assets} />}
         {activeTab === 4 && (
-          <TradesTab
-            trades={trades}
-            assets={assets}
-            categories={categories}
-            onDeleteTrade={deleteTrade}
-            onSyncMissingTrades={syncMissingTrades}
-          />
-        )}
-        {activeTab === 5 && <ImportsTab records={importRecords} onRevert={revertImport} />}
-        {activeTab === 6 && (
           <AnalysisTab
             assets={assets}
             fundamentals={fundamentals}
@@ -172,6 +154,16 @@ export const PortfolioPage = () => {
             saveStockInfo={saveStockInfo}
           />
         )}
+        {activeTab === 5 && (
+          <TradesTab
+            trades={trades}
+            assets={assets}
+            categories={categories}
+            onDeleteTrade={deleteTrade}
+            onSyncMissingTrades={syncMissingTrades}
+          />
+        )}
+        {activeTab === 6 && <ImportsTab records={importRecords} onRevert={revertImport} />}
       </Suspense>
     </div>
   )

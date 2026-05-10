@@ -6,8 +6,18 @@ import type { ReportEvent } from '../utils/report-events'
 const WEEK_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ]
 
 type Props = {
@@ -32,7 +42,10 @@ const buildCalendarDays = (year: number, month: number) => {
     const d = daysInPrev - i
     const m = month === 0 ? 12 : month
     const y = month === 0 ? year - 1 : year
-    cells.push({ date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, current: false })
+    cells.push({
+      date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      current: false,
+    })
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -46,13 +59,25 @@ const buildCalendarDays = (year: number, month: number) => {
   for (let d = 1; d <= remaining; d++) {
     const m = month === 11 ? 1 : month + 2
     const y = month === 11 ? year + 1 : year
-    cells.push({ date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, current: false })
+    cells.push({
+      date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      current: false,
+    })
   }
 
   return cells
 }
 
-export const CalendarGrid = ({ year, month, dividends, reports, selectedDay, onSelectDay, onPrev, onNext }: Props) => {
+export const CalendarGrid = ({
+  year,
+  month,
+  dividends,
+  reports,
+  selectedDay,
+  onSelectDay,
+  onPrev,
+  onNext,
+}: Props) => {
   const today = new Date().toISOString().slice(0, 10)
   const cells = buildCalendarDays(year, month)
 
@@ -75,13 +100,19 @@ export const CalendarGrid = ({ year, month, dividends, reports, selectedDay, onS
     <div className="space-y-3">
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <button onClick={onPrev} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+        <button
+          onClick={onPrev}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
           <ChevronLeft size={16} />
         </button>
         <span className="text-sm font-semibold text-foreground">
           {MONTH_NAMES[month]} {year}
         </span>
-        <button onClick={onNext} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+        <button
+          onClick={onNext}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
           <ChevronRight size={16} />
         </button>
       </div>
@@ -89,7 +120,10 @@ export const CalendarGrid = ({ year, month, dividends, reports, selectedDay, onS
       {/* Week headers */}
       <div className="grid grid-cols-7 gap-1">
         {WEEK_DAYS.map((d) => (
-          <div key={d} className="text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wide pb-1">
+          <div
+            key={d}
+            className="text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wide pb-1"
+          >
             {d}
           </div>
         ))}
@@ -126,11 +160,12 @@ export const CalendarGrid = ({ year, month, dividends, reports, selectedDay, onS
               {hasAny && cell.current && (
                 <div className="flex flex-wrap justify-center gap-0.5 mt-1 px-0.5">
                   {divs.slice(0, 2).map((d) => (
-                    <span key={d.ticker + d.paymentDate} className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span
+                      key={d.ticker + d.paymentDate}
+                      className="w-1.5 h-1.5 rounded-full bg-primary"
+                    />
                   ))}
-                  {reps.length > 0 && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  )}
+                  {reps.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                   {divs.length + reps.length > 3 && (
                     <span className="text-[9px] text-muted-foreground leading-none">
                       +{divs.length + reps.length - 3}

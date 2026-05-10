@@ -9,11 +9,7 @@ import { DividendsSkeleton } from '@/skeleton'
 import type { Asset, Dividend } from '@/types'
 import { CURRENT_MONTH, THIS_YEAR } from '@/pages/dividends/constants'
 import { buildLast12Months, type MonthBreakdown } from '@/pages/dividends/utils'
-import {
-  DividendsList,
-  MonthlyChart,
-  SummaryCards,
-} from '@/pages/dividends/components'
+import { DividendsList, MonthlyChart, SummaryCards } from '@/pages/dividends/components'
 
 type Props = {
   assets: Asset[]
@@ -102,13 +98,6 @@ export const DividendsTab = ({ assets }: Props) => {
   const avg12 = total12 / 12
   const paidCurrentMonth = byMonth[CURRENT_MONTH]?.total ?? 0
 
-  const prevMonth = useMemo(() => {
-    const d = new Date()
-    d.setMonth(d.getMonth() - 1)
-    return d.toISOString().slice(0, 7)
-  }, [])
-  const prevMonthTotal = byMonth[prevMonth]?.total ?? 0
-
   const provisionedCurrentMonth = useMemo(() => {
     const cm = CURRENT_MONTH
     return upcoming
@@ -138,7 +127,6 @@ export const DividendsTab = ({ assets }: Props) => {
         avg12={avg12}
         paidCurrentMonth={paidCurrentMonth}
         provisionedCurrentMonth={provisionedCurrentMonth}
-        prevMonthTotal={prevMonthTotal}
       />
 
       <Card>

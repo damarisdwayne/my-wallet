@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Skeleton } from '@/components'
-import type { StockInfo } from '@/types'
 import {
-  fetchInvestidor10StockInfo,
-  type Investidor10StockInfo,
-} from '@/services/investidor10'
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Skeleton,
+} from '@/components'
+import type { StockInfo } from '@/types'
+import { fetchInvestidor10StockInfo, type Investidor10StockInfo } from '@/services/investidor10'
 import { inputClass } from '../utils'
 import { STOCK_INFO_FIELDS } from '../constants'
 
@@ -207,7 +211,7 @@ export const StockInfoSection = ({
       {fetching ? (
         <div className="rounded-lg border border-border p-4 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-            {['n','c','s','sg','f','ipo','vm','g'].map((k) => (
+            {['n', 'c', 's', 'sg', 'f', 'ipo', 'vm', 'g'].map((k) => (
               <div key={k} className="space-y-1">
                 <Skeleton className="h-2.5 w-20" />
                 <Skeleton className="h-4 w-28" />

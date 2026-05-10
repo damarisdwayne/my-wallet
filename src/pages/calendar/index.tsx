@@ -80,14 +80,18 @@ export const CalendarPage = () => {
   const hasSelectedEvents = selectedDayDividends.length > 0 || selectedDayReports.length > 0
 
   const goToPrev = () => {
-    if (month === 0) { setMonth(11); setYear((y) => y - 1) }
-    else setMonth((m) => m - 1)
+    if (month === 0) {
+      setMonth(11)
+      setYear((y) => y - 1)
+    } else setMonth((m) => m - 1)
     setSelectedDay(null)
   }
 
   const goToNext = () => {
-    if (month === 11) { setMonth(0); setYear((y) => y + 1) }
-    else setMonth((m) => m + 1)
+    if (month === 11) {
+      setMonth(0)
+      setYear((y) => y + 1)
+    } else setMonth((m) => m + 1)
     setSelectedDay(null)
   }
 
@@ -104,7 +108,7 @@ export const CalendarPage = () => {
                 <Skeleton className="w-8 h-8 rounded" />
               </div>
               <div className="grid grid-cols-7 gap-1">
-                {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((d) => (
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
                   <Skeleton key={d} className="h-4 w-full" />
                 ))}
                 {Array.from({ length: 35 }, (_, i) => String(i)).map((i) => (

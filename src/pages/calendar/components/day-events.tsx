@@ -52,8 +52,12 @@ export const DayEvents = ({ date, dividends, reports }: DayEventsProps) => {
                   {typeBadge(e.type)}
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-foreground tabular-nums">{fmt(e.totalValue)}</p>
-                  <p className="text-[10px] text-muted-foreground tabular-nums">{fmt(e.valuePerShare)}/cota</p>
+                  <p className="text-sm font-semibold text-foreground tabular-nums">
+                    {fmt(e.totalValue)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums">
+                    {fmt(e.valuePerShare)}/cota
+                  </p>
                 </div>
               </div>
             ))}
@@ -129,8 +133,12 @@ export const ProvisionedList = ({ dividends }: ProvisionedListProps) => {
                 {typeBadge(e.type)}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-foreground tabular-nums">{fmt(e.totalValue)}</p>
-                <p className="text-[10px] text-muted-foreground tabular-nums">{fmt(e.valuePerShare)}/cota</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums">
+                  {fmt(e.totalValue)}
+                </p>
+                <p className="text-[10px] text-muted-foreground tabular-nums">
+                  {fmt(e.valuePerShare)}/cota
+                </p>
               </div>
             </div>
           ))}

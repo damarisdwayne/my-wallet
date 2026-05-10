@@ -56,7 +56,13 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
     if (type === 'normal') {
       const amount = Number.parseFloat(form.amount.replace(',', '.'))
       if (!form.description.trim() || Number.isNaN(amount) || amount <= 0) return
-      await onAdd({ description: form.description.trim(), amount, category: form.category, date: form.date, source: 'manual' })
+      await onAdd({
+        description: form.description.trim(),
+        amount,
+        category: form.category,
+        date: form.date,
+        source: 'manual',
+      })
     } else if (type === 'fixo') {
       const amount = Number.parseFloat(fixed.amount.replace(',', '.'))
       if (!fixed.description.trim() || Number.isNaN(amount) || amount <= 0) return
@@ -72,7 +78,8 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
     } else {
       const total = Number.parseFloat(installment.totalAmount.replace(',', '.'))
       const n = Number.parseInt(installment.installments, 10)
-      if (!installment.description.trim() || Number.isNaN(total) || total <= 0 || !n || n < 2) return
+      if (!installment.description.trim() || Number.isNaN(total) || total <= 0 || !n || n < 2)
+        return
       await onAddInstallment({
         description: installment.description.trim(),
         totalAmount: total,
@@ -132,25 +139,50 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
             <p className="text-xs text-muted-foreground">Gasto pontual registrado manualmente.</p>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Descrição</label>
-              <input className={INPUT_CLASS} placeholder="Ex: Mercado" value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} autoFocus />
+              <input
+                className={INPUT_CLASS}
+                placeholder="Ex: Mercado"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                autoFocus
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Valor (R$)</label>
-              <input type="number" min="0" step="0.01" className={INPUT_CLASS} placeholder="0,00"
-                value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={INPUT_CLASS}
+                placeholder="0,00"
+                value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Categoria</label>
-              <select className={INPUT_CLASS} value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))}>
-                {Object.entries(categoryLabel).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              <select
+                className={INPUT_CLASS}
+                value={form.category}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))
+                }
+              >
+                {Object.entries(categoryLabel).map(([k, l]) => (
+                  <option key={k} value={k}>
+                    {l}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Data</label>
-              <input type="date" className={INPUT_CLASS} value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+              <input
+                type="date"
+                className={INPUT_CLASS}
+                value={form.date}
+                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              />
             </div>
           </div>
         )}
@@ -158,34 +190,65 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
         {/* Fixo */}
         {type === 'fixo' && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">Aparece automaticamente todo mês até ser removido.</p>
+            <p className="text-xs text-muted-foreground">
+              Aparece automaticamente todo mês até ser removido.
+            </p>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Descrição</label>
-              <input className={INPUT_CLASS} placeholder="Ex: Condomínio" value={fixed.description}
-                onChange={(e) => setFixed((f) => ({ ...f, description: e.target.value }))} autoFocus />
+              <input
+                className={INPUT_CLASS}
+                placeholder="Ex: Condomínio"
+                value={fixed.description}
+                onChange={(e) => setFixed((f) => ({ ...f, description: e.target.value }))}
+                autoFocus
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Valor mensal (R$)</label>
-              <input type="number" min="0" step="0.01" className={INPUT_CLASS} placeholder="0,00"
-                value={fixed.amount} onChange={(e) => setFixed((f) => ({ ...f, amount: e.target.value }))} />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={INPUT_CLASS}
+                placeholder="0,00"
+                value={fixed.amount}
+                onChange={(e) => setFixed((f) => ({ ...f, amount: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Categoria</label>
-              <select className={INPUT_CLASS} value={fixed.category}
-                onChange={(e) => setFixed((f) => ({ ...f, category: e.target.value as ExpenseCategory }))}>
-                {Object.entries(categoryLabel).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              <select
+                className={INPUT_CLASS}
+                value={fixed.category}
+                onChange={(e) =>
+                  setFixed((f) => ({ ...f, category: e.target.value as ExpenseCategory }))
+                }
+              >
+                {Object.entries(categoryLabel).map(([k, l]) => (
+                  <option key={k} value={k}>
+                    {l}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Início (mês)</label>
-                <input type="month" className={INPUT_CLASS} value={fixed.startMonth}
-                  onChange={(e) => setFixed((f) => ({ ...f, startMonth: e.target.value }))} />
+                <input
+                  type="month"
+                  className={INPUT_CLASS}
+                  value={fixed.startMonth}
+                  onChange={(e) => setFixed((f) => ({ ...f, startMonth: e.target.value }))}
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Fim (opcional)</label>
-                <input type="month" className={INPUT_CLASS} value={fixed.endMonth}
-                  onChange={(e) => setFixed((f) => ({ ...f, endMonth: e.target.value }))} />
+                <input
+                  type="month"
+                  className={INPUT_CLASS}
+                  value={fixed.endMonth}
+                  onChange={(e) => setFixed((f) => ({ ...f, endMonth: e.target.value }))}
+                />
               </div>
             </div>
           </div>
@@ -194,53 +257,93 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
         {/* Parcelado */}
         {type === 'parcelado' && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">O valor total é dividido pelo número de parcelas.</p>
+            <p className="text-xs text-muted-foreground">
+              O valor total é dividido pelo número de parcelas.
+            </p>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Descrição</label>
-              <input className={INPUT_CLASS} placeholder="Ex: TV Samsung 65'" value={installment.description}
-                onChange={(e) => setInstallment((f) => ({ ...f, description: e.target.value }))} autoFocus />
+              <input
+                className={INPUT_CLASS}
+                placeholder="Ex: TV Samsung 65'"
+                value={installment.description}
+                onChange={(e) => setInstallment((f) => ({ ...f, description: e.target.value }))}
+                autoFocus
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Valor total (R$)</label>
-                <input type="number" min="0" step="0.01" className={INPUT_CLASS} placeholder="0,00"
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className={INPUT_CLASS}
+                  placeholder="0,00"
                   value={installment.totalAmount}
-                  onChange={(e) => setInstallment((f) => ({ ...f, totalAmount: e.target.value }))} />
+                  onChange={(e) => setInstallment((f) => ({ ...f, totalAmount: e.target.value }))}
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Nº parcelas</label>
-                <input type="number" min="2" step="1" className={INPUT_CLASS} placeholder="12"
+                <input
+                  type="number"
+                  min="2"
+                  step="1"
+                  className={INPUT_CLASS}
+                  placeholder="12"
                   value={installment.installments}
-                  onChange={(e) => setInstallment((f) => ({ ...f, installments: e.target.value }))} />
+                  onChange={(e) => setInstallment((f) => ({ ...f, installments: e.target.value }))}
+                />
               </div>
             </div>
             {installmentPreview !== null && !Number.isNaN(installmentPreview) && (
               <p className="text-sm text-muted-foreground">
-                Parcela: <span className="font-medium text-foreground">{formatCurrency(installmentPreview)}</span>/mês
+                Parcela:{' '}
+                <span className="font-medium text-foreground">
+                  {formatCurrency(installmentPreview)}
+                </span>
+                /mês
               </p>
             )}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Categoria</label>
-              <select className={INPUT_CLASS} value={installment.category}
-                onChange={(e) => setInstallment((f) => ({ ...f, category: e.target.value as ExpenseCategory }))}>
-                {Object.entries(categoryLabel).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              <select
+                className={INPUT_CLASS}
+                value={installment.category}
+                onChange={(e) =>
+                  setInstallment((f) => ({ ...f, category: e.target.value as ExpenseCategory }))
+                }
+              >
+                {Object.entries(categoryLabel).map(([k, l]) => (
+                  <option key={k} value={k}>
+                    {l}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Mês inicial</label>
-              <input type="month" className={INPUT_CLASS} value={installment.startMonth}
-                onChange={(e) => setInstallment((f) => ({ ...f, startMonth: e.target.value }))} />
+              <input
+                type="month"
+                className={INPUT_CLASS}
+                value={installment.startMonth}
+                onChange={(e) => setInstallment((f) => ({ ...f, startMonth: e.target.value }))}
+              />
             </div>
           </div>
         )}
 
         <DialogFooter>
-          <button onClick={() => handleClose(false)}
-            className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent transition-colors">
+          <button
+            onClick={() => handleClose(false)}
+            className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent transition-colors"
+          >
             Cancelar
           </button>
-          <button onClick={handle}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors">
+          <button
+            onClick={handle}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
+          >
             Adicionar
           </button>
         </DialogFooter>

@@ -4,9 +4,9 @@ interface RawEntry {
   code: string
   companyName: string
   resultAbsoluteValue: string // "0,01724983"
-  dateCom: string             // "DD/MM/YYYY"
-  paymentDividend: string     // "DD/MM/YYYY" or "-"
-  earningType: string         // "JCP" | "Dividendos" | "Rendimento"
+  dateCom: string // "DD/MM/YYYY"
+  paymentDividend: string // "DD/MM/YYYY" or "-"
+  earningType: string // "JCP" | "Dividendos" | "Rendimento"
   dy: string
 }
 
@@ -19,11 +19,11 @@ export interface UpcomingDividend {
   ticker: string
   companyName: string
   type: string
-  dateCom: string        // YYYY-MM-DD
+  dateCom: string // YYYY-MM-DD
   paymentDate: string | null
   valuePerShare: number
   isProvisioned: boolean
-  totalValue: number     // valuePerShare × quantity
+  totalValue: number // valuePerShare × quantity
 }
 
 const parseDate = (s: string): string | null => {

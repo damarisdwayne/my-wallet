@@ -107,13 +107,6 @@ export const DividendsPage = () => {
   const avg12 = total12 / 12
   const paidCurrentMonth = byMonth[CURRENT_MONTH]?.total ?? 0
 
-  const prevMonth = useMemo(() => {
-    const d = new Date()
-    d.setMonth(d.getMonth() - 1)
-    return d.toISOString().slice(0, 7)
-  }, [])
-  const prevMonthTotal = byMonth[prevMonth]?.total ?? 0
-
   const provisionedCurrentMonth = useMemo(() => {
     const cm = CURRENT_MONTH
     return upcoming
@@ -144,7 +137,6 @@ export const DividendsPage = () => {
         avg12={avg12}
         paidCurrentMonth={paidCurrentMonth}
         provisionedCurrentMonth={provisionedCurrentMonth}
-        prevMonthTotal={prevMonthTotal}
       />
 
       {/* Evolução histórica */}

@@ -19,8 +19,18 @@ const nextBusinessDay = (d: Date): Date => {
 const toIso = (d: Date) => d.toISOString().slice(0, 10)
 
 const MONTH_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ]
 
 export const generateReportEvents = (
@@ -58,17 +68,43 @@ export const generateReportEvents = (
       // Q1 → May 14, Q2 → Aug 14, Q3 → Nov 14, DFP → Apr 30 (next year)
       const baseYear = from.getFullYear()
       const quarters = [
-        { date: new Date(baseYear, 4, 14), reportType: 'ITR' as ReportType, period: `Q1 ${baseYear}` },
-        { date: new Date(baseYear, 7, 14), reportType: 'ITR' as ReportType, period: `Q2 ${baseYear}` },
-        { date: new Date(baseYear, 10, 14), reportType: 'ITR' as ReportType, period: `Q3 ${baseYear}` },
-        { date: new Date(baseYear + 1, 3, 30), reportType: 'DFP' as ReportType, period: `Q4 ${baseYear}` },
+        {
+          date: new Date(baseYear, 4, 14),
+          reportType: 'ITR' as ReportType,
+          period: `Q1 ${baseYear}`,
+        },
+        {
+          date: new Date(baseYear, 7, 14),
+          reportType: 'ITR' as ReportType,
+          period: `Q2 ${baseYear}`,
+        },
+        {
+          date: new Date(baseYear, 10, 14),
+          reportType: 'ITR' as ReportType,
+          period: `Q3 ${baseYear}`,
+        },
+        {
+          date: new Date(baseYear + 1, 3, 30),
+          reportType: 'DFP' as ReportType,
+          period: `Q4 ${baseYear}`,
+        },
         // also next year's Q1 in case range spans into next year
-        { date: new Date(baseYear + 1, 4, 14), reportType: 'ITR' as ReportType, period: `Q1 ${baseYear + 1}` },
+        {
+          date: new Date(baseYear + 1, 4, 14),
+          reportType: 'ITR' as ReportType,
+          period: `Q1 ${baseYear + 1}`,
+        },
       ]
       for (const q of quarters) {
         const d = nextBusinessDay(q.date)
         if (inRange(d)) {
-          events.push({ ticker: asset.ticker, assetType: 'stock', reportType: q.reportType, period: q.period, date: toIso(d) })
+          events.push({
+            ticker: asset.ticker,
+            assetType: 'stock',
+            reportType: q.reportType,
+            period: q.period,
+            date: toIso(d),
+          })
         }
       }
     }

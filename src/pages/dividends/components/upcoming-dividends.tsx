@@ -41,8 +41,12 @@ export const MonthDonutCard = ({
             <circle cx={CX} cy={CY} r={R} fill="none" stroke="hsl(var(--muted))" strokeWidth={SW} />
             {provisioned > 0 && (
               <circle
-                cx={CX} cy={CY} r={R}
-                fill="none" stroke={PROV_COLOR} strokeWidth={SW}
+                cx={CX}
+                cy={CY}
+                r={R}
+                fill="none"
+                stroke={PROV_COLOR}
+                strokeWidth={SW}
                 strokeDasharray={`${provArc} ${CIRC - provArc}`}
                 strokeDashoffset={-paidArc}
                 strokeLinecap="round"
@@ -51,8 +55,12 @@ export const MonthDonutCard = ({
             )}
             {paid > 0 && (
               <circle
-                cx={CX} cy={CY} r={R}
-                fill="none" stroke={PAID_COLOR} strokeWidth={SW}
+                cx={CX}
+                cy={CY}
+                r={R}
+                fill="none"
+                stroke={PAID_COLOR}
+                strokeWidth={SW}
                 strokeDasharray={`${paidArc} ${CIRC - paidArc}`}
                 strokeLinecap="round"
                 transform={`rotate(-90 ${CX} ${CY})`}
@@ -62,7 +70,10 @@ export const MonthDonutCard = ({
           <div className="absolute inset-0 flex items-center justify-center">
             <div
               className="w-2 h-2 rounded-full"
-              style={{ background: paid > 0 ? PAID_COLOR : provisioned > 0 ? PROV_COLOR : 'hsl(var(--muted))' }}
+              style={{
+                background:
+                  paid > 0 ? PAID_COLOR : provisioned > 0 ? PROV_COLOR : 'hsl(var(--muted))',
+              }}
             />
           </div>
         </div>
@@ -72,21 +83,27 @@ export const MonthDonutCard = ({
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: PAID_COLOR }} />
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">Pago</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">
+                Pago
+              </p>
               <p className="text-sm font-semibold text-foreground">{fmt(paid)}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: PROV_COLOR }} />
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">Provisionado</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">
+                Provisionado
+              </p>
               <p className="text-sm font-semibold text-foreground">{fmt(provisioned)}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0 bg-muted" />
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">Mês anterior</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none">
+                Mês anterior
+              </p>
               <p className="text-sm font-semibold text-muted-foreground">{fmt(prevMonth)}</p>
             </div>
           </div>

@@ -9,10 +9,7 @@ import {
   Skeleton,
 } from '@/components'
 import type { FiiInfo } from '@/types'
-import {
-  fetchInvestidor10FiiInfo,
-  type Investidor10FiiInfo,
-} from '@/services/investidor10'
+import { fetchInvestidor10FiiInfo, type Investidor10FiiInfo } from '@/services/investidor10'
 import { inputClass } from '../utils'
 import { FII_INFO_FIELDS } from '../constants'
 
@@ -198,7 +195,7 @@ export const FiiInfoSection = ({
       </div>
       {fetching ? (
         <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-          {['n','c','i','s','vm','a','ta','tp'].map((k) => (
+          {['n', 'c', 'i', 's', 'vm', 'a', 'ta', 'tp'].map((k) => (
             <div key={k} className="space-y-1">
               <Skeleton className="h-2.5 w-20" />
               <Skeleton className="h-4 w-28" />

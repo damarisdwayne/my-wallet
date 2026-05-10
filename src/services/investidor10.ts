@@ -16,9 +16,9 @@ interface IndicatorEntry {
 }
 
 const searchTicker = async (ticker: string): Promise<SearchResult | null> => {
-  const res = await fetch(
-    `${BASE}/api/searchquery/${ticker.toLowerCase()}/compare/`,
-  ).catch(() => null)
+  const res = await fetch(`${BASE}/api/searchquery/${ticker.toLowerCase()}/compare/`).catch(
+    () => null,
+  )
   if (!res?.ok) return null
   const data = (await res.json()) as SearchResult[]
   if (!Array.isArray(data) || data.length === 0) return null
@@ -163,9 +163,9 @@ const fetchStockIndicators = async (
   const meta = await searchTicker(ticker)
   if (!meta?.ticker_id) return null
 
-  const res = await fetch(
-    `${BASE}/api/historico-indicadores/${meta.ticker_id}/5?v=2`,
-  ).catch(() => null)
+  const res = await fetch(`${BASE}/api/historico-indicadores/${meta.ticker_id}/5?v=2`).catch(
+    () => null,
+  )
   if (!res?.ok) return null
 
   const data = (await res.json()) as Record<string, IndicatorEntry[]>
@@ -213,9 +213,9 @@ const fetchFiiIndicators = async (ticker: string): Promise<Investidor10FiiIndica
   const meta = await searchTicker(ticker)
   if (!meta?.ticker_id) return null
 
-  const res = await fetch(
-    `${BASE}/api/historico-indicadores/${meta.ticker_id}/5?v=2`,
-  ).catch(() => null)
+  const res = await fetch(`${BASE}/api/historico-indicadores/${meta.ticker_id}/5?v=2`).catch(
+    () => null,
+  )
   if (!res?.ok) return null
 
   const data = (await res.json()) as Record<string, IndicatorEntry[]>

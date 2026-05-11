@@ -34,7 +34,9 @@
 25. [CSV Export (Portfólio)](#csv-export-portfólio)
 26. [Open Finance (Pluggy)](#open-finance-pluggy)
 27. [Valuation (Graham e FII)](#valuation-graham-e-fii)
-28. [Tabela Resumo — APIs Externas](#tabela-resumo--apis-externas)
+28. [PWA (Progressive Web App)](#pwa-progressive-web-app)
+29. [Design Responsivo e Mobile](#design-responsivo-e-mobile)
+30. [Tabela Resumo — APIs Externas](#tabela-resumo--apis-externas)
 
 ---
 
@@ -862,6 +864,87 @@ Salva proventos em `dividends`
 
 ---
 
+## PWA (Progressive Web App)
+
+**Plugin:** `vite-plugin-pwa` com Workbox
+**Configuração:** `vite.config.ts` → bloco `VitePWA({ ... })`
+
+### Manifesto
+
+- `name`: My Wallet, `short_name`: My Wallet
+- `display: standalone` — abre sem barra do navegador
+- `theme_color` / `background_color`: `#09090b` (dark)
+- Ícones: `favicon.svg` (any) e `pwa-maskable.svg` (maskable para Android)
+
+### Service Worker (Workbox)
+
+- `registerType: 'autoUpdate'` — atualiza silenciosamente quando há nova versão
+- `globPatterns`: pré-cacheia todos os arquivos estáticos (`.js`, `.css`, `.html`, `.svg`, etc.)
+- `navigateFallback: '/index.html'` — SPA fallback para rotas client-side
+- `runtimeCaching` com `NetworkFirst` para domínios Firebase/Firestore (TTL 5 min, timeout 10 s)
+
+### Desenvolvimento vs. Produção
+
+- Em produção (`yarn build`) o SW é gerado e servido normalmente
+- Em desenvolvimento, usar `devOptions: { enabled: true, type: 'module' }` no `vite.config.ts` para testar o SW
+- Para testar a instalação localmente: `yarn build && yarn preview`
+
+### iOS Safe Area
+
+- `index.html` usa `viewport-fit=cover` no meta viewport
+- `apple-mobile-web-app-status-bar-style: black-translucent` para barra de status transparente
+- Todos os elementos fixos usam `env(safe-area-inset-top/bottom)`:
+  - Header: `paddingTop: env(safe-area-inset-top)` via inline style
+  - Bottom nav: `paddingBottom: env(safe-area-inset-bottom)` via inline style
+  - FAB e banner de instalação: classe `.chat-fab` / `.above-mobile-nav` em `index.css` com `calc()`
+  - Sheets: `paddingTop/Bottom: env(...)` no componente base `sheet.tsx`
+
+### Banner de Instalação
+
+**Componente:** `src/components/pwa-install-prompt.tsx`
+- Escuta o evento `beforeinstallprompt` (Android/Chrome)
+- Exibe banner "Instalar My Wallet" acima do bottom nav
+- Chama `prompt.prompt()` e verifica `userChoice`
+- iOS não dispara `beforeinstallprompt` — instrução via Safari "Adicionar à tela inicial"
+
+---
+
+## Design Responsivo e Mobile
+
+### Layout Geral
+
+- **Desktop:** sidebar fixa à esquerda + área de conteúdo com header no topo
+- **Mobile:** header no topo + conteúdo central + bottom navigation bar fixo (`md:hidden`)
+- Componente do layout: `src/routes/app-layout.tsx`
+- Bottom nav: `src/components/layout/mobile-nav.tsx` (6 itens: Dashboard, Gastos, Carteira, IR, Calc, Info)
+
+### Padrões de Responsividade
+
+**Tabs em páginas com múltiplas abas (Portfolio, IR, Calculadoras, Conhecimento):**
+- Mobile: `DropdownMenu` shadcn/ui com ícone `Check` no item ativo
+- Desktop: barra de tabs horizontal com `hidden md:flex`
+- Mesmo padrão em: `src/pages/portfolio/index.tsx`, `src/pages/tax/components/tab-bar.tsx`, `src/pages/calculators/index.tsx`, `src/pages/knowledge/index.tsx`
+
+**Tabelas com muitas colunas:**
+- Mobile: lista de cards (`md:hidden`) com informações condensadas em 2-3 linhas
+- Desktop: tabela completa (`hidden md:block`)
+- Aplicado em: `assets-table.tsx` (visão geral do portfólio), `ticker-row.tsx` (movimentações)
+
+**Toolbars de botões:**
+- Ícone sempre visível; texto com `hidden sm:inline` e `title` tooltip para mobile
+- Aplicado em: `toolbar.tsx` (portfólio), `page-header.tsx` (gastos e IR)
+
+### Safe Area e Scroll
+
+**Classe `.main-scroll-area`** (`src/index.css`):
+- Mobile: `padding-bottom: calc(4rem + env(safe-area-inset-bottom))` — espaço para o bottom nav + safe area
+- Desktop: `padding-bottom: 0`
+- Aplicada no `<main>` em `app-layout.tsx`
+
+**FAB do chat:** classe `.chat-fab` — posiciona `0.75rem` acima do bottom nav respeitando safe area; `1.5rem` do fundo no desktop
+
+---
+
 ## Tabela Resumo — APIs Externas
 
 | API | Endpoint base | Dados | Auth | Cache |
@@ -878,4 +961,4 @@ Salva proventos em `dividends`
 
 ---
 
-*Última atualização: maio 2026*
+*Última atualização: maio 2026 — adicionado PWA e design responsivo*

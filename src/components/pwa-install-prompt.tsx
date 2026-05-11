@@ -28,7 +28,7 @@ export const PwaInstallPrompt = () => {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-6 md:bottom-20 md:w-80 z-50">
+    <div className="above-mobile-nav fixed left-4 right-4 md:left-auto md:right-6 md:w-80 z-50">
       <div className="flex items-center gap-3 rounded-xl border border-border bg-card shadow-lg px-4 py-3">
         <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <Download size={18} className="text-primary" />

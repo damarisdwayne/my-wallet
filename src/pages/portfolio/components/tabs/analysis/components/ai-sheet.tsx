@@ -117,8 +117,8 @@ export const AiSheet = ({
         </button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col overflow-y-auto p-0">
+        <SheetHeader className="px-6 pt-6">
           <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
             <BrainCircuit size={15} className="text-primary/70" />
             {ticker} · Análise por IA
@@ -128,7 +128,7 @@ export const AiSheet = ({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 space-y-8 mt-4">
+        <div className="flex-1 space-y-8 mt-4 px-6 pb-6">
           {/* Market Intelligence */}
           <MarketIntelligence ticker={ticker} type={isFii ? 'fii' : 'stock'} />
 

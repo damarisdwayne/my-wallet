@@ -50,6 +50,22 @@ A personal finance and investment portfolio manager built for Brazilian investor
 - Automatic polling of CVM regulatory filings for assets in your portfolio
 - Unseen count badge in the header
 
+### PWA (Progressive Web App)
+
+- Installable on Android (Chrome) and iOS (Safari) — appears on the home screen with a custom icon
+- Offline-capable via Workbox service worker (NetworkFirst for Firebase, cache-first for static assets)
+- iOS safe area support: header, bottom nav, FAB, and sheets all respect `env(safe-area-inset-top/bottom)` with `viewport-fit=cover`
+- Install prompt banner for Android/Chrome using `beforeinstallprompt`
+- To test locally: `yarn build && yarn preview`
+
+### Responsive Design
+
+- Mobile-first layout with a bottom navigation bar (6 items) replacing the sidebar on small screens
+- Tab-heavy pages (Portfolio, Tax, Calculators, Knowledge) use a dropdown selector on mobile and a tab bar on desktop
+- Assets table renders as a card list on mobile and a full table on desktop
+- Button toolbars hide text labels on mobile (`hidden sm:inline`) with `title` tooltips
+- Chat assistant FAB repositioned above the bottom nav on mobile
+
 ### Privacy Mode
 
 - Toggle to mask all monetary values with `••••••` across every page
@@ -69,6 +85,7 @@ A personal finance and investment portfolio manager built for Brazilian investor
 | Framework | React 19 + TypeScript |
 | Routing | React Router 7 |
 | Build | Vite |
+| PWA | vite-plugin-pwa + Workbox |
 | State | Jotai |
 | Styling | Tailwind CSS 4 + Radix UI + shadcn/ui |
 | Database | Firebase Firestore |

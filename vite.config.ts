@@ -43,6 +43,10 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           navigateFallback: '/index.html',

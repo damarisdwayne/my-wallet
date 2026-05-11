@@ -22,6 +22,15 @@
   }
 }
 
+.above-mobile-nav {
+  bottom: calc(4rem + env(safe-area-inset-bottom) + 0.75rem);
+}
+@media (min-width: 768px) {
+  .above-mobile-nav {
+    bottom: 1.25rem;
+  }
+}
+
 @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

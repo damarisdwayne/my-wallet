@@ -34,15 +34,17 @@ export const CategoryCards = ({
             className="text-left"
           >
             <Card
-              className={`transition-colors ${isActive ? 'border-primary bg-primary/5' : 'hover:border-primary/40'}`}
+              className={`h-full transition-colors ${isActive ? 'border-primary bg-primary/5' : 'hover:border-primary/40'}`}
             >
               <CardHeader className="p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ background: cat.color }}
                   />
-                  <CardTitle>{cat.name}</CardTitle>
+                  <CardTitle className="truncate" title={cat.name}>
+                    {cat.name}
+                  </CardTitle>
                 </div>
                 <p className="text-base font-bold text-foreground mt-1">
                   {hideValues ? MASK : formatCurrency(val)}

@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/header'
 import { Sidebar } from '@/components/layout/sidebar'
 import { MobileNav } from '@/components/layout/mobile-nav'
 import { ChatAssistant } from '@/components/chat-assistant'
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { useNotifications } from '@/hooks/use-notifications'
 import { usePriceAlerts } from '@/hooks/use-price-alerts'
 import { useAuth } from '@/store/auth'
@@ -59,6 +60,7 @@ export const AppLayout = () => {
       </div>
       <MobileNav />
       <ChatAssistant />
+      <PwaInstallPrompt />
     </div>
   )
 }

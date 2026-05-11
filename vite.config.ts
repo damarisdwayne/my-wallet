@@ -2,6 +2,7 @@ import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, loadEnv } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { pluggyDevPlugin } from './vite-plugin-pluggy'
 
 export default defineConfig(({ mode }) => {
@@ -10,7 +11,58 @@ export default defineConfig(({ mode }) => {
   process.env.PLUGGY_CLIENT_SECRET = env.PLUGGY_CLIENT_SECRET
 
   return {
-    plugins: [react(), tailwindcss(), pluggyDevPlugin()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      pluggyDevPlugin(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: {
+          name: 'My Wallet',
+          short_name: 'My Wallet',
+          description: 'Gestão de carteira de investimentos',
+          theme_color: '#09090b',
+          background_color: '#09090b',
+          display: 'standalone',
+          orientation: 'portrait',
+          start_url: '/',
+          scope: '/',
+          icons: [
+            {
+              src: 'favicon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any',
+            },
+            {
+              src: 'favicon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          navigateFallback: '/index.html',
+          // não cachear rotas de API
+          navigateFallbackDenylist: [/^\/api\//],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/(firestore|firebase)\.googleapis\.com\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'firebase-cache',
+                networkTimeoutSeconds: 10,
+                expiration: { maxEntries: 100, maxAgeSeconds: 300 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

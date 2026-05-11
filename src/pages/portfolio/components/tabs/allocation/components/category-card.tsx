@@ -192,7 +192,9 @@ const DiagramAssetRow = ({
       {/* Row 2: meta + atual */}
       <div className="flex items-center justify-between pl-16 pr-5 gap-2">
         <div className="text-left">
-          <p className="text-[10px] text-muted-foreground">Meta {(withinCatRatio * 100).toFixed(1)}%</p>
+          <p className="text-[10px] text-muted-foreground">
+            Meta {(withinCatRatio * 100).toFixed(1)}%
+          </p>
           <p className="text-xs font-medium text-foreground">{fmt(metaValue)}</p>
         </div>
         <div className="text-right">

@@ -240,7 +240,9 @@ export const AllocationTab = ({
           >
             <GitBranch size={14} />
             <span className="hidden sm:inline">Diagramas</span>
-            {diagrams.length > 0 && <span className="hidden sm:inline text-xs opacity-60">({diagrams.length})</span>}
+            {diagrams.length > 0 && (
+              <span className="hidden sm:inline text-xs opacity-60">({diagrams.length})</span>
+            )}
           </button>
           <button
             onClick={() => setAddOpen(true)}

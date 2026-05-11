@@ -27,7 +27,9 @@ export const Toolbar = ({
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors disabled:opacity-50"
     >
       <RefreshCw size={14} className={cn(refreshingPrices && 'animate-spin')} />
-      <span className="hidden sm:inline">{refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}</span>
+      <span className="hidden sm:inline">
+        {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
+      </span>
     </button>
     <button
       onClick={onExportCsv}

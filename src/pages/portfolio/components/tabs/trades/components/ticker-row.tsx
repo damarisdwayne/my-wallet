@@ -116,7 +116,9 @@ export const TickerRow = ({
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                     </span>
-                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', tradeColor(t))}>
+                    <span
+                      className={cn('text-xs font-medium px-2 py-0.5 rounded-full', tradeColor(t))}
+                    >
                       {tradeLabel(t)}
                     </span>
                   </div>
@@ -130,19 +132,43 @@ export const TickerRow = ({
                 </div>
                 <div className="mt-1.5 flex items-start justify-between text-xs">
                   <div>
-                    <p className="text-muted-foreground/60 uppercase tracking-wide" style={{ fontSize: '9px' }}>Qtd</p>
+                    <p
+                      className="text-muted-foreground/60 uppercase tracking-wide"
+                      style={{ fontSize: '9px' }}
+                    >
+                      Qtd
+                    </p>
                     <p className="tabular-nums text-foreground">{formatQuantity(t.quantity)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground/60 uppercase tracking-wide" style={{ fontSize: '9px' }}>Preço</p>
-                    <p className="tabular-nums text-muted-foreground">{t.price > 0 ? formatCurrency(t.price) : '—'}</p>
+                    <p
+                      className="text-muted-foreground/60 uppercase tracking-wide"
+                      style={{ fontSize: '9px' }}
+                    >
+                      Preço
+                    </p>
+                    <p className="tabular-nums text-muted-foreground">
+                      {t.price > 0 ? formatCurrency(t.price) : '—'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground/60 uppercase tracking-wide" style={{ fontSize: '9px' }}>Total</p>
-                    <p className="tabular-nums font-medium text-foreground">{t.total > 0 ? formatCurrency(t.total) : '—'}</p>
+                    <p
+                      className="text-muted-foreground/60 uppercase tracking-wide"
+                      style={{ fontSize: '9px' }}
+                    >
+                      Total
+                    </p>
+                    <p className="tabular-nums font-medium text-foreground">
+                      {t.total > 0 ? formatCurrency(t.total) : '—'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground/60 uppercase tracking-wide" style={{ fontSize: '9px' }}>Origem</p>
+                    <p
+                      className="text-muted-foreground/60 uppercase tracking-wide"
+                      style={{ fontSize: '9px' }}
+                    >
+                      Origem
+                    </p>
                     <p className="text-muted-foreground">{sourceLabel(t)}</p>
                   </div>
                 </div>
@@ -165,23 +191,32 @@ export const TickerRow = ({
             </thead>
             <tbody>
               {items.map((t) => (
-                <tr key={t.id} className="border-t border-border/60 hover:bg-accent/20 transition-colors">
+                <tr
+                  key={t.id}
+                  className="border-t border-border/60 hover:bg-accent/20 transition-colors"
+                >
                   <td className="px-4 py-2 text-muted-foreground tabular-nums text-xs">
                     {t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                   </td>
                   <td className="px-4 py-2">
-                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', tradeColor(t))}>
+                    <span
+                      className={cn('text-xs font-medium px-2 py-0.5 rounded-full', tradeColor(t))}
+                    >
                       {tradeLabel(t)}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-xs">{formatQuantity(t.quantity)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-xs">
+                    {formatQuantity(t.quantity)}
+                  </td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
                     {t.price > 0 ? formatCurrency(t.price) : '—'}
                   </td>
                   <td className="px-4 py-2 text-right font-medium tabular-nums text-xs">
                     {t.total > 0 ? formatCurrency(t.total) : '—'}
                   </td>
-                  <td className="px-4 py-2 text-right text-xs text-muted-foreground">{sourceLabel(t)}</td>
+                  <td className="px-4 py-2 text-right text-xs text-muted-foreground">
+                    {sourceLabel(t)}
+                  </td>
                   <td className="px-4 py-2 text-right">
                     <DeleteControl
                       tradeId={t.id}

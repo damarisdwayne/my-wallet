@@ -8,7 +8,7 @@ type Props = {
 }
 
 export const PageHeader = ({ effectiveYear, years, currentYear, onSelectYear }: Props) => (
-  <div className="flex items-center justify-between gap-4 flex-wrap">
+  <div className="space-y-3">
     <div>
       <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
         <FileText size={20} />
@@ -19,13 +19,13 @@ export const PageHeader = ({ effectiveYear, years, currentYear, onSelectYear }: 
       </p>
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Ano-base:</span>
-      <div className="flex gap-1">
-        {(years.length > 0 ? years : [currentYear]).map((y) => (
+      <span className="text-sm text-muted-foreground whitespace-nowrap">Ano-base:</span>
+      <div className="flex gap-1 overflow-x-auto pb-0.5">
+        {(years.length > 0 ? years : [currentYear]).slice(0, 4).map((y) => (
           <button
             key={y}
             onClick={() => onSelectYear(y)}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+            className={`shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
               effectiveYear === y
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:text-foreground'

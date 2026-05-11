@@ -83,8 +83,103 @@ export const AssetsTable = memo(
       )
     }
 
+    const mobileCards = (
+      <div className="flex flex-col gap-2 md:hidden">
+        {tableRows.map((row) => {
+          if (row.kind === 'group') {
+            const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
+            return (
+              <div
+                key="fi-group"
+                className="rounded-lg border border-border bg-card px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
+                onClick={() => fixedIncomeCatId && onSetFilterCatId(fixedIncomeCatId)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">{row.label}</p>
+                    <p className="text-xs text-muted-foreground">{row.subtitle}</p>
+                  </div>
+                  <Badge variant="secondary">Renda Fixa</Badge>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">{fmt(row.total)}</p>
+                  <p className={`text-sm font-medium ${ret >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatPercent(ret)}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{row.pct.toFixed(1)}% da carteira</p>
+              </div>
+            )
+          }
+
+          const a = row.asset
+          const totalAtual = a.currentPrice * a.quantity
+          const cost = a.avgPrice * a.quantity
+          const ret = cost > 0 ? ((totalAtual - cost) / cost) * 100 : 0
+          const baseValue = filterCatId === ALL ? totalValue : filteredTotal
+          const pct = baseValue > 0 ? (totalAtual / baseValue) * 100 : 0
+          const cat = categories.find((c) => c.id === a.categoryId)
+          const flatFI = isFlatFixedIncome(a)
+
+          return (
+            <div
+              key={a.id}
+              className={`rounded-lg border border-border px-4 py-3 ${ret >= 0 ? 'bg-success/5' : 'bg-destructive/5'}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground text-sm flex items-center gap-1.5 flex-wrap">
+                    {a.type === 'fixed_income' ? getFiLabel(a) : a.name}
+                    {a.pauseAporte && <PauseCircle size={12} className="text-destructive shrink-0" />}
+                    {!a.pauseAporte && a.ceilingPrice && a.currentPrice >= a.ceilingPrice && (
+                      <TrendingDown size={12} className="text-destructive shrink-0" />
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {flatFI ? (a.institution ?? a.ticker) : a.ticker}
+                    {a.maturityDate && (
+                      <span className="ml-1.5 text-muted-foreground/70">
+                        · venc. {a.maturityDate.slice(5, 7)}/{a.maturityDate.slice(0, 4)}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {cat ? (
+                    <Badge variant="secondary" style={{ borderColor: cat.color, color: cat.color }}>
+                      {cat.name}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">{typeLabel[a.type]}</Badge>
+                  )}
+                  <button
+                    onClick={() => onEditAsset(a)}
+                    className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-sm font-medium text-foreground">{fmt(totalAtual)}</p>
+                <p className={`text-sm font-semibold ${ret >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {formatPercent(ret)}
+                </p>
+              </div>
+              <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{flatFI ? `Invest. ${fmt(cost)}` : `${formatQuantity(a.quantity)} cotas · PM ${fmt(a.avgPrice)}`}</span>
+                <span>{pct.toFixed(1)}% {filterCatId === ALL ? 'cart.' : 'cat.'}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+
     return (
-      <div className="overflow-x-auto">
+      <>
+        {mobileCards}
+        <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-muted-foreground border-b border-border">
@@ -222,7 +317,8 @@ export const AssetsTable = memo(
             })}
           </tbody>
         </table>
-      </div>
+        </div>
+      </>
     )
   },
 )

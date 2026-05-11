@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { Header } from '@/components/layout/header'
 import { Sidebar } from '@/components/layout/sidebar'
+import { MobileNav } from '@/components/layout/mobile-nav'
 import { ChatAssistant } from '@/components/chat-assistant'
 import { useNotifications } from '@/hooks/use-notifications'
 import { usePriceAlerts } from '@/hooks/use-price-alerts'
@@ -48,7 +49,7 @@ export const AppLayout = () => {
           onToggleAlert={toggleAlert}
           onRemoveAlert={removeAlert}
         />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <ErrorBoundary key={pathname}>
             <Suspense fallback={<PageLoader />}>
               <Outlet />
@@ -56,6 +57,7 @@ export const AppLayout = () => {
           </ErrorBoundary>
         </main>
       </div>
+      <MobileNav />
       <ChatAssistant />
     </div>
   )

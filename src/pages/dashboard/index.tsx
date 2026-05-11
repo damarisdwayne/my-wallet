@@ -28,7 +28,7 @@ export const DashboardPage = () => {
   const balance = monthlySalary + monthlyDividends - monthlyExpenses
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <Card>
         <CardContent className="pt-4">
           <MarketIndicators />

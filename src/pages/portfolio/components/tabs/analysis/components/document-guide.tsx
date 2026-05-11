@@ -60,7 +60,7 @@ export const DocumentGuide = ({ type }: { type: 'stock' | 'fii' }) => {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                 Qual documento priorizar
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   {
                     tipo: 'Empresa operacional',

@@ -86,7 +86,7 @@ export const TaxPage = () => {
   const totalDARF = useMemo(() => monthlyRV.reduce((s, m) => s + m.irDue, 0), [monthlyRV])
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <PageHeader
         effectiveYear={effectiveYear}
         years={years}

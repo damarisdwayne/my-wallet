@@ -220,7 +220,7 @@ export const OpenFinanceDialog = ({ selectedMonth, onImport }: Props) => {
         <DialogTrigger asChild>
           <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-border text-sm text-foreground hover:bg-accent transition-colors">
             <Building2 size={15} />
-            Open Finance
+            <span className="hidden sm:inline">Open Finance</span>
           </button>
         </DialogTrigger>
 

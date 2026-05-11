@@ -23,31 +23,35 @@ export const Toolbar = ({
     <button
       onClick={onRefreshPrices}
       disabled={refreshingPrices}
+      title={refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors disabled:opacity-50"
     >
       <RefreshCw size={14} className={cn(refreshingPrices && 'animate-spin')} />
-      {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
+      <span className="hidden sm:inline">{refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}</span>
     </button>
     <button
       onClick={onExportCsv}
+      title="Exportar CSV"
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
     >
       <Download size={14} />
-      Exportar CSV
+      <span className="hidden sm:inline">Exportar CSV</span>
     </button>
     <button
       onClick={onOpenBrokerImport}
+      title="Importar nota"
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
     >
       <Upload size={14} />
-      Importar nota
+      <span className="hidden sm:inline">Importar nota</span>
     </button>
     <button
       onClick={onOpenAddAsset}
+      title="Adicionar ativo"
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
     >
       <Plus size={14} />
-      Adicionar ativo
+      <span className="hidden sm:inline">Adicionar ativo</span>
     </button>
   </div>
 )

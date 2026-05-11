@@ -1,5 +1,12 @@
 import { useState } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   AcoesBr,
   Exterior,
@@ -46,13 +53,34 @@ export const KnowledgePage = () => {
   const [activeTab, setActiveTab] = useState(0)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Base de Conhecimento</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{tabs[activeTab].description}</p>
       </div>
 
-      <div className="relative flex gap-1 pb-px overflow-x-auto">
+      {/* Mobile: dropdown */}
+      <div className="md:hidden">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-card text-sm font-medium text-foreground w-full justify-between">
+              {tabs[activeTab].label}
+              <ChevronDown size={16} className="text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            {tabs.map((tab, i) => (
+              <DropdownMenuItem key={tab.label} onClick={() => setActiveTab(i)} className="gap-2">
+                <Check size={14} className={i === activeTab ? 'text-primary' : 'opacity-0'} />
+                {tab.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Desktop: tab bar */}
+      <div className="relative hidden md:flex gap-1 pb-px">
         <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
         {tabs.map((tab, i) => (
           <button

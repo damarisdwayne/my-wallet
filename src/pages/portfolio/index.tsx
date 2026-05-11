@@ -1,4 +1,11 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
+import { ChevronDown, Check } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { PortfolioSkeleton } from '@/skeleton'
 import { PageLoader } from '@/components'
@@ -79,22 +86,45 @@ export const PortfolioPage = () => {
   if (loading) return <PortfolioSkeleton />
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative flex gap-1 pb-px">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      {/* Mobile: dropdown */}
+      <div className="md:hidden">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-card text-sm font-medium text-foreground w-full justify-between">
+              {tabs[activeTab]}
+              <ChevronDown size={16} className="text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            {tabs.map((tab, i) => (
+              <DropdownMenuItem key={tab} onClick={() => setActiveTab(i)} className="gap-2">
+                <Check size={14} className={i === activeTab ? 'text-primary' : 'opacity-0'} />
+                {tab}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Desktop: tab bar */}
+      <div className="relative hidden md:block pb-px">
         <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
-        {tabs.map((tab, i) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(i)}
-            className={`relative px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
-              activeTab === i
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        <div className="flex gap-1">
+          {tabs.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={`relative shrink-0 px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
+                activeTab === i
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <Suspense fallback={<PageLoader />}>

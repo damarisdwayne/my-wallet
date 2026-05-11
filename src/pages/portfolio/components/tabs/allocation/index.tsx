@@ -227,25 +227,28 @@ export const AllocationTab = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAssignOpen(true)}
+            title="Categorizar Ativos"
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
           >
             <ListChecks size={14} />
-            Categorizar Ativos
+            <span className="hidden sm:inline">Categorizar Ativos</span>
           </button>
           <button
             onClick={() => setDiagramsOpen(true)}
+            title="Diagramas"
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors"
           >
             <GitBranch size={14} />
-            Diagramas
-            {diagrams.length > 0 && <span className="text-xs opacity-60">({diagrams.length})</span>}
+            <span className="hidden sm:inline">Diagramas</span>
+            {diagrams.length > 0 && <span className="hidden sm:inline text-xs opacity-60">({diagrams.length})</span>}
           </button>
           <button
             onClick={() => setAddOpen(true)}
+            title="Nova categoria"
             className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
           >
             <Plus size={14} />
-            Nova categoria
+            <span className="hidden sm:inline">Nova categoria</span>
           </button>
         </div>
       </div>

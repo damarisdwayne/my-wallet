@@ -168,34 +168,38 @@ const DiagramAssetRow = ({
   return (
     <button
       onClick={() => onAnswerAsset(a)}
-      className="w-full flex items-center gap-3 group text-left hover:bg-accent/40 rounded-md px-1 py-1.5 transition-colors"
+      className="w-full flex flex-col gap-1 group text-left hover:bg-accent/40 rounded-md px-1 py-1.5 transition-colors"
     >
-      <div className="w-20 shrink-0">
-        <p className="text-sm font-semibold text-foreground">{a.ticker}</p>
-      </div>
-      <div className="flex-1 bg-muted rounded-full h-1.5">
-        <div
-          className="h-1.5 rounded-full bg-primary transition-all"
-          style={{ width: `${scorePct}%` }}
+      {/* Row 1: ticker + bar + score */}
+      <div className="flex items-center gap-3 w-full">
+        <div className="w-16 shrink-0">
+          <p className="text-sm font-semibold text-foreground">{a.ticker}</p>
+        </div>
+        <div className="flex-1 bg-muted rounded-full h-1.5">
+          <div
+            className="h-1.5 rounded-full bg-primary transition-all"
+            style={{ width: `${scorePct}%` }}
+          />
+        </div>
+        <span className={cn('shrink-0 text-xs font-bold w-8 text-right tabular-nums', scoreColor)}>
+          {yes}/{total}
+        </span>
+        <ChevronRight
+          size={12}
+          className="text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
         />
       </div>
-      <span className={cn('shrink-0 text-xs font-bold w-10 text-right tabular-nums', scoreColor)}>
-        {yes}/{total}
-      </span>
-      <div className="w-28 shrink-0 text-right">
-        <p className="text-[10px] text-muted-foreground">
-          Meta {(withinCatRatio * 100).toFixed(1)}%
-        </p>
-        <p className="text-xs font-medium text-foreground">{fmt(metaValue)}</p>
+      {/* Row 2: meta + atual */}
+      <div className="flex items-center justify-between pl-16 pr-5 gap-2">
+        <div className="text-left">
+          <p className="text-[10px] text-muted-foreground">Meta {(withinCatRatio * 100).toFixed(1)}%</p>
+          <p className="text-xs font-medium text-foreground">{fmt(metaValue)}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-muted-foreground">Atual {atualPct}%</p>
+          <p className="text-xs font-medium text-foreground">{fmt(atualValue)}</p>
+        </div>
       </div>
-      <div className="w-28 shrink-0 text-right">
-        <p className="text-[10px] text-muted-foreground">Atual {atualPct}%</p>
-        <p className="text-xs font-medium text-foreground">{fmt(atualValue)}</p>
-      </div>
-      <ChevronRight
-        size={12}
-        className="text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-      />
     </button>
   )
 }
@@ -282,20 +286,16 @@ export const CategoryCard = memo(
               <CardTitle className="text-foreground text-sm font-semibold">{cat.name}</CardTitle>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              {true && (
-                <span className="hidden sm:inline text-xs text-muted-foreground">
-                  Meta: {cat.targetPercent}% · {fmt(catTargetValue)}
-                </span>
-              )}
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                Meta: {cat.targetPercent}% · {fmt(catTargetValue)}
+              </span>
               <span className="hidden sm:inline text-xs font-medium text-foreground">
                 Atual: {actualPct.toFixed(1)}% · {fmt(catValue)}
               </span>
-              {true && (
-                <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
-                  {diff >= 0 ? '+' : ''}
-                  {diff.toFixed(1)}%
-                </Badge>
-              )}
+              <Badge variant={diff >= 0 ? 'success' : 'destructive'}>
+                {diff >= 0 ? '+' : ''}
+                {diff.toFixed(1)}%
+              </Badge>
               <button
                 onClick={onEdit}
                 className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
@@ -328,14 +328,12 @@ export const CategoryCard = memo(
               )}
             </div>
           </div>
-          {true && (
-            <div className="w-full bg-muted rounded-full h-2 mt-2">
-              <div
-                className="h-2 rounded-full transition-all"
-                style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
-              />
-            </div>
-          )}
+          <div className="w-full bg-muted rounded-full h-2 mt-2">
+            <div
+              className="h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(actualPct, 100)}%`, background: cat.color }}
+            />
+          </div>
         </CardHeader>
 
         {showCardContent && (
@@ -429,11 +427,9 @@ export const CategoryCard = memo(
                   return (
                     <div key={a.id} className="text-xs p-2 rounded bg-muted space-y-0.5">
                       <p className="font-semibold text-foreground">{a.ticker}</p>
-                      {true && (
-                        <p className="text-muted-foreground">
-                          Meta {metaPct}% · {fmt(metaValue)}
-                        </p>
-                      )}
+                      <p className="text-muted-foreground">
+                        Meta {metaPct}% · {fmt(metaValue)}
+                      </p>
                       <p className="text-muted-foreground">
                         Atual {atualPct}% · {fmt(atualValue)}
                       </p>

@@ -141,7 +141,7 @@ export const OFXImportDialog = ({ onImport }: Props) => {
       <DialogTrigger asChild>
         <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-border text-sm text-foreground hover:bg-accent transition-colors">
           <Upload size={15} />
-          OFX
+          <span className="hidden sm:inline">OFX</span>
         </button>
       </DialogTrigger>
 

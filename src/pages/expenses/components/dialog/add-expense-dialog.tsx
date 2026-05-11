@@ -108,7 +108,7 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
       <DialogTrigger asChild>
         <button className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors">
           <PlusCircle size={15} />
-          Adicionar
+          <span className="hidden sm:inline">Adicionar</span>
         </button>
       </DialogTrigger>
       <DialogContent>

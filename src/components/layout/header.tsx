@@ -62,7 +62,7 @@ export const Header = ({
   const { hideValues, toggleHideValues } = usePrivacy()
 
   return (
-    <header className="h-16.25 flex items-center justify-between px-6 border-b border-border bg-card">
+    <header className="h-16.25 flex items-center justify-between px-4 md:px-6 border-b border-border bg-card">
       <h1 className="text-lg font-semibold text-foreground">{title}</h1>
 
       <div className="flex items-center gap-2">

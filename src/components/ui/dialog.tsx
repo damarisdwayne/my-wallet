@@ -31,6 +31,7 @@ export const DialogContent = ({
   <DialogPortal>
     <DialogOverlay />
     <RadixDialog.Content
+      onOpenAutoFocus={(e) => e.preventDefault()}
       className={cn(
         // mobile: bottom sheet
         'fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl border-t border-x border-border bg-card p-5 shadow-xl',

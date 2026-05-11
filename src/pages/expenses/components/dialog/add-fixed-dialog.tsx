@@ -60,7 +60,6 @@ export const AddFixedDialog = ({ onAdd }: Props) => {
               placeholder="Ex: Condomínio"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              autoFocus
             />
           </div>
           <div className="space-y-1.5">

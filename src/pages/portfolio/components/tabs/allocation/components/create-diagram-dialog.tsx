@@ -41,7 +41,6 @@ export const CreateDiagramDialog = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSubmit()}
-          autoFocus
         />
       </div>
       <DialogFooter className="mt-4">

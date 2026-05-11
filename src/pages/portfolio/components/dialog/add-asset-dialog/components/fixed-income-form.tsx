@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import type { Asset, FixedIncomeType, PortfolioCategory, RateType } from '@/types'
 import { Field, buildFiName, isTesourotType } from '../utils'
-import { inputClass, FIXED_INCOME_TYPES, RATE_TYPES, TESOURO_RATE_TYPE } from '../constants'
+import {
+  inputClass,
+  todayStr,
+  FIXED_INCOME_TYPES,
+  RATE_TYPES,
+  TESOURO_RATE_TYPE,
+} from '../constants'
 
 export const FixedIncomeForm = ({
   categories,
@@ -25,7 +31,7 @@ export const FixedIncomeForm = ({
     quantity: '',
     avgPrice: '',
     maturityYear: '',
-    operationDate: '',
+    operationDate: todayStr,
     maturityDate: '',
     categoryId: fiCatId,
   })
@@ -78,7 +84,6 @@ export const FixedIncomeForm = ({
               maxLength={4}
               value={form.maturityYear}
               onChange={(e) => set('maturityYear', e.target.value)}
-              autoFocus
             />
           </Field>
         ) : (
@@ -183,7 +188,7 @@ export const FixedIncomeForm = ({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Field label="Data de aplicação">
           <input
             className={inputClass}

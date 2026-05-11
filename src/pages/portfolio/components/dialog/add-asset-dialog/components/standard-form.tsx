@@ -43,7 +43,6 @@ export const StandardForm = ({
             placeholder="PETR4"
             value={form.ticker}
             onChange={(e) => set('ticker', e.target.value)}
-            autoFocus
           />
         </Field>
         <Field label="Nome">

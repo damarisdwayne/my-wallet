@@ -44,7 +44,6 @@ export const SellDialog = ({ open, item, form, onChange, onClose, onSubmit }: Se
             placeholder="0,00"
             value={form.sellPrice}
             onChange={(e) => onChange({ ...form, sellPrice: e.target.value })}
-            autoFocus
           />
           {form.sellPrice && item && (
             <p className="text-xs text-muted-foreground">

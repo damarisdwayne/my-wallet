@@ -69,7 +69,6 @@ export const AddInstallmentDialog = ({ onAdd }: Props) => {
               placeholder="Ex: TV Samsung 65'"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              autoFocus
             />
           </div>
           <div className="grid grid-cols-2 gap-3">

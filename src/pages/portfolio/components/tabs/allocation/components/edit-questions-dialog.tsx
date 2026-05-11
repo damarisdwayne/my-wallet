@@ -75,7 +75,6 @@ export const EditQuestionsDialog = ({
                     value={editingQuestionText}
                     onChange={(e) => setEditingQuestionText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && saveEditQuestion()}
-                    autoFocus
                   />
                   <button
                     onClick={saveEditQuestion}

@@ -144,7 +144,6 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
                 placeholder="Ex: Mercado"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                autoFocus
               />
             </div>
             <div className="space-y-1.5">
@@ -200,7 +199,6 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
                 placeholder="Ex: Condomínio"
                 value={fixed.description}
                 onChange={(e) => setFixed((f) => ({ ...f, description: e.target.value }))}
-                autoFocus
               />
             </div>
             <div className="space-y-1.5">
@@ -267,7 +265,6 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
                 placeholder="Ex: TV Samsung 65'"
                 value={installment.description}
                 onChange={(e) => setInstallment((f) => ({ ...f, description: e.target.value }))}
-                autoFocus
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -71,7 +71,6 @@ export const CryptoForm = ({
             placeholder="DOGE, SHIB..."
             value={customTicker}
             onChange={(e) => setCustomTicker(e.target.value)}
-            autoFocus
           />
         )}
       </div>

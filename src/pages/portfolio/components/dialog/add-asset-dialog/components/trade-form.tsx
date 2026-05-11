@@ -44,7 +44,6 @@ export const TradeForm = ({
           placeholder="Ex: SAPR4"
           value={form.ticker}
           onChange={(e) => set('ticker', e.target.value)}
-          autoFocus
         />
         <datalist id="trade-ticker-list">
           {assets.map((a) => (

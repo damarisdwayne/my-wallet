@@ -2,8 +2,16 @@ import type { ReactNode } from 'react'
 import type { FixedIncomeType, RateType } from '@/types'
 import { RATE_LABEL, TESOURO_RATE_TYPE } from './constants'
 
-export const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div>
+export const Field = ({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}) => (
+  <div className={className}>
     <p className="text-xs text-muted-foreground mb-1">{label}</p>
     {children}
   </div>

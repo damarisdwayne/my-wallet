@@ -7,7 +7,7 @@ export const TypeSelector = ({ onSelect }: { onSelect: (t: AssetType) => void })
     {TYPE_GROUPS.map((group) => (
       <div key={group.label}>
         <p className="text-xs text-muted-foreground mb-2">{group.label}</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {group.types.map((t) => (
             <button
               key={t}

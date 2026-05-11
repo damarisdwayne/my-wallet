@@ -55,7 +55,7 @@ export const StandardForm = ({
           />
         </Field>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <Field label="Quantidade">
           <input
             className={inputClass}
@@ -77,7 +77,7 @@ export const StandardForm = ({
             onChange={(e) => set('avgPrice', e.target.value)}
           />
         </Field>
-        <Field label="Atual (R$)">
+        <Field label="Atual (R$)" className="col-span-2 sm:col-span-1">
           <input
             className={inputClass}
             type="number"

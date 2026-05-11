@@ -33,7 +33,9 @@ export const AporteTab = ({
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
     const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
-    setDistribution(calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded))
+    setDistribution(
+      calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded),
+    )
   }
 
   const toggleCat = (id: string) => {

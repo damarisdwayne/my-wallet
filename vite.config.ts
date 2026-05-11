@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       pluggyDevPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg'],
+        includeAssets: ['favicon.svg', 'pwa-maskable.svg'],
         manifest: {
           name: 'My Wallet',
           short_name: 'My Wallet',
@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
               purpose: 'any',
             },
             {
-              src: 'favicon.svg',
+              src: 'pwa-maskable.svg',
               sizes: 'any',
               type: 'image/svg+xml',
               purpose: 'maskable',

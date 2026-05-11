@@ -183,7 +183,7 @@ export const StockInfoSection = ({
     { label: 'Nome da Empresa', value: v(apiData.name, info?.companyName) },
     { label: 'CNPJ', value: info?.cnpj ?? '' },
     { label: 'Setor', value: v(apiData.sector, info?.sector) },
-    { label: 'Subsetor / Segmento', value: v(apiData.subsector, info?.subsector) },
+    { label: 'Segmento', value: v(apiData.subsector, info?.subsector) },
     { label: 'Fundação', value: v(apiData.foundedYear, info?.foundedYear) },
     { label: 'IPO', value: v(apiData.ipoYear, info?.ipoYear) },
     { label: 'Valor de Mercado', value: v(apiData.marketCap, info?.marketCap) },

@@ -40,7 +40,7 @@ export const STOCK_INFO_FIELDS: {
   { key: 'companyName', label: 'Nome da Empresa', placeholder: 'Ex: Itaú Unibanco Holding S.A.' },
   { key: 'cnpj', label: 'CNPJ', placeholder: 'Ex: 60.872.504/0001-23' },
   { key: 'sector', label: 'Setor', placeholder: 'Ex: Financeiro' },
-  { key: 'subsector', label: 'Subsetor / Segmento', placeholder: 'Ex: Bancos / Large Caps' },
+  { key: 'subsector', label: 'Segmento', placeholder: 'Ex: Bancos Large Cap, Distribuidoras' },
   {
     key: 'about',
     label: 'Sobre a Empresa',

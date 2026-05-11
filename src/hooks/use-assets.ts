@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSetAtom } from 'jotai'
 import {
   addAsset as addAssetService,
@@ -40,7 +40,20 @@ export const useAssets = (uid: string | null) => {
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
   const setFreshPrices = useSetAtom(freshPricesAtom)
-  const lastRefreshedAt = useRef<number | null>(null)
+  const PRICE_TS_KEY = 'mw_price_refreshed_at'
+  const getPriceTs = () => {
+    try {
+      const v = localStorage.getItem(PRICE_TS_KEY)
+      return v ? Number(v) : null
+    } catch {
+      return null
+    }
+  }
+  const setPriceTs = () => {
+    try {
+      localStorage.setItem(PRICE_TS_KEY, String(Date.now()))
+    } catch {}
+  }
 
   useEffect(() => {
     if (!uid) return
@@ -124,7 +137,7 @@ export const useAssets = (uid: string | null) => {
             }
           }),
       )
-      lastRefreshedAt.current = Date.now()
+      setPriceTs()
       toast.success('Preços atualizados')
     } catch (err) {
       setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
@@ -135,7 +148,8 @@ export const useAssets = (uid: string | null) => {
   }
 
   const refreshPricesIfStale = async (maxAgeMs = 2 * 60 * 60 * 1000) => {
-    if (lastRefreshedAt.current && Date.now() - lastRefreshedAt.current < maxAgeMs) return
+    const last = getPriceTs()
+    if (last && Date.now() - last < maxAgeMs) return
     await refreshPrices()
   }
 

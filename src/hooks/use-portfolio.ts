@@ -108,6 +108,7 @@ export const usePortfolio = () => {
   useEffect(() => {
     if (assetsHook.loaded && categoriesLoaded && diagramsLoaded && answersLoaded && importsLoaded) {
       setLoading(false)
+      void assetsHook.refreshPricesIfStale()
     }
   }, [assetsHook.loaded, categoriesLoaded, diagramsLoaded, answersLoaded, importsLoaded])
 

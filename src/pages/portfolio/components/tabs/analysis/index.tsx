@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import type { Props } from './types'
-import { AssetCompactCard, AssetDetailView } from './components'
+import {
+  AssetCompactCard,
+  AssetDetailView,
+  FiiSectorBreakdown,
+  StockSectorBreakdown,
+} from './components'
 import { DocumentGuide } from './components/document-guide'
 
 export const AnalysisTab = ({
@@ -55,6 +60,12 @@ export const AnalysisTab = ({
       </div>
 
       <DocumentGuide type={isFii ? 'fii' : 'stock'} />
+
+      {isFii ? (
+        <FiiSectorBreakdown assets={assets} fiiInfo={fiiInfo} />
+      ) : (
+        <StockSectorBreakdown assets={assets} stockInfo={stockInfo} />
+      )}
 
       {allShown.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-10">

@@ -79,7 +79,7 @@ export const ChatAssistant = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-13 h-13 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 flex items-center justify-center"
+        className="chat-fab fixed right-4 md:right-6 z-50 w-13 h-13 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 flex items-center justify-center"
         aria-label="Abrir assistente de investimentos"
       >
         <Bot className="w-6 h-6" />

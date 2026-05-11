@@ -119,6 +119,15 @@ button {
   textarea {
     font-size: 16px;
   }
+
+  /* iOS ignores width/padding on date/month inputs — enforce box model */
+  input[type='date'],
+  input[type='month'] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-height: 40px;
+  }
 }
 
 body {

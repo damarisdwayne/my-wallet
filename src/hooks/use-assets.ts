@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSetAtom } from 'jotai'
 import {
   addAsset as addAssetService,
@@ -40,6 +40,7 @@ export const useAssets = (uid: string | null) => {
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
   const setFreshPrices = useSetAtom(freshPricesAtom)
+  const lastRefreshedAt = useRef<number | null>(null)
 
   useEffect(() => {
     if (!uid) return
@@ -123,6 +124,7 @@ export const useAssets = (uid: string | null) => {
             }
           }),
       )
+      lastRefreshedAt.current = Date.now()
       toast.success('Preços atualizados')
     } catch (err) {
       setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
@@ -130,6 +132,11 @@ export const useAssets = (uid: string | null) => {
     } finally {
       setRefreshingPrices(false)
     }
+  }
+
+  const refreshPricesIfStale = async (maxAgeMs = 2 * 60 * 60 * 1000) => {
+    if (lastRefreshedAt.current && Date.now() - lastRefreshedAt.current < maxAgeMs) return
+    await refreshPrices()
   }
 
   return {
@@ -141,5 +148,6 @@ export const useAssets = (uid: string | null) => {
     editAsset,
     deleteAsset,
     refreshPrices,
+    refreshPricesIfStale,
   }
 }

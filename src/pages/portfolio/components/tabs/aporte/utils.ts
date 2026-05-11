@@ -7,11 +7,13 @@ export const calcDistribution = (
   assets: Asset[],
   totalValue: number,
   assetTargets: Map<string, number>,
+  excludedCatIds: Set<string> = new Set(),
 ): CategoryAllocation[] => {
+  const activeCats = categories.filter((c) => !excludedCatIds.has(c.id))
   const newTotal = totalValue + aporte
-  const totalTargetPct = categories.reduce((s, c) => s + c.targetPercent, 0)
+  const totalTargetPct = activeCats.reduce((s, c) => s + c.targetPercent, 0)
 
-  const catData = categories.map((cat) => {
+  const catData = activeCats.map((cat) => {
     const catAssets = assets.filter((a) => a.categoryId === cat.id)
     const catCurrentValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
     const catTargetValue = (cat.targetPercent / 100) * newTotal
@@ -34,6 +36,8 @@ export const calcDistribution = (
     const newCatTotal = catCurrentValue + catAporte
 
     const assetData = catAssets
+      .filter((asset) => !asset.pauseAporte)
+      .filter((asset) => !(asset.ceilingPrice && asset.currentPrice >= asset.ceilingPrice))
       .map((asset) => {
         const withinCatRatio =
           cat.targetPercent > 0 ? (assetTargets.get(asset.id) ?? 0) / cat.targetPercent : 0

@@ -34,7 +34,11 @@ export const EditAssetDialog = ({
   const [editAvgPrice, setEditAvgPrice] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
   const [previousTickers, setPreviousTickers] = useState('')
+  const [pauseAporte, setPauseAporte] = useState(false)
+  const [ceilingPrice, setCeilingPrice] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const isFixedIncome = asset?.type === 'fixed_income' || asset?.type === 'tesouro'
 
   useEffect(() => {
     if (asset) {
@@ -45,6 +49,8 @@ export const EditAssetDialog = ({
       setEditAvgPrice(String(Math.ceil(asset.avgPrice * 100) / 100))
       setSplitRatio('')
       setPreviousTickers(asset.previousTickers?.join(', ') ?? '')
+      setPauseAporte(asset.pauseAporte ?? false)
+      setCeilingPrice(asset.ceilingPrice ? String(asset.ceilingPrice) : '')
     }
   }, [asset])
 
@@ -85,6 +91,7 @@ export const EditAssetDialog = ({
           .split(',')
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
+        const parsedCeiling = Number.parseFloat(ceilingPrice)
         const updates: Partial<Asset> = {
           categoryId: editCategoryId,
           ticker: newTicker,
@@ -92,6 +99,8 @@ export const EditAssetDialog = ({
           quantity: srcQty,
           avgPrice: srcAvg,
           previousTickers: prev.length > 0 ? prev : undefined,
+          pauseAporte: isFixedIncome ? false : pauseAporte,
+          ceilingPrice: !isFixedIncome && parsedCeiling > 0 ? parsedCeiling : undefined,
         }
         await editAsset(asset.id, updates)
       }
@@ -180,42 +189,96 @@ export const EditAssetDialog = ({
               />
             </div>
           </div>
-          <div>
-            <label htmlFor="edit-prev-tickers" className="text-xs text-muted-foreground mb-1 block">
-              Tickers anteriores{' '}
-              <span className="text-muted-foreground/60">(separados por vírgula)</span>
-            </label>
-            <input
-              id="edit-prev-tickers"
-              className={inputClass}
-              placeholder="Ex: MALL11, IRDM11"
-              value={previousTickers}
-              onChange={(e) => setPreviousTickers(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="edit-split" className="text-xs text-muted-foreground mb-1 block">
-              Desdobramento / Grupamento{' '}
-              <span className="text-muted-foreground/60">(ex: 2 = dobra qtd, 0.5 = agrupa)</span>
-            </label>
-            <input
-              id="edit-split"
-              type="number"
-              min="0.01"
-              step="any"
-              placeholder="1 = sem alteração"
-              className={inputClass}
-              value={splitRatio}
-              onChange={(e) => setSplitRatio(e.target.value)}
-            />
-            {splitRatio && Number(splitRatio) > 0 && Number(splitRatio) !== 1 && asset && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {asset.quantity} → {Math.round(asset.quantity * Number(splitRatio))} cotas · PM{' '}
-                {formatCurrency(asset.avgPrice)} →{' '}
-                {formatCurrency(asset.avgPrice / Number(splitRatio))}
-              </p>
-            )}
-          </div>
+          {!isFixedIncome && (
+            <>
+              <div>
+                <label
+                  htmlFor="edit-prev-tickers"
+                  className="text-xs text-muted-foreground mb-1 block"
+                >
+                  Tickers anteriores{' '}
+                  <span className="text-muted-foreground/60">(separados por vírgula)</span>
+                </label>
+                <input
+                  id="edit-prev-tickers"
+                  className={inputClass}
+                  placeholder="Ex: MALL11, IRDM11"
+                  value={previousTickers}
+                  onChange={(e) => setPreviousTickers(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-split" className="text-xs text-muted-foreground mb-1 block">
+                  Desdobramento / Grupamento{' '}
+                  <span className="text-muted-foreground/60">
+                    (ex: 2 = dobra qtd, 0.5 = agrupa)
+                  </span>
+                </label>
+                <input
+                  id="edit-split"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  placeholder="1 = sem alteração"
+                  className={inputClass}
+                  value={splitRatio}
+                  onChange={(e) => setSplitRatio(e.target.value)}
+                />
+                {splitRatio && Number(splitRatio) > 0 && Number(splitRatio) !== 1 && asset && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {asset.quantity} → {Math.round(asset.quantity * Number(splitRatio))} cotas · PM{' '}
+                    {formatCurrency(asset.avgPrice)} →{' '}
+                    {formatCurrency(asset.avgPrice / Number(splitRatio))}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+          {!isFixedIncome && (
+            <>
+              <div>
+                <label htmlFor="edit-ceiling" className="text-xs text-muted-foreground mb-1 block">
+                  Preço teto (R$){' '}
+                  <span className="text-muted-foreground/60">— pausa aporte se atingido</span>
+                </label>
+                <input
+                  id="edit-ceiling"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Sem teto"
+                  className={inputClass}
+                  value={ceilingPrice}
+                  onChange={(e) => setCeilingPrice(e.target.value)}
+                />
+                {asset && ceilingPrice && Number(ceilingPrice) > 0 && asset.currentPrice > 0 && (
+                  <p
+                    className={`text-xs mt-1 ${asset.currentPrice >= Number(ceilingPrice) ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+                  >
+                    Preço atual: {formatCurrency(asset.currentPrice)}
+                    {asset.currentPrice >= Number(ceilingPrice) ? ' — teto atingido' : ''}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-border px-3 py-2.5">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Pausar aporte</p>
+                  <p className="text-xs text-muted-foreground">Excluir manualmente da simulação</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={pauseAporte}
+                  onClick={() => setPauseAporte((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none ${pauseAporte ? 'bg-destructive' : 'bg-muted'}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform ${pauseAporte ? 'translate-x-4' : 'translate-x-0'}`}
+                  />
+                </button>
+              </div>
+            </>
+          )}
         </div>
         <DialogFooter className="mt-4">
           <button

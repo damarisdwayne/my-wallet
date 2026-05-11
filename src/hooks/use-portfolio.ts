@@ -428,6 +428,7 @@ export const usePortfolio = () => {
     deleteDiagram,
     saveAnswers,
     refreshPrices: assetsHook.refreshPrices,
+    refreshPricesIfStale: assetsHook.refreshPricesIfStale,
     refreshingPrices: assetsHook.refreshingPrices,
     priceError: assetsHook.priceError,
     fundamentals: fundamentalsHook.fundamentals,

@@ -19,6 +19,7 @@ export const AporteTab = ({
   const [aporteInput, setAporteInput] = useState('')
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [excludedCatIds, setExcludedCatIds] = useState<Set<string>>(new Set())
   const { hideValues } = usePrivacy()
 
   const toggle = (id: string) =>
@@ -28,12 +29,25 @@ export const AporteTab = ({
       return next
     })
 
+  const runCalc = (excluded: Set<string>) => {
+    const aporte = Number.parseFloat(aporteInput) || 0
+    if (aporte <= 0) return
+    const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
+    setDistribution(calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded))
+  }
+
+  const toggleCat = (id: string) => {
+    const next = new Set(excludedCatIds)
+    next.has(id) ? next.delete(id) : next.add(id)
+    setExcludedCatIds(next)
+    runCalc(next)
+  }
+
   const calcular = async () => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
     await refreshPrices()
-    const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
-    setDistribution(calcDistribution(aporte, categories, assets, totalValue, assetTargets))
+    runCalc(excludedCatIds)
   }
 
   const aporte = distribution ? Number.parseFloat(aporteInput) || 0 : 0
@@ -69,6 +83,28 @@ export const AporteTab = ({
           {refreshingPrices ? 'Calculando...' : 'Calcular'}
         </button>
       </div>
+
+      {distribution !== null && categories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => {
+            const excluded = excludedCatIds.has(cat.id)
+            return (
+              <button
+                key={cat.id}
+                onClick={() => toggleCat(cat.id)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                  excluded
+                    ? 'border-border text-muted-foreground bg-transparent opacity-40'
+                    : 'border-transparent text-background'
+                }`}
+                style={excluded ? {} : { background: cat.color }}
+              >
+                {cat.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {distribution !== null && categories.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-6">

@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronUp, Pencil, PauseCircle, TrendingDown } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatPercent, formatQuantity } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
@@ -149,8 +149,18 @@ export const AssetsTable = memo(
                   className={`border-b border-border last:border-0 transition-colors ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'}`}
                 >
                   <td className="py-3 pl-3">
-                    <p className="font-semibold text-foreground">
+                    <p className="font-semibold text-foreground flex items-center gap-1.5">
                       {a.type === 'fixed_income' ? getFiLabel(a) : a.name}
+                      {a.pauseAporte && (
+                        <span title="Aporte pausado manualmente">
+                          <PauseCircle size={12} className="text-destructive shrink-0" />
+                        </span>
+                      )}
+                      {!a.pauseAporte && a.ceilingPrice && a.currentPrice >= a.ceilingPrice && (
+                        <span title={`Preço teto atingido (R$ ${a.ceilingPrice})`}>
+                          <TrendingDown size={12} className="text-destructive shrink-0" />
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isFlatFixedIncome(a) ? (a.institution ?? a.ticker) : a.ticker}

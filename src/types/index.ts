@@ -130,6 +130,8 @@ export interface Asset {
   score?: number
   cnpj?: string
   previousTickers?: string[]
+  pauseAporte?: boolean
+  ceilingPrice?: number
   // Fixed income optional fields
   institution?: string
   fixedIncomeType?: FixedIncomeType

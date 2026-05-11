@@ -57,6 +57,7 @@ export const PortfolioPage = () => {
     deleteDiagram,
     saveAnswers,
     refreshPrices,
+    refreshPricesIfStale,
     refreshingPrices,
     priceError,
     fundamentals,
@@ -137,7 +138,7 @@ export const PortfolioPage = () => {
             diagrams={diagrams}
             answers={answers}
             totalValue={totalValue}
-            refreshPrices={refreshPrices}
+            refreshPrices={refreshPricesIfStale}
             refreshingPrices={refreshingPrices}
           />
         )}

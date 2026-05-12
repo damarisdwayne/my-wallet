@@ -10,7 +10,13 @@ import {
   updateWatchlistAsset,
   updateWatchlistGroup,
 } from '@/services/watchlist'
-import type { AssetType, WatchlistAsset, WatchlistField, WatchlistGroup, WatchlistVerdict } from '@/types'
+import type {
+  AssetType,
+  WatchlistAsset,
+  WatchlistField,
+  WatchlistGroup,
+  WatchlistVerdict,
+} from '@/types'
 import { toast } from 'sonner'
 
 export const useWatchlist = (uid: string | null) => {
@@ -108,8 +114,7 @@ export const useWatchlist = (uid: string | null) => {
     }
   }
 
-  const setVerdict = (assetId: string, verdict: WatchlistVerdict) =>
-    editAsset(assetId, { verdict })
+  const setVerdict = (assetId: string, verdict: WatchlistVerdict) => editAsset(assetId, { verdict })
 
   const setFieldValue = (assetId: string, fieldId: string, value: string) => {
     const asset = assets.find((a) => a.id === assetId)

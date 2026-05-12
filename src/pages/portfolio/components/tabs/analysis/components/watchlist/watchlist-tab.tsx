@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { WatchlistGroupCard } from './group-card'
 
@@ -17,8 +12,19 @@ interface Props {
 }
 
 export const WatchlistTab = ({ uid }: Props) => {
-  const { groups, assets, loaded, createGroup, editGroup, updateGroupFields, removeGroup, addAsset, setVerdict, setFieldValue, removeAsset } =
-    useWatchlist(uid)
+  const {
+    groups,
+    assets,
+    loaded,
+    createGroup,
+    editGroup,
+    updateGroupFields,
+    removeGroup,
+    addAsset,
+    setVerdict,
+    setFieldValue,
+    removeAsset,
+  } = useWatchlist(uid)
   const [createOpen, setCreateOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
@@ -59,7 +65,8 @@ export const WatchlistTab = ({ uid }: Props) => {
       {groups.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <p className="text-muted-foreground text-sm text-center max-w-64">
-            Crie categorias para organizar ativos que você está avaliando, ex: "FIIs de Shopping", "Elétricas".
+            Crie categorias para organizar ativos que você está avaliando, ex: "FIIs de Shopping",
+            "Elétricas".
           </p>
           <button
             onClick={() => setCreateOpen(true)}

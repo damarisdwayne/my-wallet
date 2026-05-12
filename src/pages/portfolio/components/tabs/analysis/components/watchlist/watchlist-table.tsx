@@ -246,7 +246,7 @@ export const WatchlistTable = ({
           <input
             ref={newFieldInputRef}
             className="w-full h-8 bg-background border border-input rounded-md px-3 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-            placeholder="Nome do campo, ex: P/VP, Vacância..."
+            placeholder="Nome do campo, ex: DY, P/VP, P/L..."
             value={newFieldName}
             onChange={(e) => setNewFieldName(e.target.value)}
             onBlur={() => {

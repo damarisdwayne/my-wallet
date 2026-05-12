@@ -5,7 +5,11 @@ import type { WatchlistAsset, WatchlistVerdict } from '@/types'
 const VERDICTS: { value: WatchlistVerdict; label: string; color: string }[] = [
   { value: 'buy', label: 'Comprar', color: 'bg-success/15 text-success border-success/30' },
   { value: 'watch', label: 'Observar', color: 'bg-warning/15 text-warning border-warning/30' },
-  { value: 'pass', label: 'Passar', color: 'bg-destructive/15 text-destructive border-destructive/30' },
+  {
+    value: 'pass',
+    label: 'Passar',
+    color: 'bg-destructive/15 text-destructive border-destructive/30',
+  },
   { value: 'none', label: 'Sem veredito', color: 'bg-muted text-muted-foreground border-border' },
 ]
 
@@ -49,7 +53,9 @@ export const WatchlistAssetCard = ({ asset, onVerdictChange, onNotesChange, onDe
             key={v.value}
             onClick={() => onVerdictChange(asset.verdict === v.value ? 'none' : v.value)}
             className={`px-2 py-0.5 rounded border text-xs font-medium transition-colors ${
-              asset.verdict === v.value ? v.color : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground'
+              asset.verdict === v.value
+                ? v.color
+                : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground'
             }`}
           >
             {v.label}
@@ -65,7 +71,9 @@ export const WatchlistAssetCard = ({ asset, onVerdictChange, onNotesChange, onDe
       />
 
       {asset.verdict !== 'none' && (
-        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium ${currentVerdict.color}`}>
+        <div
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium ${currentVerdict.color}`}
+        >
           {currentVerdict.label}
         </div>
       )}

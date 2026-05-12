@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Trash2, Pencil, Check, X } from 'lucide-react'
-import type { AssetType, WatchlistAsset, WatchlistField, WatchlistGroup, WatchlistVerdict } from '@/types'
+import type {
+  AssetType,
+  WatchlistAsset,
+  WatchlistField,
+  WatchlistGroup,
+  WatchlistVerdict,
+} from '@/types'
 import { WatchlistTable } from './watchlist-table'
 
 interface Props {
@@ -77,7 +83,10 @@ export const WatchlistGroupCard = ({
               <button onClick={saveEdit} className="p-1 text-success hover:text-success/80">
                 <Check size={15} />
               </button>
-              <button onClick={cancelEdit} className="p-1 text-muted-foreground hover:text-foreground">
+              <button
+                onClick={cancelEdit}
+                className="p-1 text-muted-foreground hover:text-foreground"
+              >
                 <X size={15} />
               </button>
             </div>

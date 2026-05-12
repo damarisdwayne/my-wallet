@@ -51,10 +51,12 @@ export const AnalysisTab = ({
     <div className="space-y-5">
       {/* Top-level tabs */}
       <div className="flex gap-1">
-        {([
-          { id: 'portfolio', label: 'Minha Carteira' },
-          { id: 'watchlist', label: 'Em Avaliação' },
-        ] as { id: TopTab; label: string }[]).map((tab) => (
+        {(
+          [
+            { id: 'portfolio', label: 'Minha Carteira' },
+            { id: 'watchlist', label: 'Em Avaliação' },
+          ] as { id: TopTab; label: string }[]
+        ).map((tab) => (
           <button
             key={tab.id}
             onClick={() => {

@@ -129,10 +129,10 @@ export const WatchlistTable = ({
     <>
       <div className="space-y-2">
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm border-collapse">
+          <table className="min-w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-border">
-                <th className="sticky left-0 z-10 bg-muted/40 text-left px-3 py-2 font-medium text-muted-foreground text-xs w-28 min-w-28">
+                <th className="sticky left-0 z-10 bg-muted/40 text-left px-3 py-2 font-medium text-muted-foreground text-xs w-28 min-w-28 border-r border-border/50">
                   Campo
                 </th>
                 {assets.map((asset) => (
@@ -178,7 +178,7 @@ export const WatchlistTable = ({
                   key={field.id}
                   className={`border-b border-border/60 hover:bg-muted/20 transition-colors group ${i % 2 === 0 ? '' : 'bg-muted/10'}`}
                 >
-                  <td className="sticky left-0 z-10 bg-card px-3 py-1.5 group-hover:bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/40 px-3 py-1.5 border-r border-border/50">
                     {editingFieldId === field.id ? (
                       <input
                         className="w-full bg-background border border-input rounded px-1.5 py-0.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"

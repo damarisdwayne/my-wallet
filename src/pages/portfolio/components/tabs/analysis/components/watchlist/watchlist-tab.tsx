@@ -47,7 +47,7 @@ export const WatchlistTab = ({ uid }: Props) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-sm text-muted-foreground">
             Compare ativos lado a lado antes de decidir onde investir.
@@ -55,10 +55,10 @@ export const WatchlistTab = ({ uid }: Props) => {
         </div>
         <button
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+          className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+          title="Nova categoria"
         >
-          <Plus size={14} />
-          Nova categoria
+          <Plus size={16} />
         </button>
       </div>
 

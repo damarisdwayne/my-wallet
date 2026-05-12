@@ -368,3 +368,33 @@ export interface AiAnalysis {
   documentType: string | null
   analyzedAt: string
 }
+
+/* ─── Watchlist ────────────────────────────────────────────────── */
+
+export type WatchlistVerdict = 'buy' | 'watch' | 'pass' | 'none'
+
+export interface WatchlistField {
+  id: string
+  name: string
+}
+
+export interface WatchlistGroup {
+  id: string
+  name: string
+  description?: string
+  createdAt: string
+  order: number
+  fields: WatchlistField[]
+}
+
+export interface WatchlistAsset {
+  id: string
+  groupId: string
+  ticker: string
+  name: string
+  type: AssetType
+  notes: string
+  verdict: WatchlistVerdict
+  createdAt: string
+  fieldValues: Record<string, string>
+}

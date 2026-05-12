@@ -409,6 +409,7 @@ export const usePortfolio = () => {
 
   return {
     loading,
+    uid,
     assets,
     categories,
     diagrams,

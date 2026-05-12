@@ -43,6 +43,7 @@ const tabs = [
 
 export const PortfolioPage = () => {
   const {
+    uid,
     assets,
     categories,
     diagrams,
@@ -175,6 +176,7 @@ export const PortfolioPage = () => {
         {activeTab === 3 && <DividendsTab assets={assets} />}
         {activeTab === 4 && (
           <AnalysisTab
+            uid={uid}
             assets={assets}
             fundamentals={fundamentals}
             saveManualSnapshot={saveManualSnapshot}

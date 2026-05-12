@@ -7,8 +7,12 @@ import {
   StockSectorBreakdown,
 } from './components'
 import { DocumentGuide } from './components/document-guide'
+import { WatchlistTab } from './components/watchlist/watchlist-tab'
+
+type TopTab = 'portfolio' | 'watchlist'
 
 export const AnalysisTab = ({
+  uid,
   assets,
   fundamentals,
   saveManualSnapshot,
@@ -18,6 +22,7 @@ export const AnalysisTab = ({
   stockInfo,
   saveStockInfo,
 }: Props) => {
+  const [topTab, setTopTab] = useState<TopTab>('portfolio')
   const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
 
@@ -25,7 +30,7 @@ export const AnalysisTab = ({
   const allShown = assets.filter((a) => a.type === (isFii ? 'fii' : 'stock'))
   const selectedAsset = allShown.find((a) => a.ticker === selectedTicker) ?? null
 
-  if (selectedAsset) {
+  if (topTab === 'portfolio' && selectedAsset) {
     return (
       <AssetDetailView
         asset={selectedAsset}
@@ -44,45 +49,70 @@ export const AnalysisTab = ({
 
   return (
     <div className="space-y-5">
+      {/* Top-level tabs */}
       <div className="flex gap-1">
-        {(['stock', 'fii'] as const).map((tab) => (
+        {([
+          { id: 'portfolio', label: 'Minha Carteira' },
+          { id: 'watchlist', label: 'Em Avaliação' },
+        ] as { id: TopTab; label: string }[]).map((tab) => (
           <button
-            key={tab}
+            key={tab.id}
             onClick={() => {
-              setSubTab(tab)
+              setTopTab(tab.id)
               setSelectedTicker(null)
             }}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === tab ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${topTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
           >
-            {tab === 'stock' ? 'Ações BR' : 'FIIs'}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      <DocumentGuide type={isFii ? 'fii' : 'stock'} />
-
-      {isFii ? (
-        <FiiSectorBreakdown assets={assets} fiiInfo={fiiInfo} />
+      {topTab === 'watchlist' ? (
+        <WatchlistTab uid={uid} />
       ) : (
-        <StockSectorBreakdown assets={assets} stockInfo={stockInfo} />
-      )}
+        <>
+          <div className="flex gap-1">
+            {(['stock', 'fii'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setSubTab(tab)
+                  setSelectedTicker(null)
+                }}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === tab ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                {tab === 'stock' ? 'Ações BR' : 'FIIs'}
+              </button>
+            ))}
+          </div>
 
-      {allShown.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-10">
-          Nenhum ativo nesta categoria.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {allShown.map((asset) => (
-            <AssetCompactCard
-              key={asset.id}
-              asset={asset}
-              record={fundamentals[asset.ticker.toUpperCase()]}
-              isFii={isFii}
-              onClick={() => setSelectedTicker(asset.ticker)}
-            />
-          ))}
-        </div>
+          <DocumentGuide type={isFii ? 'fii' : 'stock'} />
+
+          {isFii ? (
+            <FiiSectorBreakdown assets={assets} fiiInfo={fiiInfo} />
+          ) : (
+            <StockSectorBreakdown assets={assets} stockInfo={stockInfo} />
+          )}
+
+          {allShown.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-10">
+              Nenhum ativo nesta categoria.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {allShown.map((asset) => (
+                <AssetCompactCard
+                  key={asset.id}
+                  asset={asset}
+                  record={fundamentals[asset.ticker.toUpperCase()]}
+                  isFii={isFii}
+                  onClick={() => setSelectedTicker(asset.ticker)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )

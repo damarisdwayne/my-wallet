@@ -1,6 +1,7 @@
 import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, StockInfo } from '@/types'
 
 export interface Props {
+  uid: string | null
   assets: Asset[]
   fundamentals: Record<string, FundamentalRecord>
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>

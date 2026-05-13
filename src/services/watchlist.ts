@@ -29,7 +29,9 @@ export const subscribeToWatchlistAssets = (
   cb: (assets: WatchlistAsset[]) => void,
 ) =>
   onSnapshot(collection(db, 'users', userId, 'watchlistAssets'), (snap) => {
-    const assets = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as WatchlistAsset)
+    const assets = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as WatchlistAsset)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     cb(assets)
   })
 

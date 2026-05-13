@@ -134,6 +134,7 @@ export const AddWatchlistAssetDialog = ({ open, onClose, onAdd }: Props) => {
                     setShowDropdown(true)
                   }}
                   onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       if (filtered.length > 0) handleSelect(filtered[0])

@@ -149,9 +149,11 @@ export const WatchlistTable = ({
                           <Trash2 size={11} />
                         </button>
                       </div>
-                      <span className="text-xs text-muted-foreground truncate max-w-28 font-normal">
-                        {asset.name}
-                      </span>
+                      {asset.name && asset.name !== asset.ticker && (
+                        <span className="text-xs text-muted-foreground truncate max-w-28 font-normal">
+                          {asset.name}
+                        </span>
+                      )}
                       {/* Verdict lives in the header, tied to each asset */}
                       <VerdictIcons
                         verdict={asset.verdict}

@@ -8,13 +8,16 @@ import {
   DialogTitle,
   Skeleton,
 } from '@/components'
-import type { StockInfo } from '@/types'
-import { fetchInvestidor10StockInfo, type Investidor10StockInfo } from '@/services/investidor10'
+import type { ExteriorInfo } from '@/types'
+import {
+  fetchInvestidor10ExteriorInfo,
+  type Investidor10ExteriorInfo,
+} from '@/services/investidor10'
 import { inputClass } from '../utils'
-import { STOCK_INFO_FIELDS } from '../constants'
+import { EXTERIOR_INFO_FIELDS } from '../constants'
 import { ExpandableText } from './expandable-text'
 
-export const StockInfoDialog = ({
+export const ExteriorInfoDialog = ({
   ticker,
   existing,
   open,
@@ -22,42 +25,30 @@ export const StockInfoDialog = ({
   onSave,
 }: {
   ticker: string
-  existing: StockInfo | undefined
+  existing: ExteriorInfo | undefined
   open: boolean
   onOpenChange: (v: boolean) => void
-  onSave: (data: StockInfo) => Promise<void>
+  onSave: (data: ExteriorInfo) => Promise<void>
 }) => {
-  const empty: Omit<StockInfo, 'ticker' | 'updatedAt'> = {
-    companyName: '',
-    cnpj: '',
-    sector: '',
-    subsector: '',
+  const empty: Omit<ExteriorInfo, 'ticker' | 'updatedAt'> = {
+    name: '',
+    expenseRatio: '',
+    aum: '',
+    trackedIndex: '',
+    category: '',
     about: '',
-    foundedYear: '',
-    ipoYear: '',
-    marketCap: '',
-    governanceLevel: '',
-    controller: '',
-    geographicExposure: '',
-    tagAlong: '',
   }
 
-  const fromExisting = (e: StockInfo): Omit<StockInfo, 'ticker' | 'updatedAt'> => ({
-    companyName: e.companyName,
-    cnpj: e.cnpj ?? '',
-    sector: e.sector,
-    subsector: e.subsector,
+  const fromExisting = (e: ExteriorInfo): Omit<ExteriorInfo, 'ticker' | 'updatedAt'> => ({
+    name: e.name,
+    expenseRatio: e.expenseRatio,
+    aum: e.aum,
+    trackedIndex: e.trackedIndex,
+    category: e.category,
     about: e.about,
-    foundedYear: e.foundedYear,
-    ipoYear: e.ipoYear,
-    marketCap: e.marketCap,
-    governanceLevel: e.governanceLevel,
-    controller: e.controller,
-    geographicExposure: e.geographicExposure,
-    tagAlong: e.tagAlong,
   })
 
-  const [form, setForm] = useState<Omit<StockInfo, 'ticker' | 'updatedAt'>>(
+  const [form, setForm] = useState<Omit<ExteriorInfo, 'ticker' | 'updatedAt'>>(
     existing ? fromExisting(existing) : empty,
   )
   const [saving, setSaving] = useState(false)
@@ -82,13 +73,13 @@ export const StockInfoDialog = ({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            <span>Informações da Empresa</span>
+            <span>Informações do ETF</span>
             <span className="text-xs font-normal text-muted-foreground">{ticker}</span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-1">
-          {STOCK_INFO_FIELDS.map(({ key, label, placeholder, multiline }) => (
+          {EXTERIOR_INFO_FIELDS.map(({ key, label, placeholder, multiline }) => (
             <div key={key}>
               <label className="block text-xs text-muted-foreground mb-1">{label}</label>
               {multiline ? (
@@ -131,56 +122,44 @@ export const StockInfoDialog = ({
   )
 }
 
-export const StockInfoSection = ({
+export const ExteriorInfoSection = ({
   ticker,
-  previousTickers,
   info,
   onEdit,
   onAutoSave,
 }: {
   ticker: string
-  previousTickers?: string[]
-  info: StockInfo | undefined
+  info: ExteriorInfo | undefined
   onEdit: () => void
-  onAutoSave?: (data: StockInfo) => Promise<void>
+  onAutoSave?: (data: ExteriorInfo) => Promise<void>
 }) => {
-  const [apiData, setApiData] = useState<Investidor10StockInfo>({})
+  const [apiData, setApiData] = useState<Investidor10ExteriorInfo>({})
   const [fetching, setFetching] = useState(true)
+
   useEffect(() => {
     setFetching(true)
-    fetchInvestidor10StockInfo(ticker, previousTickers ?? [])
+    fetchInvestidor10ExteriorInfo(ticker)
       .then((data) => {
         setApiData(data)
         const ok = (v: string | undefined) => !!v && v.trim().length > 0
-        const fill = (saved: string | undefined, api: string | undefined) =>
-          ok(saved) ? saved! : (api ?? '')
         const anyMissing = (
           [
-            [info?.companyName, data.name],
-            [info?.sector, data.sector],
-            [info?.subsector, data.subsector],
+            [info?.name, data.name],
+            [info?.aum, data.aum],
             [info?.about, data.about],
-            [info?.foundedYear, data.foundedYear],
-            [info?.ipoYear, data.ipoYear],
-            [info?.marketCap, data.marketCap],
-            [info?.tagAlong, data.tagAlong],
           ] as [string | undefined, string | undefined][]
         ).some(([saved, api]) => ok(api) && !ok(saved))
         if (onAutoSave && anyMissing) {
+          const fill = (saved: string | undefined, api: string | undefined) =>
+            ok(saved) ? saved! : (api ?? '')
           onAutoSave({
             ticker,
-            companyName: fill(info?.companyName, data.name),
-            sector: fill(info?.sector, data.sector),
-            subsector: fill(info?.subsector, data.subsector),
-            cnpj: info?.cnpj ?? '',
+            name: fill(info?.name, data.name),
+            aum: fill(info?.aum, data.aum),
             about: fill(info?.about, data.about),
-            foundedYear: fill(info?.foundedYear, data.foundedYear),
-            ipoYear: fill(info?.ipoYear, data.ipoYear),
-            marketCap: fill(info?.marketCap, data.marketCap),
-            governanceLevel: info?.governanceLevel ?? '',
-            controller: info?.controller ?? '',
-            geographicExposure: info?.geographicExposure ?? '',
-            tagAlong: fill(info?.tagAlong, data.tagAlong),
+            expenseRatio: info?.expenseRatio ?? '',
+            trackedIndex: info?.trackedIndex ?? '',
+            category: info?.category ?? '',
             updatedAt: new Date().toISOString(),
           }).catch(() => null)
         }
@@ -194,25 +173,20 @@ export const StockInfoSection = ({
     apiVal?.trim() || savedVal?.trim() || ''
 
   const fields: { label: string; value: string }[] = [
-    { label: 'Nome da Empresa', value: v(apiData.name, info?.companyName) },
-    { label: 'CNPJ', value: info?.cnpj ?? '' },
-    { label: 'Setor', value: v(apiData.sector, info?.sector) },
-    { label: 'Segmento', value: v(apiData.subsector, info?.subsector) },
-    { label: 'Fundação', value: v(apiData.foundedYear, info?.foundedYear) },
-    { label: 'IPO', value: v(apiData.ipoYear, info?.ipoYear) },
-    { label: 'Valor de Mercado', value: v(apiData.marketCap, info?.marketCap) },
-    { label: 'Governança', value: info?.governanceLevel ?? '' },
-    { label: 'Controlador', value: info?.controller ?? '' },
-    { label: 'Exposição Geográfica', value: info?.geographicExposure ?? '' },
-    { label: 'Tag Along', value: v(apiData.tagAlong, info?.tagAlong) },
-    { label: 'Sobre a Empresa', value: v(apiData.about, info?.about) },
+    { label: 'Nome do ETF', value: v(apiData.name, info?.name) },
+    { label: 'Categoria', value: info?.category ?? '' },
+    { label: 'Índice Rastreado', value: info?.trackedIndex ?? '' },
+    { label: 'Taxa de Administração', value: info?.expenseRatio ?? '' },
+    { label: 'Patrimônio (AUM)', value: v(apiData.aum, info?.aum) },
   ].filter((f) => f.value.trim() !== '')
+
+  const about = v(apiData.about, info?.about)
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Informações da Empresa
+          Informações do ETF
         </p>
         <button
           onClick={onEdit}
@@ -222,10 +196,11 @@ export const StockInfoSection = ({
           {info ? 'Editar' : 'Preencher'}
         </button>
       </div>
+
       {fetching ? (
         <div className="rounded-lg border border-border p-4 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-            {['n', 'c', 's', 'sg', 'f', 'ipo', 'vm', 'g'].map((k) => (
+            {['n', 'c', 'i', 'e', 'a'].map((k) => (
               <div key={k} className="space-y-1">
                 <Skeleton className="h-2.5 w-20" />
                 <Skeleton className="h-4 w-28" />
@@ -239,28 +214,25 @@ export const StockInfoSection = ({
             <Skeleton className="h-3 w-3/4" />
           </div>
         </div>
-      ) : fields.length > 0 ? (
+      ) : fields.length === 0 && !about ? (
+        <div className="rounded-lg border border-dashed border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground">Nenhuma informação registrada.</p>
+        </div>
+      ) : (
         <div className="rounded-lg border border-border p-4 space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-            {fields
-              .filter((f) => f.label !== 'Sobre a Empresa')
-              .map((f) => (
+          {fields.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+              {fields.map((f) => (
                 <div key={f.label} className="min-w-0">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
                     {f.label}
                   </p>
-                  <p className="text-sm font-medium text-foreground wrap-break-word">{f.value}</p>
+                  <p className="text-sm font-medium text-foreground">{f.value}</p>
                 </div>
               ))}
-          </div>
-          {(() => {
-            const sobre = fields.find((f) => f.label === 'Sobre a Empresa')
-            return sobre ? <ExpandableText label="Sobre a Empresa" text={sobre.value} /> : null
-          })()}
-        </div>
-      ) : (
-        <div className="rounded-lg border border-dashed border-border p-4 text-center">
-          <p className="text-xs text-muted-foreground">Nenhuma informação registrada.</p>
+            </div>
+          )}
+          {about && <ExpandableText label="Sobre o ETF" text={about} />}
         </div>
       )}
     </div>

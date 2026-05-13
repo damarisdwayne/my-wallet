@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import {
   deleteSnapshotFromRecord,
   fetchBrapiSummary,
+  saveExteriorInfo as saveExteriorInfoService,
   saveFiiInfo as saveFiiInfoService,
   saveFiiManualData,
   saveStockInfo as saveStockInfoService,
+  subscribeToExteriorInfo,
   subscribeToFiiInfo,
   subscribeToFiiManual,
   subscribeToFundamentals,
@@ -13,6 +15,7 @@ import {
 } from '@/services/fundamentals'
 import type {
   Asset,
+  ExteriorInfo,
   FiiInfo,
   FiiManualData,
   FundamentalRecord,
@@ -25,6 +28,7 @@ export const useFundamentals = (uid: string | null) => {
   const [fiiManual, setFiiManual] = useState<Record<string, FiiManualData>>({})
   const [fiiInfo, setFiiInfo] = useState<Record<string, FiiInfo>>({})
   const [stockInfo, setStockInfo] = useState<Record<string, StockInfo>>({})
+  const [exteriorInfo, setExteriorInfo] = useState<Record<string, ExteriorInfo>>({})
   const [refreshingFundamentals, setRefreshingFundamentals] = useState<Record<string, boolean>>({})
   const [fundamentalErrors, setFundamentalErrors] = useState<Record<string, string>>({})
 
@@ -35,6 +39,7 @@ export const useFundamentals = (uid: string | null) => {
       subscribeToFiiManual(uid, setFiiManual),
       subscribeToFiiInfo(uid, setFiiInfo),
       subscribeToStockInfo(uid, setStockInfo),
+      subscribeToExteriorInfo(uid, setExteriorInfo),
     ]
     return () => unsubs.forEach((u) => u())
   }, [uid])
@@ -91,6 +96,9 @@ export const useFundamentals = (uid: string | null) => {
   const saveStockInfo = (data: StockInfo) =>
     uid ? saveStockInfoService(uid, data) : Promise.resolve()
 
+  const saveExteriorInfo = (data: ExteriorInfo) =>
+    uid ? saveExteriorInfoService(uid, data) : Promise.resolve()
+
   const deleteSnapshot = (ticker: string, fetchedAt: string) => {
     if (!uid) return Promise.resolve()
     const existing = fundamentals[ticker.toUpperCase()]
@@ -103,6 +111,7 @@ export const useFundamentals = (uid: string | null) => {
     fiiManual,
     fiiInfo,
     stockInfo,
+    exteriorInfo,
     refreshingFundamentals,
     fundamentalErrors,
     refreshFundamentals,
@@ -110,6 +119,7 @@ export const useFundamentals = (uid: string | null) => {
     saveFiiManual,
     saveFiiInfo,
     saveStockInfo,
+    saveExteriorInfo,
     deleteSnapshot,
   }
 }

@@ -1,6 +1,7 @@
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type {
+  ExteriorInfo,
   FiiInfo,
   FiiManualData,
   FundamentalRecord,
@@ -216,6 +217,23 @@ export const subscribeToStockInfo = (
     const records: Record<string, StockInfo> = {}
     snap.docs.forEach((d) => {
       records[d.id] = d.data() as StockInfo
+    })
+    cb(records)
+  })
+
+/* ─── Firestore – Exterior (ETF/stock US) static info (manual) ─── */
+
+export const saveExteriorInfo = (userId: string, data: ExteriorInfo) =>
+  setDoc(doc(db, 'users', userId, 'exterior-info', data.ticker.toUpperCase()), data)
+
+export const subscribeToExteriorInfo = (
+  userId: string,
+  cb: (data: Record<string, ExteriorInfo>) => void,
+) =>
+  onSnapshot(collection(db, 'users', userId, 'exterior-info'), (snap) => {
+    const records: Record<string, ExteriorInfo> = {}
+    snap.docs.forEach((d) => {
+      records[d.id] = d.data() as ExteriorInfo
     })
     cb(records)
   })

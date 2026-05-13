@@ -105,6 +105,7 @@ export type Investidor10FiiInfo = Partial<{
   segment: string
   adminFee: string
   marketCap: string
+  about: string
 }>
 
 const scrapeFiiInfo = async (ticker: string): Promise<Investidor10FiiInfo | null> => {
@@ -127,8 +128,17 @@ const scrapeFiiInfo = async (ticker: string): Promise<Investidor10FiiInfo | null
     else if (label === 'VALOR PATRIMONIAL') marketCap = val
   })
 
+  const aboutParas = doc.querySelectorAll('#about-section p')
+  const about =
+    aboutParas.length > 0
+      ? Array.from(aboutParas)
+          .map((p) => p.textContent?.trim())
+          .filter(Boolean)
+          .join('\n\n')
+      : undefined
+
   if (!name && !segment) return null
-  return { name, segment, adminFee, marketCap }
+  return { name, segment, adminFee, marketCap, about }
 }
 
 export const fetchInvestidor10FiiInfo = (
@@ -136,6 +146,42 @@ export const fetchInvestidor10FiiInfo = (
   previousTickers: string[] = [],
 ): Promise<Investidor10FiiInfo> =>
   tryTickers(scrapeFiiInfo, [ticker, ...previousTickers]).then((r) => r ?? {})
+
+/* ─── Exterior ETF info (HTML scraping) ─────────────────────────── */
+
+export type Investidor10ExteriorInfo = Partial<{
+  name: string
+  aum: string
+  distributionYield: string
+  about: string
+}>
+
+const scrapeExteriorInfo = async (ticker: string): Promise<Investidor10ExteriorInfo | null> => {
+  const res = await fetch(`${BASE}/etfs-global/${ticker.toLowerCase()}/`).catch(() => null)
+  if (!res?.ok) return null
+  const html = await res.text()
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+
+  const name = doc.querySelector('h2.name-company')?.textContent?.trim()
+
+  let aum: string | undefined
+  let distributionYield: string | undefined
+  doc.querySelectorAll('._card').forEach((card) => {
+    const header = card.querySelector('._card-header span')?.getAttribute('title') ?? ''
+    const val = card.querySelector('._card-body span')?.textContent?.replaceAll(/\s+/g, ' ').trim()
+    if (header === 'Capitalização') aum = val
+    else if (header === 'DY') distributionYield = val
+  })
+
+  const aboutSection = doc.querySelector('#about-section')
+  const about = aboutSection?.querySelector('p')?.textContent?.replaceAll(/\s+/g, ' ').trim()
+
+  if (!name) return null
+  return { name, aum, distributionYield, about }
+}
+
+export const fetchInvestidor10ExteriorInfo = (ticker: string): Promise<Investidor10ExteriorInfo> =>
+  scrapeExteriorInfo(ticker).then((r) => r ?? {})
 
 /* ─── Stock indicators (API) ─────────────────────────────────────── */
 
@@ -157,6 +203,13 @@ export type Investidor10StockIndicators = Partial<{
   earningsGrowth: number
 }>
 
+const getIndicator = (data: Record<string, IndicatorEntry[]>, key: string): number | undefined => {
+  const list = data[key]
+  if (!Array.isArray(list)) return undefined
+  const atual = list.find((e) => e.year === 'Atual')
+  return (atual ?? list[0])?.value ?? undefined
+}
+
 const fetchStockIndicators = async (
   ticker: string,
 ): Promise<Investidor10StockIndicators | null> => {
@@ -169,13 +222,7 @@ const fetchStockIndicators = async (
   if (!res?.ok) return null
 
   const data = (await res.json()) as Record<string, IndicatorEntry[]>
-
-  const get = (key: string): number | undefined => {
-    const list = data[key]
-    if (!Array.isArray(list)) return undefined
-    const atual = list.find((e) => e.year === 'Atual')
-    return (atual ?? list[0])?.value ?? undefined
-  }
+  const get = (key: string) => getIndicator(data, key)
 
   return {
     priceEarnings: get('P/L'),
@@ -219,13 +266,7 @@ const fetchFiiIndicators = async (ticker: string): Promise<Investidor10FiiIndica
   if (!res?.ok) return null
 
   const data = (await res.json()) as Record<string, IndicatorEntry[]>
-
-  const get = (key: string): number | undefined => {
-    const list = data[key]
-    if (!Array.isArray(list)) return undefined
-    const atual = list.find((e) => e.year === 'Atual')
-    return (atual ?? list[0])?.value ?? undefined
-  }
+  const get = (key: string) => getIndicator(data, key)
 
   return {
     dividendYield: get('Dividend Yield'),

@@ -55,7 +55,9 @@ export const AssetCompactCard = ({
 
         <div className="flex items-end justify-between mb-3">
           <p className="text-lg font-bold text-foreground">{formatCurrency(asset.currentPrice)}</p>
-          <Sparkline ticker={asset.ticker} width={72} height={28} />
+          {asset.type !== 'fixed_income' && asset.type !== 'tesouro' && (
+            <Sparkline ticker={asset.ticker} width={72} height={28} />
+          )}
         </div>
 
         {keyDefs.length > 0 && current && (

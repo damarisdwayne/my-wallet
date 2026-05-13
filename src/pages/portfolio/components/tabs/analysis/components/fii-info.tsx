@@ -12,16 +12,19 @@ import type { FiiInfo } from '@/types'
 import { fetchInvestidor10FiiInfo, type Investidor10FiiInfo } from '@/services/investidor10'
 import { inputClass } from '../utils'
 import { FII_INFO_FIELDS } from '../constants'
+import { ExpandableText } from './expandable-text'
 
 export const FiiInfoDialog = ({
   ticker,
   existing,
+  apiAbout,
   open,
   onOpenChange,
   onSave,
 }: {
   ticker: string
   existing: FiiInfo | undefined
+  apiAbout?: string
   open: boolean
   onOpenChange: (v: boolean) => void
   onSave: (data: FiiInfo) => Promise<void>
@@ -35,6 +38,7 @@ export const FiiInfoDialog = ({
     adminName: '',
     adminFee: '',
     performanceFee: '',
+    about: '',
   }
   const [form, setForm] = useState<Omit<FiiInfo, 'ticker' | 'updatedAt'>>(
     existing
@@ -47,6 +51,7 @@ export const FiiInfoDialog = ({
           adminName: existing.adminName,
           adminFee: existing.adminFee,
           performanceFee: existing.performanceFee,
+          about: existing.about || apiAbout || '',
         }
       : empty,
   )
@@ -66,6 +71,7 @@ export const FiiInfoDialog = ({
               adminName: existing.adminName,
               adminFee: existing.adminFee,
               performanceFee: existing.performanceFee,
+              about: existing.about || apiAbout || '',
             }
           : empty,
       )
@@ -91,15 +97,25 @@ export const FiiInfoDialog = ({
         </DialogHeader>
 
         <div className="space-y-3 py-1">
-          {FII_INFO_FIELDS.map(({ key, label, placeholder }) => (
+          {FII_INFO_FIELDS.map(({ key, label, placeholder, multiline }) => (
             <div key={key}>
               <label className="block text-xs text-muted-foreground mb-1">{label}</label>
-              <input
-                className={inputClass}
-                placeholder={placeholder}
-                value={form[key]}
-                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-              />
+              {multiline ? (
+                <textarea
+                  className={`${inputClass} resize-none`}
+                  rows={3}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              ) : (
+                <input
+                  className={inputClass}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -128,34 +144,44 @@ export const FiiInfoSection = ({
   ticker,
   previousTickers,
   info,
-  onEdit,
   onAutoSave,
 }: {
   ticker: string
   previousTickers?: string[]
   info: FiiInfo | undefined
-  onEdit: () => void
   onAutoSave?: (data: FiiInfo) => Promise<void>
 }) => {
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [apiData, setApiData] = useState<Investidor10FiiInfo>({})
   const [fetching, setFetching] = useState(true)
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFetching(true)
     fetchInvestidor10FiiInfo(ticker, previousTickers ?? [])
       .then((data) => {
         setApiData(data)
-        if (!info && onAutoSave && (data.name || data.segment)) {
+        const ok = (v: string | undefined) => !!v && v.trim().length > 0
+        const anyMissing = (
+          [
+            [info?.longName, data.name],
+            [info?.segment, data.segment],
+            [info?.about, data.about],
+          ] as [string | undefined, string | undefined][]
+        ).some(([saved, api]) => ok(api) && !ok(saved))
+        if (onAutoSave && anyMissing) {
+          const fill = (saved: string | undefined, api: string | undefined) =>
+            ok(saved) ? saved! : (api ?? '')
           onAutoSave({
             ticker,
-            longName: data.name ?? '',
-            segment: data.segment ?? '',
-            cnpj: '',
-            startDate: '',
-            marketCap: data.marketCap ?? '',
-            adminName: '',
-            adminFee: data.adminFee ?? '',
-            performanceFee: '',
+            longName: fill(info?.longName, data.name),
+            segment: fill(info?.segment, data.segment),
+            about: fill(info?.about, data.about),
+            cnpj: info?.cnpj ?? '',
+            startDate: info?.startDate ?? '',
+            marketCap: fill(info?.marketCap, data.marketCap),
+            adminName: info?.adminName ?? '',
+            adminFee: fill(info?.adminFee, data.adminFee),
+            performanceFee: info?.performanceFee ?? '',
             updatedAt: new Date().toISOString(),
           }).catch(() => null)
         }
@@ -163,7 +189,7 @@ export const FiiInfoSection = ({
       .catch(() => null)
       .finally(() => setFetching(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticker])
+  }, [ticker, info])
 
   const v = (apiVal: string | undefined, savedVal: string | undefined) =>
     apiVal?.trim() || savedVal?.trim() || ''
@@ -179,6 +205,8 @@ export const FiiInfoSection = ({
     { label: 'Taxa de Performance', value: info?.performanceFee ?? '' },
   ].filter((f) => f.value.trim() !== '')
 
+  const about = v(apiData.about, info?.about)
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -186,7 +214,7 @@ export const FiiInfoSection = ({
           Informações do Fundo
         </p>
         <button
-          onClick={onEdit}
+          onClick={() => setDialogOpen(true)}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <Pencil size={11} />
@@ -194,30 +222,54 @@ export const FiiInfoSection = ({
         </button>
       </div>
       {fetching ? (
-        <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-          {['n', 'c', 'i', 's', 'vm', 'a', 'ta', 'tp'].map((k) => (
-            <div key={k} className="space-y-1">
-              <Skeleton className="h-2.5 w-20" />
-              <Skeleton className="h-4 w-28" />
-            </div>
-          ))}
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+            {['n', 'c', 'i', 's', 'vm', 'a', 'ta', 'tp'].map((k) => (
+              <div key={k} className="space-y-1">
+                <Skeleton className="h-2.5 w-20" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
+          <div className="pt-3 border-t border-border space-y-2">
+            <Skeleton className="h-2.5 w-24" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
+          </div>
         </div>
-      ) : fields.length > 0 ? (
-        <div className="rounded-lg border border-border p-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-          {fields.map((f) => (
-            <div key={f.label} className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-                {f.label}
-              </p>
-              <p className="text-sm font-medium text-foreground break-words">{f.value}</p>
+      ) : fields.length > 0 || about ? (
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          {fields.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+              {fields.map((f) => (
+                <div key={f.label} className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                    {f.label}
+                  </p>
+                  <p className="text-sm font-medium text-foreground wrap-break-word">{f.value}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          {about && <ExpandableText label="Sobre o Fundo" text={about} />}
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-border p-4 text-center">
           <p className="text-xs text-muted-foreground">Nenhuma informação registrada.</p>
         </div>
       )}
+      <FiiInfoDialog
+        ticker={ticker}
+        existing={info}
+        apiAbout={apiData.about}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSave={async (data) => {
+          await onAutoSave?.(data)
+          setDialogOpen(false)
+        }}
+      />
     </div>
   )
 }

@@ -439,6 +439,8 @@ export const usePortfolio = () => {
     saveFiiInfo: fundamentalsHook.saveFiiInfo,
     stockInfo: fundamentalsHook.stockInfo,
     saveStockInfo: fundamentalsHook.saveStockInfo,
+    exteriorInfo: fundamentalsHook.exteriorInfo,
+    saveExteriorInfo: fundamentalsHook.saveExteriorInfo,
     refreshingFundamentals: fundamentalsHook.refreshingFundamentals,
     fundamentalErrors: fundamentalsHook.fundamentalErrors,
     refreshFundamentals,

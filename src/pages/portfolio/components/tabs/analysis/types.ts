@@ -1,8 +1,17 @@
-import type { Asset, FiiInfo, FundamentalRecord, FundamentalSnapshot, StockInfo } from '@/types'
+import type {
+  Asset,
+  ExteriorInfo,
+  FiiInfo,
+  FundamentalRecord,
+  FundamentalSnapshot,
+  PortfolioCategory,
+  StockInfo,
+} from '@/types'
 
 export interface Props {
   uid: string | null
   assets: Asset[]
+  categories: PortfolioCategory[]
   fundamentals: Record<string, FundamentalRecord>
   saveManualSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
   deleteSnapshot: (ticker: string, fetchedAt: string) => Promise<void>
@@ -10,6 +19,8 @@ export interface Props {
   saveFiiInfo: (data: FiiInfo) => Promise<void>
   stockInfo: Record<string, StockInfo>
   saveStockInfo: (data: StockInfo) => Promise<void>
+  exteriorInfo: Record<string, ExteriorInfo>
+  saveExteriorInfo: (data: ExteriorInfo) => Promise<void>
 }
 
 export type TrendType = 'up-good' | 'up-bad' | 'neutral'

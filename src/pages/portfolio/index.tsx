@@ -75,6 +75,8 @@ export const PortfolioPage = () => {
     saveFiiInfo,
     stockInfo,
     saveStockInfo,
+    exteriorInfo,
+    saveExteriorInfo,
     loading,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
@@ -178,6 +180,7 @@ export const PortfolioPage = () => {
           <AnalysisTab
             uid={uid}
             assets={assets}
+            categories={categories}
             fundamentals={fundamentals}
             saveManualSnapshot={saveManualSnapshot}
             deleteSnapshot={deleteSnapshot}
@@ -185,6 +188,8 @@ export const PortfolioPage = () => {
             saveFiiInfo={saveFiiInfo}
             stockInfo={stockInfo}
             saveStockInfo={saveStockInfo}
+            exteriorInfo={exteriorInfo}
+            saveExteriorInfo={saveExteriorInfo}
           />
         )}
         {activeTab === 5 && (

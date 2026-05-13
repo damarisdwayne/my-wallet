@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils'
 import type {
   AiAnalysis,
   Asset,
+  ExteriorInfo,
   FiiInfo,
   FundamentalRecord,
   FundamentalSnapshot,
@@ -14,7 +15,9 @@ import type {
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
 import { AiHistorySection } from './ai-analysis'
 import { AiSheet } from './ai-sheet'
-import { FiiInfoDialog, FiiInfoSection } from './fii-info'
+import { ExteriorInfoDialog, ExteriorInfoSection } from './exterior-info'
+import { FixedIncomeSection } from './fixed-income-section'
+import { FiiInfoSection } from './fii-info'
 import { IndicatorCard } from './indicator-card'
 import { ManualSnapshotDialog } from './snapshot-form'
 import { StockInfoDialog, StockInfoSection } from './stock-info'
@@ -28,27 +31,31 @@ export const AssetDetailView = ({
   isFii,
   fiiInfoData,
   stockInfoData,
+  exteriorInfoData,
   onBack,
   onSaveSnapshot,
   onDeleteSnapshot,
   onSaveFiiInfo,
   onSaveStockInfo,
+  onSaveExteriorInfo,
 }: {
   asset: Asset
   record: FundamentalRecord | undefined
   isFii: boolean
   fiiInfoData: FiiInfo | undefined
   stockInfoData: StockInfo | undefined
+  exteriorInfoData: ExteriorInfo | undefined
   onBack: () => void
   onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
   onDeleteSnapshot: (fetchedAt: string) => Promise<void>
   onSaveFiiInfo: (data: FiiInfo) => Promise<void>
   onSaveStockInfo: (data: StockInfo) => Promise<void>
+  onSaveExteriorInfo: (data: ExteriorInfo) => Promise<void>
 }) => {
   const { user } = useAuth()
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [fiiInfoOpen, setFiiInfoOpen] = useState(false)
   const [stockInfoOpen, setStockInfoOpen] = useState(false)
+  const [exteriorInfoOpen, setExteriorInfoOpen] = useState(false)
   const [aiHistory, setAiHistory] = useState<AiAnalysis[]>([])
 
   useEffect(() => {
@@ -59,6 +66,11 @@ export const AssetDetailView = ({
   const snapshots = record?.snapshots ?? []
   const current = mergeSnapshots(snapshots)
   const indicators = STOCK_INDICATORS
+
+  const isFixedIncome = asset.type === 'fixed_income' || asset.type === 'tesouro'
+  const isExterior = asset.type === 'stock_us' || asset.type === 'etf_us' || asset.type === 'bdr'
+  const showStockInfo = !isFii && !isFixedIncome
+  const showIndicators = !isFixedIncome
 
   return (
     <>
@@ -84,14 +96,16 @@ export const AssetDetailView = ({
           {asset.name !== asset.ticker && (
             <p className="text-sm text-muted-foreground truncate hidden sm:block">{asset.name}</p>
           )}
-          <div className="ml-auto shrink-0">
-            <AiSheet
-              ticker={asset.ticker}
-              isFii={isFii}
-              sector={stockInfoData?.sector ?? current?.sector ?? undefined}
-              subsector={stockInfoData?.subsector ?? current?.industry ?? undefined}
-            />
-          </div>
+          {!isFixedIncome && (
+            <div className="ml-auto shrink-0">
+              <AiSheet
+                ticker={asset.ticker}
+                isFii={isFii}
+                sector={stockInfoData?.sector ?? current?.sector ?? undefined}
+                subsector={stockInfoData?.subsector ?? current?.industry ?? undefined}
+              />
+            </div>
+          )}
         </div>
 
         {/* Price row */}
@@ -104,11 +118,22 @@ export const AssetDetailView = ({
           )}
         </div>
 
-        {/* Valuation — compact chips */}
-        {isFii ? (
-          <FiiValuation currentPrice={asset.currentPrice} snapshot={current} />
-        ) : (
-          <StockValuation currentPrice={asset.currentPrice} snapshot={current} />
+        {/* Valuation */}
+        {!isFixedIncome &&
+          (isFii ? (
+            <FiiValuation currentPrice={asset.currentPrice} snapshot={current} />
+          ) : (
+            <StockValuation currentPrice={asset.currentPrice} snapshot={current} />
+          ))}
+
+        {/* Renda fixa / Tesouro */}
+        {isFixedIncome && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              {asset.type === 'tesouro' ? 'Dados do Título' : 'Dados do Investimento'}
+            </p>
+            <FixedIncomeSection asset={asset} />
+          </div>
         )}
 
         {/* FII fund info */}
@@ -117,13 +142,22 @@ export const AssetDetailView = ({
             ticker={asset.ticker}
             previousTickers={asset.previousTickers}
             info={fiiInfoData}
-            onEdit={() => setFiiInfoOpen(true)}
             onAutoSave={onSaveFiiInfo}
           />
         )}
 
+        {/* Exterior ETF info */}
+        {isExterior && (
+          <ExteriorInfoSection
+            ticker={asset.ticker}
+            info={exteriorInfoData}
+            onEdit={() => setExteriorInfoOpen(true)}
+            onAutoSave={onSaveExteriorInfo}
+          />
+        )}
+
         {/* Stock company info */}
-        {!isFii && (
+        {showStockInfo && !isExterior && (
           <StockInfoSection
             ticker={asset.ticker}
             previousTickers={asset.previousTickers}
@@ -134,61 +168,63 @@ export const AssetDetailView = ({
         )}
 
         {/* Indicators */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Indicadores
-            </p>
-            <button
-              onClick={() => setRegisterOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Plus size={12} />
-              Registrar indicadores
-            </button>
-          </div>
-          {isFii ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {[...FII_COMMON, ...FII_TIJOLO, ...FII_PAPEL].map((def) =>
-                def.type === 'number' ? (
-                  <IndicatorCard
-                    key={def.key as string}
-                    def={def}
-                    snapshots={snapshots}
-                    onDeleteSnapshot={onDeleteSnapshot}
-                  />
+        {showIndicators && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Indicadores
+              </p>
+              <button
+                onClick={() => setRegisterOpen(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Plus size={12} />
+                Registrar indicadores
+              </button>
+            </div>
+            {isFii ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {[...FII_COMMON, ...FII_TIJOLO, ...FII_PAPEL].map((def) =>
+                  def.type === 'number' ? (
+                    <IndicatorCard
+                      key={def.key as string}
+                      def={def}
+                      snapshots={snapshots}
+                      onDeleteSnapshot={onDeleteSnapshot}
+                    />
+                  ) : (
+                    <TextIndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                  ),
+                )}
+                <TextIndicatorCard
+                  def={{ type: 'text', key: 'notes', label: 'Observações' }}
+                  snapshots={snapshots}
+                />
+                {snapshots.length === 0 && (
+                  <p className="text-xs text-muted-foreground col-span-full mt-1">
+                    Nenhum indicador registrado ainda
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {snapshots.length > 0 ? (
+                  indicators.map((def) => (
+                    <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
+                  ))
                 ) : (
-                  <TextIndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
-                ),
-              )}
-              <TextIndicatorCard
-                def={{ type: 'text', key: 'notes', label: 'Observações' }}
-                snapshots={snapshots}
-              />
-              {snapshots.length === 0 && (
-                <p className="text-xs text-muted-foreground col-span-full mt-1">
-                  Nenhum indicador registrado ainda
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {snapshots.length > 0 ? (
-                indicators.map((def) => (
-                  <IndicatorCard key={def.key as string} def={def} snapshots={snapshots} />
-                ))
-              ) : (
-                <p className="text-xs text-muted-foreground col-span-full mt-1">
-                  Nenhum indicador registrado ainda
-                </p>
-              )}
-              <TextIndicatorCard
-                def={{ type: 'text', key: 'notes', label: 'Observações' }}
-                snapshots={snapshots}
-              />
-            </div>
-          )}
-        </div>
+                  <p className="text-xs text-muted-foreground col-span-full mt-1">
+                    Nenhum indicador registrado ainda
+                  </p>
+                )}
+                <TextIndicatorCard
+                  def={{ type: 'text', key: 'notes', label: 'Observações' }}
+                  snapshots={snapshots}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* AI analysis history */}
         {aiHistory.length > 0 && <AiHistorySection history={aiHistory} />}
@@ -202,16 +238,16 @@ export const AssetDetailView = ({
         onOpenChange={setRegisterOpen}
         onSave={onSaveSnapshot}
       />
-      {isFii && (
-        <FiiInfoDialog
+      {isExterior && (
+        <ExteriorInfoDialog
           ticker={asset.ticker}
-          existing={fiiInfoData}
-          open={fiiInfoOpen}
-          onOpenChange={setFiiInfoOpen}
-          onSave={onSaveFiiInfo}
+          existing={exteriorInfoData}
+          open={exteriorInfoOpen}
+          onOpenChange={setExteriorInfoOpen}
+          onSave={onSaveExteriorInfo}
         />
       )}
-      {!isFii && (
+      {!isFii && !isExterior && (
         <StockInfoDialog
           ticker={asset.ticker}
           existing={stockInfoData}

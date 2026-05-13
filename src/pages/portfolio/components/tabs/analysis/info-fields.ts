@@ -1,9 +1,10 @@
-import type { FiiInfo, StockInfo } from '@/types'
+import type { ExteriorInfo, FiiInfo, StockInfo } from '@/types'
 
 export const FII_INFO_FIELDS: {
   key: keyof Omit<FiiInfo, 'ticker' | 'updatedAt'>
   label: string
   placeholder: string
+  multiline?: boolean
 }[] = [
   {
     key: 'longName',
@@ -28,6 +29,35 @@ export const FII_INFO_FIELDS: {
     key: 'performanceFee',
     label: 'Taxa de Performance',
     placeholder: 'Ex: 20% sobre IPCA+6% ou Não há',
+  },
+  {
+    key: 'about',
+    label: 'Sobre o Fundo',
+    placeholder: 'Mini descrição do fundo e estratégia...',
+    multiline: true,
+  },
+]
+
+export const EXTERIOR_INFO_FIELDS: {
+  key: keyof Omit<ExteriorInfo, 'ticker' | 'updatedAt'>
+  label: string
+  placeholder: string
+  multiline?: boolean
+}[] = [
+  { key: 'name', label: 'Nome do ETF', placeholder: 'Ex: iShares 20+ Year Treasury Bond ETF' },
+  { key: 'category', label: 'Categoria', placeholder: 'Ex: Renda Fixa EUA, Ações EUA' },
+  {
+    key: 'trackedIndex',
+    label: 'Índice Rastreado',
+    placeholder: 'Ex: Bloomberg US 20+ Year Treasury Bond Index',
+  },
+  { key: 'expenseRatio', label: 'Taxa de Administração', placeholder: 'Ex: 0,15% a.a.' },
+  { key: 'aum', label: 'Patrimônio (AUM)', placeholder: 'Ex: USD 17 bi' },
+  {
+    key: 'about',
+    label: 'Sobre o ETF',
+    placeholder: 'Mini descrição do ETF e sua estratégia...',
+    multiline: true,
   },
 ]
 

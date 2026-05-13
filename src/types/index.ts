@@ -279,6 +279,7 @@ export interface FiiInfo {
   adminName: string
   adminFee: string
   performanceFee: string
+  about: string
   updatedAt: string
 }
 
@@ -296,6 +297,17 @@ export interface StockInfo {
   controller: string
   geographicExposure: string
   tagAlong: string
+  updatedAt: string
+}
+
+export interface ExteriorInfo {
+  ticker: string
+  name: string
+  expenseRatio: string
+  aum: string
+  trackedIndex: string
+  category: string
+  about: string
   updatedAt: string
 }
 

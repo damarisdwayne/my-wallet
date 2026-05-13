@@ -14,6 +14,7 @@ type TopTab = 'portfolio' | 'watchlist'
 export const AnalysisTab = ({
   uid,
   assets,
+  categories,
   fundamentals,
   saveManualSnapshot,
   deleteSnapshot,
@@ -21,21 +22,32 @@ export const AnalysisTab = ({
   saveFiiInfo,
   stockInfo,
   saveStockInfo,
+  exteriorInfo,
+  saveExteriorInfo,
 }: Props) => {
   const [topTab, setTopTab] = useState<TopTab>('portfolio')
-  const [subTab, setSubTab] = useState<'stock' | 'fii'>('stock')
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
 
-  const isFii = subTab === 'fii'
-  const allShown = assets.filter((a) => a.type === (isFii ? 'fii' : 'stock'))
+  const availableCategories = categories.filter((c) => assets.some((a) => a.categoryId === c.id))
+  const [subCategoryId, setSubCategoryId] = useState<string>(availableCategories[0]?.id ?? '')
+
+  const currentCategory = availableCategories.find((c) => c.id === subCategoryId)
+  const allShown = assets.filter((a) => a.categoryId === subCategoryId)
   const selectedAsset = allShown.find((a) => a.ticker === selectedTicker) ?? null
+
+  const categoryTypes = currentCategory?.assetTypes ?? []
+  const isFiiCategory = categoryTypes.every((t) => t === 'fii')
+  const isStockCategory =
+    !isFiiCategory && !categoryTypes.some((t) => t === 'fixed_income' || t === 'tesouro')
+  const showSectorBreakdown = isFiiCategory || (isStockCategory && categoryTypes.includes('stock'))
+  const showDocGuide = isFiiCategory || categoryTypes.includes('stock')
 
   if (topTab === 'portfolio' && selectedAsset) {
     return (
       <AssetDetailView
         asset={selectedAsset}
         record={fundamentals[selectedAsset.ticker.toUpperCase()]}
-        isFii={isFii}
+        isFii={selectedAsset.type === 'fii'}
         fiiInfoData={fiiInfo[selectedAsset.ticker.toUpperCase()]}
         stockInfoData={stockInfo[selectedAsset.ticker.toUpperCase()]}
         onBack={() => setSelectedTicker(null)}
@@ -43,13 +55,14 @@ export const AnalysisTab = ({
         onDeleteSnapshot={(fetchedAt) => deleteSnapshot(selectedAsset.ticker, fetchedAt)}
         onSaveFiiInfo={saveFiiInfo}
         onSaveStockInfo={saveStockInfo}
+        exteriorInfoData={exteriorInfo[selectedAsset.ticker.toUpperCase()]}
+        onSaveExteriorInfo={saveExteriorInfo}
       />
     )
   }
 
   return (
     <div className="space-y-5">
-      {/* Top-level tabs */}
       <div className="flex gap-1">
         {(
           [
@@ -74,28 +87,29 @@ export const AnalysisTab = ({
         <WatchlistTab uid={uid} />
       ) : (
         <>
-          <div className="flex gap-1">
-            {(['stock', 'fii'] as const).map((tab) => (
+          <div className="flex flex-wrap gap-1">
+            {availableCategories.map((cat) => (
               <button
-                key={tab}
+                key={cat.id}
                 onClick={() => {
-                  setSubTab(tab)
+                  setSubCategoryId(cat.id)
                   setSelectedTicker(null)
                 }}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subTab === tab ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subCategoryId === cat.id ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                {tab === 'stock' ? 'Ações BR' : 'FIIs'}
+                {cat.name}
               </button>
             ))}
           </div>
 
-          <DocumentGuide type={isFii ? 'fii' : 'stock'} />
+          {showDocGuide && <DocumentGuide type={isFiiCategory ? 'fii' : 'stock'} />}
 
-          {isFii ? (
-            <FiiSectorBreakdown assets={assets} fiiInfo={fiiInfo} />
-          ) : (
-            <StockSectorBreakdown assets={assets} stockInfo={stockInfo} />
-          )}
+          {showSectorBreakdown &&
+            (isFiiCategory ? (
+              <FiiSectorBreakdown assets={allShown} fiiInfo={fiiInfo} />
+            ) : (
+              <StockSectorBreakdown assets={allShown} stockInfo={stockInfo} />
+            ))}
 
           {allShown.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">
@@ -108,7 +122,7 @@ export const AnalysisTab = ({
                   key={asset.id}
                   asset={asset}
                   record={fundamentals[asset.ticker.toUpperCase()]}
-                  isFii={isFii}
+                  isFii={asset.type === 'fii'}
                   onClick={() => setSelectedTicker(asset.ticker)}
                 />
               ))}

@@ -86,7 +86,7 @@ const scrapeStockInfo = async (ticker: string): Promise<Investidor10StockInfo | 
   const about = doc
     .querySelector('#about-company .about .text-content')
     ?.textContent?.trim()
-    ?.replace(/\s+/g, ' ')
+    ?.replaceAll(/\s+/g, ' ')
 
   if (!name && !sector) return null
   return { name, sector, subsector, marketCap, tagAlong, foundedYear, ipoYear, about }
@@ -182,6 +182,87 @@ const scrapeExteriorInfo = async (ticker: string): Promise<Investidor10ExteriorI
 
 export const fetchInvestidor10ExteriorInfo = (ticker: string): Promise<Investidor10ExteriorInfo> =>
   scrapeExteriorInfo(ticker).then((r) => r ?? {})
+
+/* ─── Comunicados (ações + FIIs) ────────────────────────────────── */
+
+export interface Investidor10Comunicado {
+  title: string
+  date: string
+  url: string
+}
+
+export interface Investidor10ComunicadosPage {
+  items: Investidor10Comunicado[]
+  totalPages: number
+}
+
+const parseComunicadosHtml = (html: string): Investidor10ComunicadosPage => {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+
+  const items: Investidor10Comunicado[] = []
+  doc.querySelectorAll('.communication-card').forEach((card) => {
+    const title = card.querySelector('.communication-card--content')?.textContent?.trim() ?? ''
+    const date = card.querySelector('.card-date--content')?.textContent?.trim() ?? ''
+    const url = card.querySelector('a.btn-download-communication')?.getAttribute('href') ?? ''
+    if (title && url) items.push({ title, date, url })
+  })
+
+  let totalPages = 1
+  doc
+    .querySelectorAll('.pagination-item:not(.previous):not(.next):not(.disabled)')
+    .forEach((li) => {
+      const n = Number.parseInt(li.textContent?.trim() ?? '', 10)
+      if (!Number.isNaN(n) && n > totalPages) totalPages = n
+    })
+
+  return { items, totalPages }
+}
+
+export const fetchInvestidor10Comunicados = async (
+  ticker: string,
+  type: 'stock' | 'fii',
+  page = 1,
+): Promise<Investidor10ComunicadosPage> => {
+  const t = ticker.toUpperCase()
+  const path = type === 'fii' ? `communications/fii/${t}` : `communications/ticker/${t}`
+  const res = await fetch(`${BASE}/${path}/?page=${page}`).catch(() => null)
+  if (!res?.ok) return { items: [], totalPages: 1 }
+  const html = await res.text()
+  return parseComunicadosHtml(html)
+}
+
+/* ─── News scraping (ações + FIIs) ──────────────────────────────── */
+
+export interface Investidor10NewsItem {
+  title: string
+  url: string
+  date: string
+  category: string
+  image: string
+}
+
+export const fetchInvestidor10News = async (
+  ticker: string,
+  type: 'stock' | 'fii',
+): Promise<Investidor10NewsItem[]> => {
+  const path = type === 'fii' ? `fiis/${ticker.toLowerCase()}` : `acoes/${ticker.toLowerCase()}`
+  const res = await fetch(`${BASE}/${path}/`).catch(() => null)
+  if (!res?.ok) return []
+  const html = await res.text()
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+
+  const items: Investidor10NewsItem[] = []
+  doc.querySelectorAll('a.stock-link-option').forEach((a) => {
+    const url = a.getAttribute('href') ?? ''
+    const title = a.querySelector('.title')?.textContent?.trim() ?? ''
+    const date =
+      a.querySelector('.publish-date')?.textContent?.replaceAll('Publicado em', '').trim() ?? ''
+    const category = a.querySelector('.category-tag')?.textContent?.trim() ?? ''
+    const image = a.querySelector('img')?.getAttribute('src') ?? ''
+    if (title && url) items.push({ title, url, date, category, image })
+  })
+  return items
+}
 
 /* ─── Stock indicators (API) ─────────────────────────────────────── */
 

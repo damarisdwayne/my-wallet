@@ -23,6 +23,8 @@ import { ManualSnapshotDialog } from './snapshot-form'
 import { StockInfoDialog, StockInfoSection } from './stock-info'
 import { TextIndicatorCard } from './text-indicator-card'
 import { FiiValuation, StockValuation } from './valuation-section'
+import { ComunicadosSection } from './comunicados-section'
+import { NewsSection } from './news-section'
 import { mergeSnapshots } from '../utils'
 
 export const AssetDetailView = ({
@@ -228,6 +230,16 @@ export const AssetDetailView = ({
 
         {/* AI analysis history */}
         {aiHistory.length > 0 && <AiHistorySection history={aiHistory} />}
+
+        {/* Comunicados */}
+        {(isFii || (!isFixedIncome && !isExterior)) && (
+          <ComunicadosSection ticker={asset.ticker} type={isFii ? 'fii' : 'stock'} />
+        )}
+
+        {/* News */}
+        {(isFii || (!isFixedIncome && !isExterior)) && (
+          <NewsSection ticker={asset.ticker} type={isFii ? 'fii' : 'stock'} />
+        )}
       </div>
 
       <ManualSnapshotDialog

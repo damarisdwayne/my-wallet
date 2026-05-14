@@ -24,12 +24,22 @@ export const AnalysisTab = ({
   saveStockInfo,
   exteriorInfo,
   saveExteriorInfo,
+  initialTicker,
 }: Props) => {
   const [topTab, setTopTab] = useState<TopTab>('portfolio')
-  const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(initialTicker ?? null)
 
   const availableCategories = categories.filter((c) => assets.some((a) => a.categoryId === c.id))
-  const [subCategoryId, setSubCategoryId] = useState<string>(availableCategories[0]?.id ?? '')
+  const [subCategoryId, setSubCategoryId] = useState<string>(() => {
+    if (initialTicker) {
+      const asset = assets.find((a) => a.ticker === initialTicker)
+      if (asset) {
+        const cat = availableCategories.find((c) => c.id === asset.categoryId)
+        if (cat) return cat.id
+      }
+    }
+    return availableCategories[0]?.id ?? ''
+  })
 
   const currentCategory = availableCategories.find((c) => c.id === subCategoryId)
   const allShown = assets.filter((a) => a.categoryId === subCategoryId)

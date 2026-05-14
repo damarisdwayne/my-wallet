@@ -24,6 +24,7 @@ interface AssetsTableProps {
   onToggleSort: (col: SortCol) => void
   onEditAsset: (asset: Asset) => void
   onSetFilterCatId: (id: string | typeof ALL) => void
+  onNavigateToAnalysis: (ticker: string) => void
 }
 
 export const AssetsTable = memo(
@@ -41,6 +42,7 @@ export const AssetsTable = memo(
     onToggleSort,
     onEditAsset,
     onSetFilterCatId,
+    onNavigateToAnalysis,
   }: AssetsTableProps) => {
     const { hideValues } = usePrivacy()
     const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
@@ -128,7 +130,10 @@ export const AssetsTable = memo(
           return (
             <div
               key={a.id}
-              className={`rounded-lg border border-border px-4 py-3 ${ret >= 0 ? 'bg-success/5' : 'bg-destructive/5'}`}
+              tabIndex={0}
+              onClick={() => onNavigateToAnalysis(a.ticker)}
+              onKeyDown={(e) => e.key === 'Enter' && onNavigateToAnalysis(a.ticker)}
+              className={`rounded-lg border border-border px-4 py-3 cursor-pointer ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'} transition-colors`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -159,7 +164,10 @@ export const AssetsTable = memo(
                     <Badge variant="secondary">{typeLabel[a.type]}</Badge>
                   )}
                   <button
-                    onClick={() => onEditAsset(a)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditAsset(a)
+                    }}
                     className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   >
                     <Pencil size={13} />
@@ -259,7 +267,8 @@ export const AssetsTable = memo(
                 return (
                   <tr
                     key={a.id}
-                    className={`border-b border-border last:border-0 transition-colors ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'}`}
+                    onClick={() => onNavigateToAnalysis(a.ticker)}
+                    className={`border-b border-border last:border-0 transition-colors cursor-pointer ${ret >= 0 ? 'bg-success/5 hover:bg-success/10' : 'bg-destructive/5 hover:bg-destructive/10'}`}
                   >
                     <td className="py-3 pl-3">
                       <p className="font-semibold text-foreground flex items-center gap-1.5">
@@ -313,9 +322,7 @@ export const AssetsTable = memo(
                       {a.type === 'fixed_income' || a.type === 'tesouro' ? (
                         <span className="text-muted-foreground">—</span>
                       ) : (
-                        <>
-                          <p className="font-medium text-foreground">{fmt(recommended)}</p>
-                        </>
+                        <p className="font-medium text-foreground">{fmt(recommended)}</p>
                       )}
                     </td>
                     <td
@@ -326,7 +333,10 @@ export const AssetsTable = memo(
                     <td className="py-3 text-right text-muted-foreground">{pct.toFixed(1)}%</td>
                     <td className="py-3 text-center">
                       <button
-                        onClick={() => onEditAsset(a)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditAsset(a)
+                        }}
                         className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                       >
                         <Pencil size={13} />

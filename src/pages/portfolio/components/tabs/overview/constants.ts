@@ -40,4 +40,5 @@ export interface OverviewTabProps {
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean
   priceError: string | null
+  onNavigateToAnalysis: (ticker: string) => void
 }

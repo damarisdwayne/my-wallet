@@ -21,6 +21,7 @@ export interface Props {
   saveStockInfo: (data: StockInfo) => Promise<void>
   exteriorInfo: Record<string, ExteriorInfo>
   saveExteriorInfo: (data: ExteriorInfo) => Promise<void>
+  initialTicker?: string | null
 }
 
 export type TrendType = 'up-good' | 'up-bad' | 'neutral'

@@ -21,6 +21,7 @@ export const OverviewTab = ({
   refreshPrices,
   refreshingPrices,
   priceError,
+  onNavigateToAnalysis,
 }: OverviewTabProps) => {
   const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
 
@@ -215,6 +216,7 @@ export const OverviewTab = ({
         onToggleSort={toggleSort}
         onEditAsset={setEditingAsset}
         onSetFilterCatId={setFilterCatId}
+        onNavigateToAnalysis={onNavigateToAnalysis}
       />
 
       <AddAssetDialog

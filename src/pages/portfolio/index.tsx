@@ -36,7 +36,7 @@ const tabs = [
   'Alocação',
   'Simular Aporte',
   'Proventos',
-  'Análises',
+  'Fundamentos',
   'Movimentações',
   'Importações',
 ]
@@ -80,6 +80,12 @@ export const PortfolioPage = () => {
     loading,
   } = usePortfolio()
   const [activeTab, setActiveTab] = useState(0)
+  const [initialAnalysisTicker, setInitialAnalysisTicker] = useState<string | null>(null)
+
+  const navigateToAnalysis = (ticker: string) => {
+    setInitialAnalysisTicker(ticker)
+    setActiveTab(4)
+  }
 
   const totalValue = useMemo(
     () => assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0),
@@ -147,6 +153,7 @@ export const PortfolioPage = () => {
             refreshPrices={refreshPrices}
             refreshingPrices={refreshingPrices}
             priceError={priceError}
+            onNavigateToAnalysis={navigateToAnalysis}
           />
         )}
         {activeTab === 1 && (
@@ -190,6 +197,7 @@ export const PortfolioPage = () => {
             saveStockInfo={saveStockInfo}
             exteriorInfo={exteriorInfo}
             saveExteriorInfo={saveExteriorInfo}
+            initialTicker={initialAnalysisTicker}
           />
         )}
         {activeTab === 5 && (

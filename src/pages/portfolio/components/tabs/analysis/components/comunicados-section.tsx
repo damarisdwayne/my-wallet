@@ -17,13 +17,7 @@ const getPageRange = (current: number, total: number): (number | '...')[] => {
   return pages
 }
 
-export const ComunicadosSection = ({
-  ticker,
-  type,
-}: {
-  ticker: string
-  type: 'stock' | 'fii'
-}) => {
+export const ComunicadosSection = ({ ticker, type }: { ticker: string; type: 'stock' | 'fii' }) => {
   const [items, setItems] = useState<Investidor10Comunicado[]>([])
   const [fetching, setFetching] = useState(true)
   const [page, setPage] = useState(1)
@@ -83,7 +77,9 @@ export const ComunicadosSection = ({
                   <p className="text-sm text-foreground leading-snug">{c.title}</p>
                   <div className="flex items-center gap-4 shrink-0">
                     {c.date && (
-                      <span className="text-xs text-muted-foreground hidden sm:block">{c.date}</span>
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        {c.date}
+                      </span>
                     )}
                     <a
                       href={c.url}
@@ -113,7 +109,10 @@ export const ComunicadosSection = ({
                 <div className="flex items-center gap-1 mx-1">
                   {getPageRange(page, totalPages).map((p, i) =>
                     p === '...' ? (
-                      <span key={`ellipsis-${String(i)}`} className="px-1 text-xs text-muted-foreground">
+                      <span
+                        key={`ellipsis-${String(i)}`}
+                        className="px-1 text-xs text-muted-foreground"
+                      >
                         ...
                       </span>
                     ) : (

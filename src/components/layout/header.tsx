@@ -18,6 +18,7 @@ interface HeaderProps {
   notifications: AppNotification[]
   unreadCount: number
   alerts: PriceAlert[]
+  alertPrices: Record<string, number>
   onMarkRead: (id: string) => void
   onMarkAllRead: () => void
   onRemoveNotification: (id: string) => void
@@ -50,6 +51,7 @@ export const Header = ({
   notifications,
   unreadCount,
   alerts,
+  alertPrices,
   onMarkRead,
   onMarkAllRead,
   onRemoveNotification,
@@ -77,6 +79,7 @@ export const Header = ({
           notifications={notifications}
           unreadCount={unreadCount}
           alerts={alerts}
+          alertPrices={alertPrices}
           onMarkRead={onMarkRead}
           onMarkAllRead={onMarkAllRead}
           onRemoveNotification={onRemoveNotification}

@@ -103,6 +103,7 @@ const fireAlert = (uid: string, alert: PriceAlert, price: number, userEmail: str
 
 export const usePriceAlerts = (uid: string | null, userEmail: string | null) => {
   const [alerts, setAlerts] = useState<PriceAlert[]>([])
+  const [alertPrices, setAlertPrices] = useState<Record<string, number>>({})
   const alertsRef = useRef(alerts)
   const freshPrices = useAtomValue(freshPricesAtom)
 
@@ -139,6 +140,8 @@ export const usePriceAlerts = (uid: string | null, userEmail: string | null) => 
         }
       }
 
+      setAlertPrices(allPrices)
+
       for (const alert of activeAlerts) {
         const price = allPrices[alert.ticker.toUpperCase()]
         if (price !== undefined && isTriggered(alert, price)) {
@@ -174,5 +177,5 @@ export const usePriceAlerts = (uid: string | null, userEmail: string | null) => 
     await deletePriceAlert(uid, alertId)
   }
 
-  return { alerts, createAlert, toggleAlert, removeAlert }
+  return { alerts, alertPrices, createAlert, toggleAlert, removeAlert }
 }

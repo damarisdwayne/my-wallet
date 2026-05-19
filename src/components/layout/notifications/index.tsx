@@ -10,6 +10,7 @@ type NotificationsSheetProps = {
   notifications: AppNotification[]
   unreadCount: number
   alerts: PriceAlert[]
+  alertPrices: Record<string, number>
   onMarkRead: (id: string) => void
   onMarkAllRead: () => void
   onRemoveNotification: (id: string) => void
@@ -29,6 +30,7 @@ export const NotificationsSheet = ({
   notifications,
   unreadCount,
   alerts,
+  alertPrices,
   onMarkRead,
   onMarkAllRead,
   onRemoveNotification,
@@ -131,6 +133,7 @@ export const NotificationsSheet = ({
                     <AlertItem
                       key={a.id}
                       alert={a}
+                      currentPrice={alertPrices[a.ticker.toUpperCase()]}
                       onToggle={(active) => onToggleAlert(a.id, active)}
                       onRemove={() => onRemoveAlert(a.id)}
                     />

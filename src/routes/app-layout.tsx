@@ -29,7 +29,7 @@ export const AppLayout = () => {
   const { notifications, unreadCount, markRead, markAllRead, remove } = useNotifications(
     user?.uid ?? null,
   )
-  const { alerts, createAlert, toggleAlert, removeAlert } = usePriceAlerts(
+  const { alerts, alertPrices, createAlert, toggleAlert, removeAlert } = usePriceAlerts(
     user?.uid ?? null,
     user?.email ?? null,
   )
@@ -43,6 +43,7 @@ export const AppLayout = () => {
           notifications={notifications}
           unreadCount={unreadCount}
           alerts={alerts}
+          alertPrices={alertPrices}
           onMarkRead={markRead}
           onMarkAllRead={markAllRead}
           onRemoveNotification={remove}

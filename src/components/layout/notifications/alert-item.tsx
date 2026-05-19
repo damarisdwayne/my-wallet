@@ -3,10 +3,12 @@ import type { PriceAlert } from '@/types'
 
 export const AlertItem = ({
   alert,
+  currentPrice,
   onToggle,
   onRemove,
 }: {
   alert: PriceAlert
+  currentPrice?: number
   onToggle: (active: boolean) => void
   onRemove: () => void
 }) => {
@@ -37,9 +39,22 @@ export const AlertItem = ({
             <span className="font-medium text-foreground">R$ {alert.targetPrice.toFixed(2)}</span>
           </span>
         </div>
-        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-          {alert.active ? 'Monitorando' : 'Pausado'}
-        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-[11px] text-muted-foreground/60">
+            {alert.active ? 'Monitorando' : 'Pausado'}
+          </p>
+          {currentPrice !== undefined && (
+            <>
+              <span className="text-[11px] text-muted-foreground/40">·</span>
+              <p className="text-[11px] text-muted-foreground/60">
+                Atual:{' '}
+                <span className="font-medium text-muted-foreground">
+                  R$ {currentPrice.toFixed(2)}
+                </span>
+              </p>
+            </>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-0.5 shrink-0">
         <button

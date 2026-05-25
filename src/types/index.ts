@@ -42,7 +42,7 @@ export interface Expense {
   amount: number
   category: ExpenseCategory
   date: string
-  source: 'manual' | 'bank'
+  source: 'manual'
 }
 
 export interface FixedExpense {
@@ -72,7 +72,7 @@ export interface DisplayExpense {
   amount: number
   category: ExpenseCategory
   date: string
-  source: 'manual' | 'bank' | 'fixed' | 'installment'
+  source: 'manual' | 'fixed' | 'installment'
   installmentNumber?: number
   totalInstallments?: number
 }

@@ -6,7 +6,6 @@ export const INPUT_CLASS =
 
 export const SOURCE_LABEL: Record<DisplayExpense['source'], string> = {
   manual: 'manual',
-  bank: 'banco',
   fixed: 'fixo',
   installment: 'parcela',
 }

@@ -136,7 +136,9 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
         {/* Normal */}
         {type === 'normal' && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">Gasto pontual registrado manualmente.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Gasto pontual registrado manualmente.
+            </p>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Descrição</label>
               <input
@@ -189,7 +191,7 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
         {/* Fixo */}
         {type === 'fixo' && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2">
               Aparece automaticamente todo mês até ser removido.
             </p>
             <div className="space-y-1.5">
@@ -255,7 +257,7 @@ export const AddExpenseDialog = ({ onAdd, onAddFixed, onAddInstallment }: Props)
         {/* Parcelado */}
         {type === 'parcelado' && (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-2">
               O valor total é dividido pelo número de parcelas.
             </p>
             <div className="space-y-1.5">

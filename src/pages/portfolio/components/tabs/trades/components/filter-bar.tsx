@@ -22,8 +22,8 @@ export const FilterBar = ({
         onClick={() => onSetFilterCatId(ALL)}
         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
           filterCatId === ALL
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:text-foreground'
+            ? 'bg-secondary text-secondary-foreground'
+            : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         Todos
@@ -34,8 +34,8 @@ export const FilterBar = ({
           onClick={() => onSetFilterCatId(filterCatId === cat.id ? ALL : cat.id)}
           className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
             filterCatId === cat.id
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
+              ? 'bg-secondary text-secondary-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           {cat.name}

@@ -110,27 +110,12 @@ export const RebalanceTab = ({ assets, categories, diagrams, answers, totalValue
     )
   }
 
-  const totalToSell = rows.filter((r) => r.diff > 1).reduce((s, r) => s + r.diff, 0)
-  const totalToBuy = rows.filter((r) => r.diff < -1).reduce((s, r) => s + Math.abs(r.diff), 0)
-
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">
         Quanto vender/comprar de cada categoria para atingir as metas de alocação — sem aportar
         dinheiro novo.
       </p>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total a vender</p>
-          <p className="text-lg font-bold text-destructive">{fmt(totalToSell)}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total a comprar</p>
-          <p className="text-lg font-bold text-success">{fmt(totalToBuy)}</p>
-        </div>
-      </div>
 
       {/* Category table */}
       <div className="rounded-lg border border-border overflow-hidden">

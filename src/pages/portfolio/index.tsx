@@ -25,20 +25,21 @@ const DividendsTab = lazy(() =>
 const TradesTab = lazy(() =>
   import('./components/tabs/trades').then((m) => ({ default: m.TradesTab })),
 )
-const ImportsTab = lazy(() =>
-  import('./components/tabs/imports').then((m) => ({ default: m.ImportsTab })),
-)
+
 const AnalysisTab = lazy(() =>
   import('./components/tabs/analysis').then((m) => ({ default: m.AnalysisTab })),
+)
+const RebalanceTab = lazy(() =>
+  import('./components/tabs/rebalance').then((m) => ({ default: m.RebalanceTab })),
 )
 const tabs = [
   'Visão Geral',
   'Alocação',
+  'Realocamento',
   'Simular Aporte',
   'Proventos',
   'Fundamentos',
   'Movimentações',
-  'Importações',
 ]
 
 export const PortfolioPage = () => {
@@ -84,7 +85,7 @@ export const PortfolioPage = () => {
 
   const navigateToAnalysis = (ticker: string) => {
     setInitialAnalysisTicker(ticker)
-    setActiveTab(4)
+    setActiveTab(5)
   }
 
   const totalValue = useMemo(
@@ -172,6 +173,15 @@ export const PortfolioPage = () => {
           />
         )}
         {activeTab === 2 && (
+          <RebalanceTab
+            assets={assets}
+            categories={categories}
+            diagrams={diagrams}
+            answers={answers}
+            totalValue={totalValue}
+          />
+        )}
+        {activeTab === 3 && (
           <AporteTab
             assets={assets}
             categories={categories}
@@ -182,8 +192,8 @@ export const PortfolioPage = () => {
             refreshingPrices={refreshingPrices}
           />
         )}
-        {activeTab === 3 && <DividendsTab assets={assets} />}
-        {activeTab === 4 && (
+        {activeTab === 4 && <DividendsTab assets={assets} />}
+        {activeTab === 5 && (
           <AnalysisTab
             uid={uid}
             assets={assets}
@@ -200,16 +210,17 @@ export const PortfolioPage = () => {
             initialTicker={initialAnalysisTicker}
           />
         )}
-        {activeTab === 5 && (
+        {activeTab === 6 && (
           <TradesTab
             trades={trades}
             assets={assets}
             categories={categories}
             onDeleteTrade={deleteTrade}
             onSyncMissingTrades={syncMissingTrades}
+            importRecords={importRecords}
+            onRevertImport={revertImport}
           />
         )}
-        {activeTab === 6 && <ImportsTab records={importRecords} onRevert={revertImport} />}
       </Suspense>
     </div>
   )

@@ -105,7 +105,7 @@ export const AnalysisTab = ({
                   setSubCategoryId(cat.id)
                   setSelectedTicker(null)
                 }}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${subCategoryId === cat.id ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${subCategoryId === cat.id ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {cat.name}
               </button>

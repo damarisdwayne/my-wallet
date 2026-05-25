@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
-import type { Asset, PortfolioCategory, Trade } from '@/types'
+import type { Asset, ImportRecord, PortfolioCategory, Trade } from '@/types'
 import { ALL } from '../../../constants'
 import { FilterBar, TickerRow } from './components'
+import { ImportsTab } from '../imports'
 
 interface Props {
   trades: Trade[]
@@ -10,6 +11,8 @@ interface Props {
   categories: PortfolioCategory[]
   onDeleteTrade: (tradeId: string) => Promise<void>
   onSyncMissingTrades: () => Promise<void>
+  importRecords: ImportRecord[]
+  onRevertImport: (record: ImportRecord) => Promise<void>
 }
 
 export const TradesTab = ({
@@ -18,7 +21,10 @@ export const TradesTab = ({
   categories,
   onDeleteTrade,
   onSyncMissingTrades,
+  importRecords,
+  onRevertImport,
 }: Props) => {
+  const [section, setSection] = useState<'trades' | 'imports'>('trades')
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
   const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
   const [syncing, setSyncing] = useState(false)
@@ -114,25 +120,56 @@ export const TradesTab = ({
       return next
     })
 
+  const subNav = (
+    <div className="flex gap-2">
+      {(['trades', 'imports'] as const).map((s) => (
+        <button
+          key={s}
+          onClick={() => setSection(s)}
+          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            section === s
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {s === 'trades' ? 'Movimentações' : 'Importações'}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (section === 'imports') {
+    return (
+      <div className="space-y-4">
+        {subNav}
+        <ImportsTab records={importRecords} onRevert={onRevertImport} />
+      </div>
+    )
+  }
+
   if (trades.length === 0) {
     return (
-      <div className="text-center py-12 space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Nenhuma movimentação registrada. Importe uma nota B3 ou registre em "Visão Geral".
-        </p>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-        >
-          {syncing ? 'Sincronizando...' : 'Sincronizar ativos existentes'}
-        </button>
+      <div className="space-y-4">
+        {subNav}
+        <div className="text-center py-12 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Nenhuma movimentação registrada. Importe uma nota B3 ou registre em "Visão Geral".
+          </p>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+          >
+            {syncing ? 'Sincronizando...' : 'Sincronizar ativos existentes'}
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      {subNav}
       <FilterBar
         filterCatId={filterCatId}
         activeCategories={activeCategories}

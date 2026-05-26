@@ -3,18 +3,13 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, loadEnv } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { pluggyDevPlugin } from './vite-plugin-pluggy'
-
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  process.env.PLUGGY_CLIENT_ID = env.PLUGGY_CLIENT_ID
-  process.env.PLUGGY_CLIENT_SECRET = env.PLUGGY_CLIENT_SECRET
+  loadEnv(mode, process.cwd(), '')
 
   return {
     plugins: [
       react(),
       tailwindcss(),
-      pluggyDevPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'pwa-maskable.svg'],

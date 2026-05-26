@@ -225,6 +225,7 @@ export const OverviewTab = ({
         categories={categories}
         assets={assets}
         onAdd={addAsset}
+        onEdit={editAsset}
         onRecordTrade={recordTrade}
         onAddTrade={addManualTrade}
       />

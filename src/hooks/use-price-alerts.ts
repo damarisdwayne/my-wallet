@@ -140,10 +140,13 @@ export const usePriceAlerts = (uid: string | null, userEmail: string | null) => 
         }
       }
 
-      setAlertPrices(allPrices)
+      const brlMap = Object.fromEntries(
+        Object.entries(allPrices).map(([t, p]) => [t, p.brl]),
+      )
+      setAlertPrices(brlMap)
 
       for (const alert of activeAlerts) {
-        const price = allPrices[alert.ticker.toUpperCase()]
+        const price = allPrices[alert.ticker.toUpperCase()]?.brl
         if (price !== undefined && isTriggered(alert, price)) {
           fireAlert(uid, alert, price, userEmail)
         }

@@ -19,16 +19,19 @@ const CRYPTO_IDS: Record<string, string> = {
   ATOM: 'cosmos',
 }
 
+export type PriceInfo = { brl: number; usd?: number }
+export type PriceMap = Record<string, PriceInfo>
+
 const CACHE_KEY = 'mw_quotes_v1'
 const TTL_MS = 5 * 60 * 1000
 
 interface QuoteCache {
-  prices: Record<string, number>
+  prices: PriceMap
   tickers: string[]
   updatedAt: number
 }
 
-function loadCache(tickers: string[]): Record<string, number> | null {
+function loadCache(tickers: string[]): PriceMap | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY)
     if (!raw) return null
@@ -41,7 +44,7 @@ function loadCache(tickers: string[]): Record<string, number> | null {
   }
 }
 
-function saveCache(tickers: string[], prices: Record<string, number>) {
+function saveCache(tickers: string[], prices: PriceMap) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ prices, tickers, updatedAt: Date.now() }))
   } catch {}
@@ -172,24 +175,24 @@ async function fetchBrapiTicker(
 }
 
 // Brazilian assets (stock, fii, bdr, etf ending in digits) — already quoted in BRL
-async function fetchStockPrices(tickers: string[]): Promise<Record<string, number>> {
+async function fetchStockPrices(tickers: string[]): Promise<PriceMap> {
   const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
   if (!token) throw new Error('VITE_BRAPI_TOKEN não configurado no .env')
 
   const results = await Promise.all(tickers.map((t) => fetchBrapiTicker(t, token, 'BRL')))
-  const prices: Record<string, number> = {}
+  const prices: PriceMap = {}
 
   for (const data of results) {
-    if (!data || 'error' in data) continue // skip failed tickers, don't abort all
+    if (!data || 'error' in data) continue
     const item = data.results?.[0]
-    if (item?.regularMarketPrice) prices[item.symbol.toUpperCase()] = item.regularMarketPrice
+    if (item?.regularMarketPrice) prices[item.symbol.toUpperCase()] = { brl: item.regularMarketPrice }
   }
 
   return prices
 }
 
-// US assets (stock_us and letter-only etf) — fetch USD price then convert to BRL
-async function fetchUsStockPrices(tickers: string[]): Promise<Record<string, number>> {
+// US assets (stock_us, etf_us) — USD é o preço nativo; BRL é derivado pela cotação atual
+async function fetchUsStockPrices(tickers: string[]): Promise<PriceMap> {
   const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
   if (!token) return {}
 
@@ -198,32 +201,38 @@ async function fetchUsStockPrices(tickers: string[]): Promise<Record<string, num
     fetchUsdBrlRate(),
   ])
 
-  const prices: Record<string, number> = {}
+  const prices: PriceMap = {}
   for (const data of results) {
     if (!data || 'error' in data) continue
     const item = data.results?.[0]
-    if (item?.regularMarketPrice)
-      prices[item.symbol.toUpperCase()] = Math.round(item.regularMarketPrice * usdRate * 100) / 100
+    if (item?.regularMarketPrice) {
+      const usd = item.regularMarketPrice
+      prices[item.symbol.toUpperCase()] = {
+        brl: Math.round(usd * usdRate * 100) / 100,
+        usd,
+      }
+    }
   }
 
   return prices
 }
 
-async function fetchCryptoPrices(tickers: string[]): Promise<Record<string, number>> {
+async function fetchCryptoPrices(tickers: string[]): Promise<PriceMap> {
   const idMap = Object.fromEntries(tickers.map((t) => [t, CRYPTO_IDS[t] ?? t.toLowerCase()]))
   const ids = [...new Set(Object.values(idMap))].join(',')
 
   try {
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl`,
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl,usd`,
     )
     if (!res.ok) return {}
-    const data = (await res.json()) as Record<string, { brl: number }>
-    return Object.fromEntries(
-      Object.entries(idMap).flatMap(([ticker, id]) =>
-        data[id]?.brl ? [[ticker, data[id].brl]] : [],
-      ),
-    )
+    const data = (await res.json()) as Record<string, { brl: number; usd?: number }>
+    const out: PriceMap = {}
+    for (const [ticker, id] of Object.entries(idMap)) {
+      const row = data[id]
+      if (row?.brl) out[ticker] = { brl: row.brl, usd: row.usd }
+    }
+    return out
   } catch {
     return {}
   }
@@ -232,9 +241,10 @@ async function fetchCryptoPrices(tickers: string[]): Promise<Record<string, numb
 const BR_STOCK_TYPES = new Set<AssetType>(['stock', 'fii', 'bdr', 'etf'])
 const isUsType = (type: AssetType) => type === 'stock_us' || type === 'etf_us'
 
-async function fetchTesouroPrices(tickers: string[]): Promise<Record<string, number>> {
+async function fetchTesouroPrices(tickers: string[]): Promise<PriceMap> {
   try {
-    return await fetchTesouroPriceMap(tickers)
+    const raw = await fetchTesouroPriceMap(tickers)
+    return Object.fromEntries(Object.entries(raw).map(([t, v]) => [t, { brl: v }]))
   } catch {
     return {}
   }
@@ -305,7 +315,7 @@ export const fetchTickerSets = async (): Promise<TickerSets> => {
 
 export async function fetchLivePrices(
   assets: { ticker: string; type: AssetType }[],
-): Promise<Record<string, number>> {
+): Promise<PriceMap> {
   const tickers = assets.map((a) => a.ticker.toUpperCase())
   const cached = loadCache(tickers)
   if (cached) return cached
@@ -323,7 +333,7 @@ export async function fetchLivePrices(
     tesouroTickers.length > 0 ? fetchTesouroPrices(tesouroTickers) : {},
   ])
 
-  const prices = { ...stockPrices, ...usPrices, ...cryptoPrices, ...tesouroPrices }
+  const prices: PriceMap = { ...stockPrices, ...usPrices, ...cryptoPrices, ...tesouroPrices }
   saveCache(tickers, prices)
   return prices
 }

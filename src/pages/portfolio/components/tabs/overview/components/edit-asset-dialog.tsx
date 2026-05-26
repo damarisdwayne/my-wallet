@@ -32,6 +32,7 @@ export const EditAssetDialog = ({
   const [editName, setEditName] = useState('')
   const [editQty, setEditQty] = useState('')
   const [editAvgPrice, setEditAvgPrice] = useState('')
+  const [editAvgPriceUsd, setEditAvgPriceUsd] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
   const [previousTickers, setPreviousTickers] = useState('')
   const [pauseAporte, setPauseAporte] = useState(false)
@@ -47,6 +48,7 @@ export const EditAssetDialog = ({
       setEditName(asset.name)
       setEditQty(String(asset.quantity))
       setEditAvgPrice(String(Math.ceil(asset.avgPrice * 100) / 100))
+      setEditAvgPriceUsd(asset.avgPriceUsd ? String(asset.avgPriceUsd) : '')
       setSplitRatio('')
       setPreviousTickers(asset.previousTickers?.join(', ') ?? '')
       setPauseAporte(asset.pauseAporte ?? false)
@@ -92,12 +94,14 @@ export const EditAssetDialog = ({
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
         const parsedCeiling = Number.parseFloat(ceilingPrice)
+        const parsedUsd = Number.parseFloat(editAvgPriceUsd)
         const updates: Partial<Asset> = {
           categoryId: editCategoryId,
           ticker: newTicker,
           name: editName.trim(),
           quantity: srcQty,
           avgPrice: srcAvg,
+          avgPriceUsd: parsedUsd > 0 ? parsedUsd : undefined,
           previousTickers: prev.length > 0 ? prev : undefined,
           pauseAporte: isFixedIncome ? false : pauseAporte,
           ceilingPrice: !isFixedIncome && parsedCeiling > 0 ? parsedCeiling : undefined,
@@ -189,6 +193,26 @@ export const EditAssetDialog = ({
               />
             </div>
           </div>
+          {asset &&
+            (asset.type === 'crypto' ||
+              asset.type === 'stock_us' ||
+              asset.type === 'etf_us') && (
+              <div>
+                <label htmlFor="edit-avg-usd" className="text-xs text-muted-foreground mb-1 block">
+                  PM ($) — opcional, custo original em dólar
+                </label>
+                <input
+                  id="edit-avg-usd"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="ex: 84518.68"
+                  className={inputClass}
+                  value={editAvgPriceUsd}
+                  onChange={(e) => setEditAvgPriceUsd(e.target.value)}
+                />
+              </div>
+            )}
           {!isFixedIncome && (
             <>
               <div>

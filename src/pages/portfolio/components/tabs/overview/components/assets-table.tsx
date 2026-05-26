@@ -46,8 +46,11 @@ export const AssetsTable = memo(
     onNavigateToAnalysis,
   }: AssetsTableProps) => {
     const { hideValues } = usePrivacy()
-    const { fmt: fmtCurrency } = useDisplayCurrency()
+    const { fmt: fmtCurrency, fmtPreferUsd } = useDisplayCurrency()
     const fmt = (v: number) => (hideValues ? MASK : fmtCurrency(v))
+    /** Pra valores de ativos que podem ter USD original armazenado (cripto/exterior) */
+    const fmtA = (brl: number, usdOriginal?: number) =>
+      hideValues ? MASK : fmtPreferUsd(brl, usdOriginal)
 
     const renderGroupRow = (row: Extract<TableRow, { kind: 'group' }>) => {
       const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
@@ -177,7 +180,12 @@ export const AssetsTable = memo(
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between">
-                <p className="text-sm font-medium text-foreground">{fmt(totalAtual)}</p>
+                <p className="text-sm font-medium text-foreground">
+                  {fmtA(
+                    totalAtual,
+                    a.currentPriceUsd ? a.currentPriceUsd * a.quantity : undefined,
+                  )}
+                </p>
                 <p
                   className={`text-sm font-semibold ${ret >= 0 ? 'text-success' : 'text-destructive'}`}
                 >
@@ -187,8 +195,8 @@ export const AssetsTable = memo(
               <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   {flatFI
-                    ? `Invest. ${fmt(cost)}`
-                    : `${formatQuantity(a.quantity, a.type)} cotas · PM ${fmt(a.avgPrice)}`}
+                    ? `Invest. ${fmtA(cost, a.avgPriceUsd ? a.avgPriceUsd * a.quantity : undefined)}`
+                    : `${formatQuantity(a.quantity, a.type)} cotas · PM ${fmtA(a.avgPrice, a.avgPriceUsd)}`}
                 </span>
                 <span>
                   {pct.toFixed(1)}% {filterCatId === ALL ? 'cart.' : 'cat.'}
@@ -311,14 +319,19 @@ export const AssetsTable = memo(
                       {flatFI ? '—' : formatQuantity(a.quantity, a.type)}
                     </td>
                     <td className="py-3 text-right text-muted-foreground">
-                      {flatFI ? '—' : fmt(a.avgPrice)}
-                    </td>
-                    <td className="py-3 text-right font-medium text-foreground">{fmt(cost)}</td>
-                    <td className="py-3 text-right text-foreground">
-                      {flatFI ? '—' : fmt(a.currentPrice)}
+                      {flatFI ? '—' : fmtA(a.avgPrice, a.avgPriceUsd)}
                     </td>
                     <td className="py-3 text-right font-medium text-foreground">
-                      {fmt(totalAtual)}
+                      {fmtA(cost, a.avgPriceUsd ? a.avgPriceUsd * a.quantity : undefined)}
+                    </td>
+                    <td className="py-3 text-right text-foreground">
+                      {flatFI ? '—' : fmtA(a.currentPrice, a.currentPriceUsd)}
+                    </td>
+                    <td className="py-3 text-right font-medium text-foreground">
+                      {fmtA(
+                        totalAtual,
+                        a.currentPriceUsd ? a.currentPriceUsd * a.quantity : undefined,
+                      )}
                     </td>
                     <td className="py-3 text-right">
                       {a.type === 'fixed_income' || a.type === 'tesouro' ? (

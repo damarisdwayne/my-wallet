@@ -7,6 +7,27 @@ import { inputClass, KNOWN_CRYPTOS } from '../constants'
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
+// Preço histórico de cripto via CoinGecko (USD na data).
+// Endpoint /coins/{id}/history retorna o preço naquela data.
+const fetchCryptoPriceForDate = async (
+  coingeckoId: string,
+  isoDate: string,
+): Promise<number | null> => {
+  // CoinGecko espera DD-MM-YYYY
+  const [y, m, d] = isoDate.split('-')
+  const date = `${d}-${m}-${y}`
+  const url = `https://api.coingecko.com/api/v3/coins/${coingeckoId}/history?date=${date}&localization=false`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const json = (await res.json()) as { market_data?: { current_price?: { usd?: number } } }
+    const price = json.market_data?.current_price?.usd
+    return typeof price === 'number' && price > 0 ? price : null
+  } catch {
+    return null
+  }
+}
+
 const fetchPtaxForDate = async (isoDate: string): Promise<number | null> => {
   // BCB PTAX venda (série 10813) — referência oficial usada pela Receita Federal.
   // Janela de 10 dias até a data para cobrir fins de semana/feriados.
@@ -21,8 +42,8 @@ const fetchPtaxForDate = async (isoDate: string): Promise<number | null> => {
     if (!res.ok) return null
     const json = (await res.json()) as Array<{ data: string; valor: string }>
     if (!Array.isArray(json) || json.length === 0) return null
-    const last = json[json.length - 1]
-    const rate = Number.parseFloat(last.valor)
+    const last = json.at(-1)
+    const rate = Number.parseFloat(last?.valor ?? '0')
     return rate > 0 ? rate : null
   } catch {
     return null
@@ -37,7 +58,7 @@ export const CryptoForm = ({
   onSave: (asset: Partial<Asset>) => void
 }) => {
   const cryptoCatId = categories.find((c) => c.assetTypes.includes('crypto'))?.id ?? ''
-  const [ticker, setTicker] = useState('')
+  const [ticker, setTicker] = useState('BTC')
   const [customTicker, setCustomTicker] = useState('')
   const [isCustom, setIsCustom] = useState(false)
   const [quantity, setQuantity] = useState('')
@@ -45,6 +66,7 @@ export const CryptoForm = ({
   const [avgPrice, setAvgPrice] = useState('')
   const [usdRate, setUsdRate] = useState('')
   const [rateLoading, setRateLoading] = useState(false)
+  const [priceLoading, setPriceLoading] = useState(false)
   const [purchaseDate, setPurchaseDate] = useState(todayStr())
   const [categoryId, setCategoryId] = useState(cryptoCatId)
 
@@ -64,6 +86,26 @@ export const CryptoForm = ({
       cancelled = true
     }
   }, [currency, purchaseDate])
+
+  // Auto-fetch crypto price (USD) via CoinGecko quando ticker e data estiverem definidos.
+  useEffect(() => {
+    if (currency !== 'USD' || !purchaseDate || isCustom || !ticker) return
+    const coingeckoId = KNOWN_CRYPTOS.find((c) => c.ticker === ticker)?.coingeckoId
+    if (!coingeckoId) return
+    let cancelled = false
+    setPriceLoading(true)
+    fetchCryptoPriceForDate(coingeckoId, purchaseDate)
+      .then((price) => {
+        if (cancelled || price === null) return
+        setAvgPrice(price.toFixed(2))
+      })
+      .finally(() => {
+        if (!cancelled) setPriceLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [currency, purchaseDate, ticker, isCustom])
 
   const resolvedTicker = isCustom ? customTicker.toUpperCase() : ticker
   const resolvedName = isCustom
@@ -139,7 +181,14 @@ export const CryptoForm = ({
             onChange={(e) => setQuantity(e.target.value)}
           />
         </Field>
-        <Field label="Preço médio">
+        <Field
+          label={
+            <span className="flex items-center gap-1">
+              Preço médio
+              {priceLoading && <Loader2 size={11} className="animate-spin" />}
+            </span>
+          }
+        >
           <div className={cn(inputClass, 'flex items-center gap-1 p-0 pl-3 pr-1 overflow-hidden')}>
             <input
               className="flex-1 bg-transparent outline-none border-0 text-sm h-full min-w-0"
@@ -225,8 +274,11 @@ export const CryptoForm = ({
             categoryId,
             quantity: Number.parseFloat(quantity),
             avgPrice: avgPriceBrl,
+            avgPriceUsd: currency === 'USD' && parsedAvg > 0 ? parsedAvg : undefined,
             currentPrice: avgPriceBrl,
+            currentPriceUsd: currency === 'USD' && parsedAvg > 0 ? parsedAvg : undefined,
             targetPercent: 0,
+            operationDate: purchaseDate,
           })
         }
         disabled={!canSave}

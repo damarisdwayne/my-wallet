@@ -29,18 +29,18 @@ export const RATE_TYPES: { value: RateType; label: string }[] = [
 ]
 
 export const KNOWN_CRYPTOS = [
-  { ticker: 'BTC', name: 'Bitcoin' },
-  { ticker: 'ETH', name: 'Ethereum' },
-  { ticker: 'SOL', name: 'Solana' },
-  { ticker: 'BNB', name: 'BNB' },
-  { ticker: 'ADA', name: 'Cardano' },
-  { ticker: 'XRP', name: 'XRP' },
-  { ticker: 'DOT', name: 'Polkadot' },
-  { ticker: 'AVAX', name: 'Avalanche' },
-  { ticker: 'MATIC', name: 'Polygon' },
-  { ticker: 'LINK', name: 'Chainlink' },
-  { ticker: 'UNI', name: 'Uniswap' },
-  { ticker: 'ATOM', name: 'Cosmos' },
+  { ticker: 'BTC', name: 'Bitcoin', coingeckoId: 'bitcoin' },
+  { ticker: 'ETH', name: 'Ethereum', coingeckoId: 'ethereum' },
+  { ticker: 'SOL', name: 'Solana', coingeckoId: 'solana' },
+  { ticker: 'BNB', name: 'BNB', coingeckoId: 'binancecoin' },
+  { ticker: 'ADA', name: 'Cardano', coingeckoId: 'cardano' },
+  { ticker: 'XRP', name: 'XRP', coingeckoId: 'ripple' },
+  { ticker: 'DOT', name: 'Polkadot', coingeckoId: 'polkadot' },
+  { ticker: 'AVAX', name: 'Avalanche', coingeckoId: 'avalanche-2' },
+  { ticker: 'MATIC', name: 'Polygon', coingeckoId: 'matic-network' },
+  { ticker: 'LINK', name: 'Chainlink', coingeckoId: 'chainlink' },
+  { ticker: 'UNI', name: 'Uniswap', coingeckoId: 'uniswap' },
+  { ticker: 'ATOM', name: 'Cosmos', coingeckoId: 'cosmos' },
 ]
 
 export type OpMode = 'buy' | 'sell' | 'bonificacao' | 'amortizacao'

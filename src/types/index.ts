@@ -124,8 +124,14 @@ export interface Asset {
   type: AssetType
   categoryId: string
   quantity: number
+  /** Preço médio em BRL (custo fiscal — usado pra IR e exibição padrão) */
   avgPrice: number
+  /** Preço médio em USD original (apenas pra ativos em USD: crypto, stock_us, etf_us) */
+  avgPriceUsd?: number
+  /** Preço atual em BRL */
   currentPrice: number
+  /** Preço atual em USD (preenchido por APIs internacionais — CoinGecko, Yahoo) */
+  currentPriceUsd?: number
   targetPercent: number
   score?: number
   cnpj?: string

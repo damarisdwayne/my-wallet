@@ -113,7 +113,13 @@ export const useAssets = (uid: string | null) => {
       await Promise.all(
         priceable
           .filter((a) => prices[a.ticker.toUpperCase()] !== undefined)
-          .map((a) => updateAssetPriceService(uid, a.id, prices[a.ticker.toUpperCase()])),
+          .map((a) => {
+            const p = prices[a.ticker.toUpperCase()]
+            return updateAssetService(uid, a.id, {
+              currentPrice: p.brl,
+              currentPriceUsd: p.usd,
+            })
+          }),
       )
       setFreshPrices(prices)
 

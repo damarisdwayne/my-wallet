@@ -1,8 +1,8 @@
 import { ALL } from '../../../../constants'
 import type { PortfolioCategory } from '@/types'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
+import { useDisplayCurrency } from '@/store/display-currency'
 
 interface CategoryCardsProps {
   activeCategories: PortfolioCategory[]
@@ -20,6 +20,7 @@ export const CategoryCards = ({
   onSetFilterCatId,
 }: CategoryCardsProps) => {
   const { hideValues } = usePrivacy()
+  const { fmt } = useDisplayCurrency()
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -47,7 +48,7 @@ export const CategoryCards = ({
                   </CardTitle>
                 </div>
                 <p className="text-base font-bold text-foreground mt-1">
-                  {hideValues ? MASK : formatCurrency(val)}
+                  {hideValues ? MASK : fmt(val)}
                 </p>
                 <p className="text-xs text-muted-foreground">{pct.toFixed(1)}% da carteira</p>
               </CardHeader>

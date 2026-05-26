@@ -16,15 +16,24 @@ export const CryptoForm = ({
   const [customTicker, setCustomTicker] = useState('')
   const [isCustom, setIsCustom] = useState(false)
   const [quantity, setQuantity] = useState('')
+  const [currency, setCurrency] = useState<'BRL' | 'USD'>('USD')
   const [avgPrice, setAvgPrice] = useState('')
+  const [usdRate, setUsdRate] = useState('')
   const [categoryId, setCategoryId] = useState(cryptoCatId)
 
   const resolvedTicker = isCustom ? customTicker.toUpperCase() : ticker
   const resolvedName = isCustom
     ? customTicker
     : (KNOWN_CRYPTOS.find((c) => c.ticker === ticker)?.name ?? ticker)
+  const parsedAvg = Number.parseFloat(avgPrice)
+  const parsedRate = Number.parseFloat(usdRate)
+  const avgPriceBrl =
+    currency === 'USD' && parsedAvg > 0 && parsedRate > 0 ? parsedAvg * parsedRate : parsedAvg
   const canSave =
-    resolvedTicker && Number.parseFloat(quantity) > 0 && Number.parseFloat(avgPrice) > 0
+    resolvedTicker &&
+    Number.parseFloat(quantity) > 0 &&
+    parsedAvg > 0 &&
+    (currency === 'BRL' || parsedRate > 0)
 
   return (
     <div className="space-y-3 mt-2">
@@ -86,18 +95,46 @@ export const CryptoForm = ({
             onChange={(e) => setQuantity(e.target.value)}
           />
         </Field>
-        <Field label="PM em R$">
+        <Field label="Preço médio">
+          <div className={cn(inputClass, 'flex items-center gap-1 p-0 pl-3 pr-1 overflow-hidden')}>
+            <input
+              className="flex-1 bg-transparent outline-none border-0 text-sm h-full min-w-0"
+              type="number"
+              min={0}
+              step="any"
+              placeholder={currency === 'USD' ? '84518.68' : '350000'}
+              value={avgPrice}
+              onChange={(e) => setAvgPrice(e.target.value)}
+            />
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as 'BRL' | 'USD')}
+              className="bg-muted/50 rounded text-xs font-medium px-1.5 py-1 border-0 outline-none cursor-pointer text-foreground"
+            >
+              <option value="USD">$</option>
+              <option value="BRL">R$</option>
+            </select>
+          </div>
+        </Field>
+      </div>
+      {currency === 'USD' && (
+        <Field label="Cotação USD/BRL na compra">
           <input
             className={inputClass}
             type="number"
             min={0}
-            step={0.01}
-            placeholder="350000"
-            value={avgPrice}
-            onChange={(e) => setAvgPrice(e.target.value)}
+            step="any"
+            placeholder="ex: 5.40"
+            value={usdRate}
+            onChange={(e) => setUsdRate(e.target.value)}
           />
+          {parsedAvg > 0 && parsedRate > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              PM convertido: R$ {avgPriceBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          )}
         </Field>
-      </div>
+      )}
       <Field label="Categoria">
         <select
           className={inputClass}
@@ -121,8 +158,8 @@ export const CryptoForm = ({
             type: 'crypto',
             categoryId,
             quantity: Number.parseFloat(quantity),
-            avgPrice: Number.parseFloat(avgPrice),
-            currentPrice: Number.parseFloat(avgPrice),
+            avgPrice: avgPriceBrl,
+            currentPrice: avgPriceBrl,
             targetPercent: 0,
           })
         }

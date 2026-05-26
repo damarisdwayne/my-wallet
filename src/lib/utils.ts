@@ -60,8 +60,14 @@ export const formatDateShort = (iso: string): string =>
     year: '2-digit',
   })
 
-export const formatQuantity = (v: number): string =>
-  v % 1 === 0 ? String(Math.round(v)) : v.toFixed(2)
+const HIGH_PRECISION_TYPES = new Set(['crypto', 'stock_us', 'etf_us'])
+
+export const formatQuantity = (v: number, type?: string): string => {
+  if (v % 1 === 0) return String(Math.round(v))
+  const allowHighPrecision = type ? HIGH_PRECISION_TYPES.has(type) : false
+  const decimals = allowHighPrecision && Math.abs(v) < 1 ? 8 : 2
+  return v.toFixed(decimals).replace(/\.?0+$/, '')
+}
 
 export const formatNumber = (v: number, decimals = 2): string =>
   v.toLocaleString('pt-BR', {

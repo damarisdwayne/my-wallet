@@ -1,8 +1,9 @@
 import { memo } from 'react'
 import { ChevronDown, ChevronUp, Pencil, PauseCircle, TrendingDown } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatPercent, formatQuantity } from '@/lib/utils'
+import { formatPercent, formatQuantity } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
+import { useDisplayCurrency } from '@/store/display-currency'
 
 import { ALL, typeLabel } from '../../../../constants'
 import type { TableRow, SortCol } from '../constants'
@@ -45,7 +46,8 @@ export const AssetsTable = memo(
     onNavigateToAnalysis,
   }: AssetsTableProps) => {
     const { hideValues } = usePrivacy()
-    const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
+    const { fmt: fmtCurrency } = useDisplayCurrency()
+    const fmt = (v: number) => (hideValues ? MASK : fmtCurrency(v))
 
     const renderGroupRow = (row: Extract<TableRow, { kind: 'group' }>) => {
       const ret = row.cost > 0 ? ((row.total - row.cost) / row.cost) * 100 : 0
@@ -186,7 +188,7 @@ export const AssetsTable = memo(
                 <span>
                   {flatFI
                     ? `Invest. ${fmt(cost)}`
-                    : `${formatQuantity(a.quantity)} cotas · PM ${fmt(a.avgPrice)}`}
+                    : `${formatQuantity(a.quantity, a.type)} cotas · PM ${fmt(a.avgPrice)}`}
                 </span>
                 <span>
                   {pct.toFixed(1)}% {filterCatId === ALL ? 'cart.' : 'cat.'}
@@ -306,7 +308,7 @@ export const AssetsTable = memo(
                       )}
                     </td>
                     <td className="py-3 text-right text-foreground">
-                      {flatFI ? '—' : formatQuantity(a.quantity)}
+                      {flatFI ? '—' : formatQuantity(a.quantity, a.type)}
                     </td>
                     <td className="py-3 text-right text-muted-foreground">
                       {flatFI ? '—' : fmt(a.avgPrice)}

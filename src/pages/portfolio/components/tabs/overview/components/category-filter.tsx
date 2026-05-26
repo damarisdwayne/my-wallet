@@ -1,7 +1,7 @@
 import { ALL } from '../../../../constants'
 import type { PortfolioCategory } from '@/types'
-import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
+import { useDisplayCurrency } from '@/store/display-currency'
 
 interface CategoryFilterProps {
   activeCat: PortfolioCategory | null
@@ -21,6 +21,7 @@ export const CategoryFilter = ({
   onSetFilterCatId,
 }: CategoryFilterProps) => {
   const { hideValues } = usePrivacy()
+  const { displayUsd, toggleDisplayUsd, usdRate, canShowUsd, fmt } = useDisplayCurrency()
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -28,9 +29,24 @@ export const CategoryFilter = ({
         <p className="text-xs text-muted-foreground mb-0.5">
           {activeCat ? activeCat.name : 'Patrimônio total'}
         </p>
-        <p className="text-2xl font-bold text-foreground">
-          {hideValues ? MASK : formatCurrency(filteredTotal)}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-2xl font-bold text-foreground">
+            {hideValues ? MASK : fmt(filteredTotal)}
+          </p>
+          {canShowUsd && !hideValues && (
+            <button
+              onClick={toggleDisplayUsd}
+              title={displayUsd ? 'Ver em R$' : `Ver em US$ (cotação R$ ${usdRate.toFixed(2)})`}
+              className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${
+                displayUsd
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {displayUsd ? 'R$' : '$'}
+            </button>
+          )}
+        </div>
         {activeCat && (
           <p className="text-xs text-muted-foreground">
             {((filteredTotal / totalValue) * 100).toFixed(1)}% da carteira

@@ -37,7 +37,13 @@ export const Sidebar = () => {
       )}
     >
       {/* Header */}
-      <div className="h-16.25 flex items-center border-b border-border shrink-0">
+      <div
+        className="flex items-center border-b border-border shrink-0"
+        style={{
+          minHeight: 'calc(4rem + env(safe-area-inset-top))',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
         <span className={ICON_SLOT}>
           <span className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
             <TrendingUp size={15} className="text-primary-foreground" />

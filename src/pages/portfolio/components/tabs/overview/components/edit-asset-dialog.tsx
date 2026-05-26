@@ -194,9 +194,7 @@ export const EditAssetDialog = ({
             </div>
           </div>
           {asset &&
-            (asset.type === 'crypto' ||
-              asset.type === 'stock_us' ||
-              asset.type === 'etf_us') && (
+            (asset.type === 'crypto' || asset.type === 'stock_us' || asset.type === 'etf_us') && (
               <div>
                 <label htmlFor="edit-avg-usd" className="text-xs text-muted-foreground mb-1 block">
                   PM ($) — opcional, custo original em dólar

@@ -185,7 +185,8 @@ async function fetchStockPrices(tickers: string[]): Promise<PriceMap> {
   for (const data of results) {
     if (!data || 'error' in data) continue
     const item = data.results?.[0]
-    if (item?.regularMarketPrice) prices[item.symbol.toUpperCase()] = { brl: item.regularMarketPrice }
+    if (item?.regularMarketPrice)
+      prices[item.symbol.toUpperCase()] = { brl: item.regularMarketPrice }
   }
 
   return prices

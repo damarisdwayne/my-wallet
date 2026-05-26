@@ -181,10 +181,7 @@ export const AssetsTable = memo(
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <p className="text-sm font-medium text-foreground">
-                  {fmtA(
-                    totalAtual,
-                    a.currentPriceUsd ? a.currentPriceUsd * a.quantity : undefined,
-                  )}
+                  {fmtA(totalAtual, a.currentPriceUsd ? a.currentPriceUsd * a.quantity : undefined)}
                 </p>
                 <p
                   className={`text-sm font-semibold ${ret >= 0 ? 'text-success' : 'text-destructive'}`}

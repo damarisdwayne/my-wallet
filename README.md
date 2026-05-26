@@ -21,13 +21,15 @@ A personal finance and investment portfolio manager built for Brazilian investor
 - Tracks stocks (B3), FIIs, BDRs, ETFs, US stocks, crypto, fixed income (CDB, LCI, LCA, Tesouro Direto), and other assets
 - Automatic weighted average cost (PM) on buys and sells
 - Real-time prices via BrAPI, CoinGecko, and USD/BRL conversion
+- **USD-native storage** for crypto / US assets (`avgPriceUsd` / `currentPriceUsd`) — toggle BRL/USD on Visão Geral shows real cost basis without conversion drift
+- **Realocamento** tab: how much to buy/sell per category to reach target allocation + scenario simulator
 - Target allocation per category with rebalancing diff
 - Grouped view for fixed-income assets
 
 ### Broker Import
 
 - **B3** — Official B3 Excel statement (Extrato de Negociação)
-- **Inter Co Securities** — Transaction Confirmation PDFs (Apex Clearing and DriveWealth formats); USD prices auto-converted to BRL
+- **Inter Co Securities** — Transaction Confirmation PDFs (Apex Clearing and DriveWealth formats); USD prices converted to BRL using **PTAX (BCB série 10813)** of each trade date for IR compliance
 
 ### Fundamental Analysis
 
@@ -99,15 +101,14 @@ A personal finance and investment portfolio manager built for Brazilian investor
 
 | API | Purpose |
 |---|---|
-| [BrAPI](https://brapi.dev) | Brazilian stock, FII, BDR, ETF, and US stock quotes + fundamentals |
-| [CoinGecko](https://coingecko.com) | Cryptocurrency prices in BRL |
-| [AwesomeAPI](https://economia.awesomeapi.com.br) | USD/BRL exchange rate |
-| [BCB](https://api.bcb.gov.br) | CDI, SELIC, IPCA, IGP-M rates for fixed income calculations |
+| [BrAPI](https://brapi.dev) | Brazilian stock, FII, BDR, ETF, and US stock quotes (BRL + USD) + fundamentals |
+| [CoinGecko](https://coingecko.com) | Cryptocurrency prices (current BRL + USD) and historical price by date |
+| [AwesomeAPI](https://economia.awesomeapi.com.br) | USD/BRL exchange rate (for display only) |
+| [BCB](https://api.bcb.gov.br) | CDI, SELIC, IPCA, IGP-M rates + **PTAX venda (série 10813)** — official USD/BRL rate used for IR, foreign dividends, and Inter US imports |
 | [Dados de Mercado](https://dadosdemercado.com.br) | Tesouro Direto bond prices (mark-to-market) |
 | [CVM](https://www.rad.cvm.gov.br) | Regulatory filings and company disclosures |
 | [Google Gemini](https://ai.google.dev) | AI-powered asset analysis |
 | [Resend](https://resend.com) | Email delivery for price alert notifications |
-| [Pluggy](https://pluggy.ai) | Open Finance — automatic bank transaction import |
 
 ## Getting Started
 
@@ -150,10 +151,6 @@ VITE_GEMINI_API_KEY=
 
 # Resend — optional, enables email delivery for price alerts (server-side only)
 RESEND_API_KEY=
-
-# Pluggy Open Finance — optional, enables automatic bank import in Expenses (server-side only)
-PLUGGY_CLIENT_ID=
-PLUGGY_CLIENT_SECRET=
 ```
 
 ### 3. Firebase setup
@@ -205,7 +202,7 @@ src/
 ├── lib/               # Firebase client, utility functions
 ├── pages/             # Page components
 │   ├── dashboard/
-│   ├── portfolio/     # Tabs: overview, allocation, analysis, imports
+│   ├── portfolio/     # Tabs: overview, allocation, realocamento, aporte, dividends, analysis, trades(+imports)
 │   ├── dividends/
 │   ├── expenses/
 │   ├── tax/
@@ -215,15 +212,14 @@ src/
 ├── services/          # External API clients and data parsers
 │   ├── assets.ts          # Firestore CRUD for assets
 │   ├── b3-import.ts       # B3 Excel statement parser
-│   ├── inter-import.ts    # Inter PDF parser (Apex + DriveWealth)
-│   ├── quotes.ts          # Live price fetching + historical prices (sparkline)
+│   ├── inter-import.ts    # Inter PDF parser (Apex + DriveWealth) — uses PTAX per trade date
+│   ├── quotes.ts          # Live price fetching (PriceMap with brl + usd); PTAX helpers
 │   ├── bcb-rates.ts       # BCB macro rate calculations
 │   ├── fundamentals.ts    # BrAPI fundamentals integration
 │   ├── notifications.ts   # Firestore CRUD for in-app notifications
 │   ├── price-alerts.ts    # Firestore CRUD for price alerts
-│   ├── pluggy.ts          # Pluggy Open Finance integration
 │   └── import-parser.ts   # ImportParser interface
-├── store/             # Jotai atoms (auth)
+├── store/             # Jotai atoms (auth, privacy, display-currency, fresh-prices)
 └── types/             # TypeScript type definitions
 ```
 

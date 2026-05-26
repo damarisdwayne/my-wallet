@@ -13,30 +13,31 @@
 4. [Dashboard](#dashboard)
 5. [Portfólio — Visão Geral](#portfólio--visão-geral)
 6. [Portfólio — Metas (Alocação)](#portfólio--metas-alocação)
-7. [Portfólio — Aporte](#portfólio--aporte)
-8. [Portfólio — Movimentações](#portfólio--movimentações)
-9. [Portfólio — Importações](#portfólio--importações)
+7. [Portfólio — Realocamento](#portfólio--realocamento)
+8. [Portfólio — Aporte](#portfólio--aporte)
+9. [Portfólio — Movimentações + Importações](#portfólio--movimentações--importações)
 10. [Portfólio — Análises](#portfólio--análises)
 11. [Atualização de Preços](#atualização-de-preços)
-12. [Renda Fixa — Cálculo de Valor](#renda-fixa--cálculo-de-valor)
-13. [Tesouro Direto — Precificação](#tesouro-direto--precificação)
-14. [Importação de Corretoras](#importação-de-corretoras)
-15. [Proventos (Dividendos)](#proventos-dividendos)
-16. [Vendas](#vendas)
-17. [Imposto de Renda (IR)](#imposto-de-renda-ir)
-18. [Gastos](#gastos)
-19. [Calculadoras](#calculadoras)
-20. [Alertas CVM](#alertas-cvm)
-21. [Análise por IA (Gemini)](#análise-por-ia-gemini)
-22. [Alertas de Preço e Notificações](#alertas-de-preço-e-notificações)
-23. [Sparkline (Gráfico Inline)](#sparkline-gráfico-inline)
-24. [Privacy Mode](#privacy-mode)
-25. [CSV Export (Portfólio)](#csv-export-portfólio)
-26. [Open Finance (Pluggy)](#open-finance-pluggy)
-27. [Valuation (Graham e FII)](#valuation-graham-e-fii)
-28. [PWA (Progressive Web App)](#pwa-progressive-web-app)
-29. [Design Responsivo e Mobile](#design-responsivo-e-mobile)
-30. [Tabela Resumo — APIs Externas](#tabela-resumo--apis-externas)
+12. [Display de Moeda (BRL / USD)](#display-de-moeda-brl--usd)
+13. [PTAX e cotação USD/BRL](#ptax-e-cotação-usdbrl)
+14. [Renda Fixa — Cálculo de Valor](#renda-fixa--cálculo-de-valor)
+15. [Tesouro Direto — Precificação](#tesouro-direto--precificação)
+16. [Importação de Corretoras](#importação-de-corretoras)
+17. [Proventos (Dividendos)](#proventos-dividendos)
+18. [Vendas](#vendas)
+19. [Imposto de Renda (IR)](#imposto-de-renda-ir)
+20. [Gastos](#gastos)
+21. [Calculadoras](#calculadoras)
+22. [Alertas CVM](#alertas-cvm)
+23. [Análise por IA (Gemini)](#análise-por-ia-gemini)
+24. [Alertas de Preço e Notificações](#alertas-de-preço-e-notificações)
+25. [Sparkline (Gráfico Inline)](#sparkline-gráfico-inline)
+26. [Privacy Mode](#privacy-mode)
+27. [CSV Export (Portfólio)](#csv-export-portfólio)
+28. [Valuation (Graham e FII)](#valuation-graham-e-fii)
+29. [PWA (Progressive Web App)](#pwa-progressive-web-app)
+30. [Design Responsivo e Mobile](#design-responsivo-e-mobile)
+31. [Tabela Resumo — APIs Externas](#tabela-resumo--apis-externas)
 
 ---
 
@@ -75,7 +76,7 @@ Todas as coleções ficam dentro de `users/{uid}/`:
 | `diagrams` | Critérios de alocação (diagrama) | `src/services/diagrams.ts` |
 | `answers` | Respostas do diagrama por ativo | `src/services/answers.ts` |
 | `imports` | Histórico de importações B3/Inter | `src/services/imports.ts` |
-| `expenses` | Gastos manuais e importados via OFX | `src/services/expenses.ts` |
+| `expenses` | Gastos manuais | `src/services/expenses.ts` |
 | `salary` | Salário mensal (doc ID = YYYY-MM) | `src/services/expenses.ts` |
 | `fixedExpenses` | Gastos fixos recorrentes | `src/services/expenses.ts` |
 | `installmentExpenses` | Parcelamentos | `src/services/expenses.ts` |
@@ -92,12 +93,18 @@ Todas as coleções ficam dentro de `users/{uid}/`:
 **`assets`**
 ```
 id, ticker, name, type (stock|fii|etf|bdr|fixed_income|tesouro|crypto|stock_us|etf_us|other),
-categoryId, quantity, avgPrice, currentPrice, targetPercent, score?,
+categoryId, quantity, avgPrice (BRL), currentPrice (BRL),
+avgPriceUsd?, currentPriceUsd?  ← apenas crypto/stock_us/etf_us
+targetPercent, score?,
 cnpj?, previousTickers? (string[]),
 operationDate (YYYY-MM-DD), maturityDate (YYYY-MM-DD),
 rateType (pos_cdi|ipca_plus|prefixado|igpm_plus|pos_selic), indexerRate?, prefixedRate?,
 institution?, issuer?, fixedIncomeType?
 ```
+
+Os campos `avgPriceUsd` e `currentPriceUsd` armazenam o **valor original em dólar** sem
+conversão reversa. São usados pelo toggle USD na Visão Geral pra mostrar o PM real (igual à
+exchange/broker) em vez de dividir o BRL pela cotação atual.
 
 **`trades`**
 ```
@@ -118,7 +125,7 @@ amountBrl?, irBrl?, usdRateAtPayment?  ← apenas dividendos em USD
 **`expenses`**
 ```
 id, description, amount, category (ExpenseCategory),
-date (YYYY-MM-DD), source (manual|bank)
+date (YYYY-MM-DD), source (manual)
 ```
 
 **`fixedExpenses`**
@@ -155,8 +162,6 @@ Ficam no arquivo `.env` na raiz do projeto (não sobe pro GitHub):
 | `VITE_BRAPI_TOKEN` | Token da brapi.dev — cotações de ações/FIIs e histórico de preços |
 | `VITE_GEMINI_API_KEY` | Google Gemini — análise de IA |
 | `VITE_CVM_PROXY_URL` | (opcional) URL alternativa para dados da CVM |
-| `PLUGGY_CLIENT_ID` | Pluggy Open Finance — ID do client (server-side) |
-| `PLUGGY_CLIENT_SECRET` | Pluggy Open Finance — secret do client (server-side) |
 | `RESEND_API_KEY` | Resend — envio de email para alertas de preço (server-side) |
 
 ---
@@ -250,19 +255,29 @@ Ficam no arquivo `.env` na raiz do projeto (não sobe pro GitHub):
 | Ativo / Ticker | `assets.name`, `assets.ticker` | Direto do Firebase |
 | Tipo | `categories` → `assets.categoryId` | Badge com cor da categoria |
 | Qtd | `assets.quantity` | Direto |
-| PM (preço médio) | `assets.avgPrice` | Direto |
-| Total investido | `assets.avgPrice * quantity` | Calculado localmente |
-| Preço atual | `assets.currentPrice` | Atualizado via API (ver seção Preços) |
-| Total atual | `assets.currentPrice * quantity` | Calculado localmente |
+| PM (preço médio) | `assets.avgPrice` (BRL) / `assets.avgPriceUsd` (USD) | Direto |
+| Total investido | `avgPrice × qty` ou `avgPriceUsd × qty` | Calculado localmente |
+| Preço atual | `assets.currentPrice` (BRL) / `assets.currentPriceUsd` (USD) | Atualizado via API |
+| Total atual | `currentPrice × qty` ou `currentPriceUsd × qty` | Calculado localmente |
 | Recomendado | Diagrama + metas de categoria | `computeAssetTargets()` em `src/pages/portfolio/components/compute-targets.ts` |
 | Resultado % | `(totalAtual - custo) / custo * 100` | Calculado localmente |
 | % Cart. / % Cat. | `totalAtual / totalCarteira * 100` | Calculado localmente |
+
+**Toggle BRL / USD** (chip `$` ao lado do "Patrimônio total"):
+- Em **BRL**: lê `avgPrice` / `currentPrice` direto
+- Em **USD**: se o ativo tem `avgPriceUsd` / `currentPriceUsd`, usa direto; senão, conversão
+  reversa (BRL ÷ cotação atual da AwesomeAPI) — útil pra ativos BR que não têm preço nativo
+  em USD
+- Implementado em `src/store/display-currency.ts` (átomo Jotai `displayUsdAtom`) — ver seção
+  [Display de Moeda](#display-de-moeda-brl--usd)
 
 **Ações disponíveis:**
 - **Atualizar preços** → `refreshPrices()` (ver seção Atualização de Preços)
 - **Importar via corretora** → `importFromB3()` (ver seção Importações)
 - **Adicionar ativo** → `addAsset()` → salva em `users/{uid}/assets`
+  - Se ticker já existir, faz merge (média ponderada de `avgPrice` e `avgPriceUsd`)
 - **Editar ativo** → `editAsset(id, data)` → atualiza em `users/{uid}/assets`
+  - Edit dialog mostra campo "PM ($)" pra crypto/stock_us/etf_us
 - **Excluir ativo** → `deleteAsset(id)` → remove de `users/{uid}/assets`
 
 ---
@@ -369,6 +384,28 @@ Isso garante que o custo médio e a quantidade declarada no IR reflitam o histó
 
 ---
 
+## Portfólio — Realocamento
+
+**Arquivo:** `src/pages/portfolio/components/tabs/rebalance/index.tsx`
+
+Calcula **quanto vender e comprar** em cada categoria/ativo para atingir as metas de alocação
+sem aportar dinheiro novo. Também permite **simular** com um patrimônio hipotético.
+
+**Cálculo (`calcRebalance`):**
+- Para cada categoria: `currentValue`, `targetValue = (targetPercent / 100) × totalValue`,
+  `diff = currentValue - targetValue`
+- Para cada ativo: peso dentro da categoria via `computeAssetTargets()`
+- Ordenação: **compras primeiro** (mais necessária no topo), depois vendas, depois "Ajustado"
+
+**Simulador:**
+- Estado local `simulatedInput` formatado em PT-BR ao digitar
+- Botão **Play** aplica a simulação; **Resetar** volta ao valor real
+- Toda a tabela recalcula com o `totalValue` simulado
+
+**Sem API externa, sem gravação no Firebase.**
+
+---
+
 ## Portfólio — Simular Aporte
 
 **Arquivo:** `src/pages/portfolio/components/tabs/aporte/index.tsx`
@@ -383,9 +420,15 @@ Mostra quanto aportar em cada ativo para chegar na alocação alvo.
 
 ---
 
-## Portfólio — Movimentações
+## Portfólio — Movimentações + Importações
 
 **Arquivo:** `src/pages/portfolio/components/tabs/trades/index.tsx`
+
+A tab "Importações" foi unificada dentro de "Movimentações" com um **sub-nav pill**
+(ícones arredondados): você alterna entre o histórico de trades e o histórico de
+importações. As duas eram conceitualmente conectadas (importações geram trades).
+
+### Movimentações
 
 **Fonte:** coleção `users/{uid}/trades` (ordenada por date DESC)
 **Função:** `subscribeToTrades(uid, callback)` em `src/services/trades.ts`
@@ -393,12 +436,14 @@ Mostra quanto aportar em cada ativo para chegar na alocação alvo.
 **Campos da operação:**
 ```
 ticker, type (buy/sell), quantity, price, total,
-date (YYYY-MM-DD), source (b3_import|inter_import|manual)
+date (YYYY-MM-DD), source (b3_import|inter_import|manual),
+priceUsd?, totalUsd?, usdRateAtTrade?  ← apenas Inter USA
 ```
 
 **Ações:**
 - **Deletar trade** → `deleteTrade(tradeId)` → remove de `trades`
-- **Sincronizar** → `syncMissingTrades()` → cria trades sintéticos de compra para ativos que não têm histórico de operações
+- **Sincronizar** → `syncMissingTrades()` → cria trades sintéticos de compra para ativos
+  que não têm histórico de operações
 
 **Operação manual (adicionar trade pelo app):**
 - Função: `addManualTrade(trade)` em `use-portfolio.ts`
@@ -406,12 +451,9 @@ date (YYYY-MM-DD), source (b3_import|inter_import|manual)
 - Atualiza `quantity` e `avgPrice` do ativo em `assets`
 - Se quantidade chegar a 0 → deleta o ativo
 
----
+### Importações (sub-section)
 
-## Portfólio — Importações
-
-**Arquivo:** `src/pages/portfolio/components/tabs/imports/index.tsx`
-
+**Componente:** `ImportsTab` em `src/pages/portfolio/components/tabs/imports/index.tsx`
 **Fonte:** coleção `users/{uid}/imports`
 **Função:** `subscribeToImports(uid, callback)` em `src/services/imports.ts`
 
@@ -463,17 +505,29 @@ items: [{ assetId, ticker, quantityDelta, importAvgPrice,
 **Função:** `refreshPrices()` em `src/hooks/use-assets.ts`
 **Serviço de cotações:** `src/services/quotes.ts`
 
+### Tipo `PriceMap`
+
+```typescript
+type PriceInfo = { brl: number; usd?: number }
+type PriceMap = Record<string, PriceInfo>
+```
+
+Todas as funções de fetch retornam `PriceMap`. Os ativos USD-nativos (cripto, stock_us,
+etf_us) trazem **ambos BRL e USD**; ativos BR-only trazem só BRL.
+
 **Fluxo:**
 
 ```
 refreshPrices()
-  ├── fetchLivePrices(assets) [src/services/quotes.ts]
-  │     ├── Ações BR / FII / ETF BR / BDR → brapi.dev (BRL direto)
-  │     ├── Ações US / ETF US            → brapi.dev (USD → converte para BRL)
-  │     ├── Cripto                        → CoinGecko (BRL direto)
-  │     └── Tesouro Direto               → /api/tesouro (CSV)
+  ├── fetchLivePrices(assets) [src/services/quotes.ts] → PriceMap
+  │     ├── Ações BR / FII / ETF BR / BDR → brapi.dev (BRL direto, sem USD)
+  │     ├── Ações US / ETF US            → brapi.dev (USD nativo + BRL via cotação atual)
+  │     ├── Cripto                        → CoinGecko (BRL + USD na mesma chamada)
+  │     └── Tesouro Direto               → /api/tesouro (BRL apenas)
   │
-  ├── updateAssetPrice(uid, assetId, novoPreco) → atualiza currentPrice em `assets`
+  ├── updateAsset(uid, assetId, { currentPrice, currentPriceUsd }) → atualiza ambos
+  │
+  ├── setFreshPrices(prices) → atom Jotai consumido por usePriceAlerts
   │
   ├── calcFixedIncomeValue() [src/services/bcb-rates.ts]
   │     └── Para CDB/LCI/LCA com operationDate e rateType definidos
@@ -483,12 +537,75 @@ refreshPrices()
 ```
 
 **Cache de cotações:** localStorage (`mw_quotes_v1`), TTL 5 minutos
+(armazena PriceMap completo, incluindo USD quando disponível)
 
 **Classificação de tickers:**
 - Arquivo: `src/services/quotes.ts` → `fetchTickerSets()`
 - API: `https://brapi.dev/api/quote/list?token={VITE_BRAPI_TOKEN}`
 - Retorna listas separadas de tickers FII, ações, BDR
 - Cache: 24 horas
+
+---
+
+## Display de Moeda (BRL / USD)
+
+**Arquivo:** `src/store/display-currency.ts`
+
+Toggle global (átomo Jotai `displayUsdAtom`) que muda a exibição da Visão Geral entre BRL e
+USD **sem afetar nenhum dado armazenado** — é puramente apresentational.
+
+### Hook `useDisplayCurrency()`
+
+```typescript
+const { displayUsd, toggleDisplayUsd, usdRate, canShowUsd, fmt, fmtPreferUsd } = useDisplayCurrency()
+```
+
+- `displayUsd: boolean` — modo atual
+- `toggleDisplayUsd()` — alterna
+- `usdRate: number` — cotação atual (`useMarketData().usdBrl`, AwesomeAPI)
+- `fmt(brl)` — formata, com **conversão reversa** quando em USD (usado pra ativos BR)
+- `fmtPreferUsd(brl, usdOriginal?)` — se em USD e `usdOriginal` existe, usa direto;
+  senão fallback pra `fmt(brl)` (usado em PM/Total quando o ativo tem `avgPriceUsd`/
+  `currentPriceUsd`)
+
+### Onde usa o que
+
+| Componente | Função |
+|---|---|
+| `CategoryFilter` (patrimônio total) | `fmt(filteredTotal)` — total agregado, conversão reversa |
+| `CategoryCards` (por categoria) | `fmt(val)` — total da categoria, conversão reversa |
+| `AssetsTable` PM/Total investido | `fmtPreferUsd(avgPrice, avgPriceUsd)` |
+| `AssetsTable` Preço/Total atual | `fmtPreferUsd(currentPrice, currentPriceUsd)` |
+
+### Cotação usada no toggle
+
+O toggle de **visualização** usa a cotação **atual da AwesomeAPI**, não PTAX. PTAX é
+reservada pra contextos **fiscais** (IR, dividendos, importações Inter). Ver seção
+[PTAX e cotação USD/BRL](#ptax-e-cotação-usdbrl).
+
+---
+
+## PTAX e cotação USD/BRL
+
+O app usa **duas fontes distintas** de cotação USD/BRL conforme o contexto:
+
+| Contexto | Função | Fonte | Por quê |
+|---|---|---|---|
+| Visualização (dashboard, toggle USD) | `fetchUsdBrlRate()` | AwesomeAPI `last/USD-BRL` | Tempo real, atualizado a cada minuto |
+| Histórico p/ visualização | `fetchUsdBrlRateForDate(date)` | AwesomeAPI `daily/USD-BRL` | Cotação de mercado da data |
+| **IR e contextos fiscais** | `fetchPtaxRate()` | BCB SGS série **10813** (PTAX venda) | Referência oficial Receita Federal |
+| **Inter import por trade** | `fetchPtaxRateForDate(date)` | BCB SGS série 10813 | PTAX da data de cada operação |
+| **Form de cripto** | inline em `crypto-form.tsx` | BCB SGS série 10813 | Auto-preenche cotação histórica |
+
+**Cache PTAX:** localStorage `mw_ptax_{date}` (permanente — PTAX histórica não muda)
+
+**Janela de busca:** 10 dias antes da data alvo (cobre fins de semana e feriados quando
+PTAX não é publicada). Pega a última cotação disponível.
+
+**Onde o PTAX é aplicado hoje (refatoração concluída):**
+- `src/pages/tax/index.tsx` — usa `fetchPtaxRate()` no lugar de `fetchUsdBrlRate()`
+- `src/pages/portfolio/components/tabs/dividends/index.tsx` — idem
+- `src/services/inter-import.ts` — `fetchPtaxRateForDate(trade.date)` por trade
 
 ---
 
@@ -557,6 +674,14 @@ refreshPrices()
 **Formato:** PDF do extrato da corretora Inter
 **Reconhecimento de ETFs US:** lista fixa de ~100 tickers americanos (SPY, VOO, QQQ, etc.)
 
+**Conversão USD → BRL:**
+- Cada trade é convertido pela **PTAX da sua data** (BCB série 10813) — não pela cotação
+  atual única
+- `fetchPtaxRateForDate(trade.date)` é chamada por data única (com cache)
+- Trades preservam `priceUsd`, `totalUsd` e `usdRateAtTrade` (PTAX usada)
+- `avgPrice` em BRL do ativo agregado é **média ponderada** considerando o PTAX de cada
+  compra (`priceUsd × rateFor(date)` somado e dividido pela qty)
+
 ### Inter — Extrato (dividendos externos)
 
 **Arquivo:** `src/services/inter-extrato.ts`
@@ -600,8 +725,11 @@ Salva proventos em `dividends`
 2. **Não há adição manual de proventos pela UI** (só via importação)
 
 **Conversão USD → BRL:**
-- Usa `fetchUsdBrlRate()` no momento da exibição
-- Proventos em USD têm campos `amountUsd` e `irUsd` separados
+- **Exibição** (aba Proventos): `fetchPtaxRate()` — PTAX venda atual (BCB 10813)
+- **IR** (aba IR — `calcRendimentosExterior`): também usa `fetchPtaxRate()` quando o
+  dividendo não tem `usdRateAtPayment` próprio
+- Proventos em USD têm campos `amountUsd`, `irUsd`, `amountBrl`, `irBrl` e
+  `usdRateAtPayment` (PTAX da data de pagamento, preservada na importação)
 
 ---
 
@@ -634,7 +762,8 @@ Salva proventos em `dividends`
 - `users/{uid}/assets` — posição atual para declaração de bens
 - `users/{uid}/dividends` — proventos para rendimentos tributáveis/isentos
 - `fetchTickerSets()` — classifica cada ticker como FII, ação, BDR, ETF
-- `fetchUsdBrlRate()` — conversão de dividendos em USD
+- `fetchPtaxRate()` — **PTAX venda** (BCB 10813) usada como referência oficial pra
+  converter rendimentos em USD (em vez da cotação de mercado AwesomeAPI)
 
 **Abas e o que calculam:**
 
@@ -680,26 +809,6 @@ Salva proventos em `dividends`
 
 ---
 
-## Open Finance (Pluggy)
-
-**Serviço:** `src/services/pluggy.ts`
-**Serverless:** `api/pluggy/` (connect-token + sync)
-**Variáveis:** `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` (server-side via Vercel)
-**Biblioteca:** `react-pluggy-connect`
-
-**O que é:** integração com Open Finance via Pluggy para importar transações bancárias automaticamente na aba de Gastos.
-
-**Como funciona:**
-1. Backend gera um `connect_token` via `POST /api/pluggy/connect-token`
-2. Frontend abre o widget `PluggyConnect` com o token
-3. Usuário conecta a conta bancária pela interface do Pluggy
-4. App busca transações via `getTransactions()` e as exibe para o usuário classificar por categoria
-5. Conexões ficam salvas em `users/{uid}/pluggyItems` (Firestore) para reconexão
-
-**Limitação:** funciona apenas em produção (Vercel) — as funções serverless precisam das variáveis de ambiente do Pluggy.
-
----
-
 ## Valuation (Graham e FII)
 
 **Componente:** `src/pages/portfolio/components/tabs/analysis/components/valuation-section.tsx`
@@ -726,15 +835,12 @@ Salva proventos em `dividends`
 | Tipo | Coleção | Descrição |
 |---|---|---|
 | Manual | `expenses` | Adicionado a mão pelo usuário |
-| Importado OFX | `expenses` | Extraído de arquivo bancário `.ofx` |
 | Fixo | `fixedExpenses` | Recorrente mensal (plano celular, streaming, etc.) |
 | Parcelado | `installmentExpenses` | Parcela calculada automaticamente por mês |
 
-**Importação OFX:**
-- Arquivo: `src/services/ofx-import.ts`
-- Formato: `.ofx` exportado do banco
-- Filtra automaticamente transferências, aplicações e resgates
-- Retorna `OFXTransaction[]` para o usuário classificar por categoria
+> Versões anteriores tinham importação OFX e Open Finance via Pluggy — ambas foram
+> removidas porque exigem CNPJ/contrato pra uso pessoal no Brasil. Toda entrada de
+> gasto agora é manual.
 
 **Salário:**
 - Coleção: `users/{uid}/salary` (doc ID = `YYYY-MM`)
@@ -949,16 +1055,18 @@ Salva proventos em `dividends`
 
 | API | Endpoint base | Dados | Auth | Cache |
 |---|---|---|---|---|
-| Awesome API | `https://economia.awesomeapi.com.br` | USD/BRL (cotação e variação) | Não | 1 hora |
-| CoinGecko | `https://api.coingecko.com/api/v3` | BTC/ETH/SOL e outras criptos em BRL | Não | 5 min |
-| Banco Central (BCB) | `https://api.bcb.gov.br/dados/serie` | SELIC, CDI, IPCA, IGP-M (séries históricas) | Não | 1 hora |
-| Brapi | `https://brapi.dev/api` | Cotações BR e US, lista de tickers, fundamentais básicos, histórico de preços (sparkline) | Sim (`VITE_BRAPI_TOKEN`) | 5 min (cotações), 24h (lista), 1h (histórico) |
+| Awesome API | `https://economia.awesomeapi.com.br` | USD/BRL atual e histórico (uso de visualização) | Não | 15 min (atual), permanente (histórico) |
+| CoinGecko | `https://api.coingecko.com/api/v3` | Cotação atual de cripto (BRL+USD); histórico por data via `/coins/{id}/history` (usado no form de cripto) | Não | 5 min (atual) |
+| Banco Central — séries de juros | `https://api.bcb.gov.br/dados/serie` | SELIC (série 432/11), CDI (12), IPCA (433), IGP-M (189) — séries históricas | Não | 1 hora |
+| Banco Central — PTAX | `https://api.bcb.gov.br/dados/serie/bcdata.sgs.10813` | **PTAX venda** USD/BRL — referência oficial Receita Federal. Usado em IR, dividendos exterior, Inter import e form de cripto | Não | Permanente (histórico) |
+| Brapi | `https://brapi.dev/api` | Cotações BR e US (BRL+USD), lista de tickers, fundamentais básicos, histórico de preços (sparkline) | Sim (`VITE_BRAPI_TOKEN`) | 5 min (cotações), 24h (lista), 1h (histórico) |
 | Tesouro Direto (proxy) | `/api/tesouro` | PU dos títulos do Tesouro | Não | 1 hora |
 | Google Gemini | Gemini API | Análise de relatórios RI/FII via IA | Sim (`VITE_GEMINI_API_KEY`) | Não (por demanda) |
 | CVM | `https://cvm-dados.gov.br` | Fatos relevantes e comunicados de empresas listadas | Não | Sessão |
 | Resend | `https://api.resend.com` | Envio de email para alertas de preço disparados | Sim (`RESEND_API_KEY`) | Não |
-| Pluggy | `https://api.pluggy.ai` | Open Finance — conexão com contas bancárias para importar transações | Sim (`PLUGGY_CLIENT_ID` / `PLUGGY_CLIENT_SECRET`) | Não |
 
 ---
 
-*Última atualização: maio 2026 — adicionado PWA e design responsivo*
+*Última atualização: maio 2026 — armazenamento USD-nativo (avgPriceUsd/currentPriceUsd),
+PTAX BCB para contextos fiscais, unificação Movimentações + Importações, nova aba
+Realocamento, remoção do Open Finance/OFX*

@@ -211,7 +211,7 @@ export const EditAssetDialog = ({
                 />
               </div>
             )}
-          {!isFixedIncome && (
+          {!isFixedIncome && asset?.type !== 'crypto' && (
             <>
               <div>
                 <label

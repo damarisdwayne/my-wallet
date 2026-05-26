@@ -130,7 +130,11 @@ export const CryptoForm = ({
           />
           {parsedAvg > 0 && parsedRate > 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              PM convertido: R$ {avgPriceBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              PM convertido: R${' '}
+              {avgPriceBrl.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
           )}
         </Field>

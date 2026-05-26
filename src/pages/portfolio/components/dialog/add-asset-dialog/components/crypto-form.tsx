@@ -1,8 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Asset, PortfolioCategory } from '@/types'
 import { Field } from '../utils'
 import { inputClass, KNOWN_CRYPTOS } from '../constants'
+
+const todayStr = () => new Date().toISOString().slice(0, 10)
+
+const fetchPtaxForDate = async (isoDate: string): Promise<number | null> => {
+  // BCB PTAX venda (série 10813) — referência oficial usada pela Receita Federal.
+  // Janela de 10 dias até a data para cobrir fins de semana/feriados.
+  const to = new Date(isoDate)
+  const from = new Date(to)
+  from.setDate(from.getDate() - 10)
+  const fmt = (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.10813/dados?formato=json&dataInicial=${fmt(from)}&dataFinal=${fmt(to)}`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const json = (await res.json()) as Array<{ data: string; valor: string }>
+    if (!Array.isArray(json) || json.length === 0) return null
+    const last = json[json.length - 1]
+    const rate = Number.parseFloat(last.valor)
+    return rate > 0 ? rate : null
+  } catch {
+    return null
+  }
+}
 
 export const CryptoForm = ({
   categories,
@@ -19,7 +44,26 @@ export const CryptoForm = ({
   const [currency, setCurrency] = useState<'BRL' | 'USD'>('USD')
   const [avgPrice, setAvgPrice] = useState('')
   const [usdRate, setUsdRate] = useState('')
+  const [rateLoading, setRateLoading] = useState(false)
+  const [purchaseDate, setPurchaseDate] = useState(todayStr())
   const [categoryId, setCategoryId] = useState(cryptoCatId)
+
+  useEffect(() => {
+    if (currency !== 'USD' || !purchaseDate) return
+    let cancelled = false
+    setRateLoading(true)
+    fetchPtaxForDate(purchaseDate)
+      .then((rate) => {
+        if (cancelled || rate === null) return
+        setUsdRate(rate.toFixed(4))
+      })
+      .finally(() => {
+        if (!cancelled) setRateLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [currency, purchaseDate])
 
   const resolvedTicker = isCustom ? customTicker.toUpperCase() : ticker
   const resolvedName = isCustom
@@ -117,27 +161,45 @@ export const CryptoForm = ({
           </div>
         </Field>
       </div>
-      {currency === 'USD' && (
-        <Field label="Cotação USD/BRL na compra">
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Data da compra">
           <input
             className={inputClass}
-            type="number"
-            min={0}
-            step="any"
-            placeholder="ex: 5.40"
-            value={usdRate}
-            onChange={(e) => setUsdRate(e.target.value)}
+            type="date"
+            value={purchaseDate}
+            max={todayStr()}
+            onChange={(e) => setPurchaseDate(e.target.value)}
           />
-          {parsedAvg > 0 && parsedRate > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              PM convertido: R${' '}
-              {avgPriceBrl.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </p>
-          )}
         </Field>
+        {currency === 'USD' && (
+          <Field
+            label={
+              <span className="flex items-center gap-1">
+                Cotação USD/BRL
+                {rateLoading && <Loader2 size={11} className="animate-spin" />}
+              </span>
+            }
+          >
+            <input
+              className={inputClass}
+              type="number"
+              min={0}
+              step="any"
+              placeholder="ex: 5.40"
+              value={usdRate}
+              onChange={(e) => setUsdRate(e.target.value)}
+            />
+          </Field>
+        )}
+      </div>
+      {currency === 'USD' && parsedAvg > 0 && parsedRate > 0 && (
+        <p className="text-xs text-muted-foreground -mt-1">
+          PM convertido: R${' '}
+          {avgPriceBrl.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </p>
       )}
       <Field label="Categoria">
         <select

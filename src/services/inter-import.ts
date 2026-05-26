@@ -1,6 +1,6 @@
 import type { AssetType } from '@/types'
 import type { B3Asset, B3ParseResult, B3RawTrade } from './b3-import'
-import { fetchUsdBrlRate } from './quotes'
+import { fetchPtaxRate, fetchPtaxRateForDate } from './quotes'
 
 const US_ETF_TICKERS = new Set([
   'SPY',
@@ -261,10 +261,22 @@ export async function parseInterPdf(buffer: ArrayBuffer): Promise<B3ParseResult>
     )
   }
 
-  const usdRate = await fetchUsdBrlRate()
+  // PTAX por data de operação (referência oficial Receita Federal).
+  // Fallback pra PTAX atual quando a data não estiver disponível.
+  const currentPtax = await fetchPtaxRate()
+  const uniqueDates = [...new Set(rows.map((r) => r.date).filter(Boolean) as string[])]
+  const rateByDate = new Map<string, number>()
+  await Promise.all(
+    uniqueDates.map(async (d) => {
+      const rate = await fetchPtaxRateForDate(d).catch(() => currentPtax)
+      rateByDate.set(d, rate || currentPtax)
+    }),
+  )
+  const rateFor = (d?: string) => (d && rateByDate.get(d)) || currentPtax
 
   const trades: B3RawTrade[] = rows.map((r) => {
-    const priceBrl = round(r.price * usdRate, 2)
+    const rate = rateFor(r.date)
+    const priceBrl = round(r.price * rate, 2)
     const totalBrl = round(r.quantity * priceBrl, 2)
     return {
       ticker: r.ticker,
@@ -275,17 +287,24 @@ export async function parseInterPdf(buffer: ArrayBuffer): Promise<B3ParseResult>
       date: r.date ?? '',
       priceUsd: r.price,
       totalUsd: round(r.quantity * r.price, 2),
-      usdRateAtTrade: usdRate,
+      usdRateAtTrade: rate,
     }
   })
 
+  // Preço médio do ativo: média ponderada em BRL convertida com PTAX de cada trade.
   const assets = aggregateTrades(rows)
   return {
-    assets: assets.map((a) => ({
-      ...a,
-      avgPrice: round(a.avgPrice * usdRate, 2),
-      currentPrice: round(a.currentPrice * usdRate, 2),
-    })),
+    assets: assets.map((a) => {
+      const assetRows = rows.filter((r) => r.ticker === a.ticker && r.action === 'buy')
+      const totalQty = assetRows.reduce((s, r) => s + r.quantity, 0)
+      const totalBrl = assetRows.reduce((s, r) => s + r.quantity * r.price * rateFor(r.date), 0)
+      const avgPriceBrl = totalQty > 0 ? totalBrl / totalQty : a.avgPrice * currentPtax
+      return {
+        ...a,
+        avgPrice: round(avgPriceBrl, 2),
+        currentPrice: round(a.currentPrice * currentPtax, 2),
+      }
+    }),
     trades,
     dividends: [],
   }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components'
 import { deleteDividend, subscribeToAllDividends } from '@/services/dividends'
-import { fetchUsdBrlRate } from '@/services/quotes'
+import { fetchPtaxRate } from '@/services/quotes'
 import { fetchUpcomingDividends, type UpcomingDividend } from '@/services/statusinvest'
 import { useAuth } from '@/store/auth'
 import { getDividendBrl } from '@/lib/utils'
@@ -24,7 +24,7 @@ export const DividendsTab = ({ assets }: Props) => {
   const [upcoming, setUpcoming] = useState<UpcomingDividend[]>([])
 
   useEffect(() => {
-    fetchUsdBrlRate()
+    fetchPtaxRate()
       .then(setUsdRate)
       .catch(() => setUsdRate(0))
   }, [])

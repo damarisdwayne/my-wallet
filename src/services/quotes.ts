@@ -85,6 +85,54 @@ export const fetchUsdBrlRateForDate = async (date: string): Promise<number> => {
   return fetchUsdBrlRate()
 }
 
+// PTAX venda (BCB série 10813) — referência oficial usada pela Receita Federal.
+// Pega a última cotação disponível na janela (cobre fins de semana/feriados).
+const fetchPtaxFromBcb = async (isoDate: string): Promise<number | null> => {
+  const to = new Date(isoDate)
+  const from = new Date(to)
+  from.setDate(from.getDate() - 10)
+  const fmt = (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.10813/dados?formato=json&dataInicial=${fmt(from)}&dataFinal=${fmt(to)}`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const json = (await res.json()) as Array<{ data: string; valor: string }>
+    if (!Array.isArray(json) || json.length === 0) return null
+    const last = json.at(-1)
+    const rate = Number.parseFloat(last?.valor ?? '0')
+    return rate > 0 ? rate : null
+  } catch {
+    return null
+  }
+}
+
+// Cotação PTAX venda para uma data específica (com cache localStorage).
+// Use em contextos fiscais (IR, dividendos exterior, Inter import).
+export const fetchPtaxRateForDate = async (date: string): Promise<number> => {
+  const key = `mw_ptax_${date}`
+  try {
+    const cached = localStorage.getItem(key)
+    if (cached) return Number(cached)
+  } catch {}
+  const rate = await fetchPtaxFromBcb(date)
+  if (rate !== null) {
+    try {
+      localStorage.setItem(key, String(rate))
+    } catch {}
+    return rate
+  }
+  return fetchPtaxRate()
+}
+
+// Cotação PTAX venda mais recente. Fallback pra cotação de mercado se BCB falhar.
+export const fetchPtaxRate = async (): Promise<number> => {
+  const today = new Date().toISOString().slice(0, 10)
+  const rate = await fetchPtaxFromBcb(today)
+  if (rate !== null) return rate
+  return fetchUsdBrlRate()
+}
+
 export const fetchUsdBrlRate = async (): Promise<number> => {
   try {
     const cached = localStorage.getItem(USD_RATE_KEY)

@@ -7,7 +7,7 @@ export const Field = ({
   children,
   className,
 }: {
-  label: string
+  label: ReactNode
   children: ReactNode
   className?: string
 }) => (

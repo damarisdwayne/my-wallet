@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToTrades } from '@/services/trades'
-import { fetchTickerSets, fetchUsdBrlRate } from '@/services/quotes'
+import { fetchPtaxRate, fetchTickerSets } from '@/services/quotes'
 import type { TickerSets } from '@/services/quotes'
 import { useAuth } from '@/store/auth'
 import { useFundamentals } from '@/hooks/use-fundamentals'
@@ -39,7 +39,7 @@ export const TaxPage = () => {
   const { fiiInfo, stockInfo } = useFundamentals(user?.uid ?? null)
 
   useEffect(() => {
-    fetchUsdBrlRate()
+    fetchPtaxRate()
       .then(setUsdRate)
       .catch(() => setUsdRate(0))
     fetchTickerSets()

@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Minus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Minus, Play, RotateCcw } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
 import { computeAssetTargets } from '../../../compute-targets'
@@ -65,7 +65,16 @@ const calcRebalance = (
           }
         })
         .filter((r) => r.targetPct > 0)
-        .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+        .sort((a, b) => {
+          const aBuy = a.diff < -1
+          const bBuy = b.diff < -1
+          const aSell = a.diff > 1
+          const bSell = b.diff > 1
+          const priority = (buy: boolean, sell: boolean) => (buy ? 0 : sell ? 1 : 2)
+          const diffPriority = priority(aBuy, aSell) - priority(bBuy, bSell)
+          if (diffPriority !== 0) return diffPriority
+          return Math.abs(b.diff) - Math.abs(a.diff)
+        })
 
       return {
         cat,
@@ -77,7 +86,16 @@ const calcRebalance = (
         assets: assetRows,
       }
     })
-    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+    .sort((a, b) => {
+      const aBuy = a.diff < -1
+      const bBuy = b.diff < -1
+      const aSell = a.diff > 1
+      const bSell = b.diff > 1
+      const priority = (buy: boolean, sell: boolean) => (buy ? 0 : sell ? 1 : 2)
+      const diffPriority = priority(aBuy, aSell) - priority(bBuy, bSell)
+      if (diffPriority !== 0) return diffPriority
+      return Math.abs(b.diff) - Math.abs(a.diff)
+    })
 }
 
 const DiffBadge = ({ diff }: { diff: number }) => {
@@ -97,9 +115,34 @@ export const RebalanceTab = ({ assets, categories, diagrams, answers, totalValue
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
 
+  const [simulatedInput, setSimulatedInput] = useState('')
+  const [appliedTotal, setAppliedTotal] = useState<number | null>(null)
+  const parsedInput = Number.parseFloat(simulatedInput.replaceAll('.', '').replace(',', '.'))
+  const canSimulate = !Number.isNaN(parsedInput) && parsedInput > 0
+  const isSimulating = appliedTotal !== null
+  const effectiveTotal = appliedTotal ?? totalValue
+
+  const handleSimulatedChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) {
+      setSimulatedInput('')
+      return
+    }
+    setSimulatedInput(Number.parseInt(digits, 10).toLocaleString('pt-BR'))
+  }
+
+  const applySimulation = () => {
+    if (canSimulate) setAppliedTotal(parsedInput)
+  }
+
+  const resetSimulation = () => {
+    setAppliedTotal(null)
+    setSimulatedInput('')
+  }
+
   const rows = useMemo(
-    () => calcRebalance(assets, categories, diagrams, answers, totalValue),
-    [assets, categories, diagrams, answers, totalValue],
+    () => calcRebalance(assets, categories, diagrams, answers, effectiveTotal),
+    [assets, categories, diagrams, answers, effectiveTotal],
   )
 
   if (categories.length === 0) {
@@ -116,6 +159,56 @@ export const RebalanceTab = ({ assets, categories, diagrams, answers, totalValue
         Quanto vender/comprar de cada categoria para atingir as metas de alocação — sem aportar
         dinheiro novo.
       </p>
+
+      {/* Summary + simulator */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground mb-1">Total investido</p>
+          <p className="text-lg font-bold text-foreground">{fmt(totalValue)}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-muted-foreground">Simular com valor (R$)</p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={applySimulation}
+                disabled={!canSimulate}
+                title="Simular"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
+              >
+                <Play size={11} />
+                Simular
+              </button>
+              {isSimulating && (
+                <button
+                  onClick={resetSimulation}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors ml-2"
+                  title="Voltar ao valor real"
+                >
+                  <RotateCcw size={11} />
+                  Resetar
+                </button>
+              )}
+            </div>
+          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="ex: 300.000"
+            value={simulatedInput}
+            onChange={(e) => handleSimulatedChange(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && applySimulation()}
+            className="w-full bg-transparent text-lg font-bold text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {isSimulating && (
+        <p className="text-xs text-primary">
+          Simulando com {fmt(effectiveTotal)} — os valores "Alvo" mostram quanto cada
+          categoria/ativo deveria ter neste cenário.
+        </p>
+      )}
 
       {/* Category table */}
       <div className="rounded-lg border border-border overflow-hidden">

@@ -105,12 +105,12 @@ export const AssignAssetsSheet = ({
         if (!v) onClose()
       }}
     >
-      <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col gap-0 p-0">
+      <SheetContent side="right" className="w-full sm:max-w-3xl flex flex-col gap-0 p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <SheetTitle>Atribuir Ativos</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto flex flex-col">
+        <div className="flex-1 overflow-y-auto flex flex-col [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {/* Toolbar */}
           <div className="px-6 py-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border-b border-border">
             <div className="relative w-full sm:w-64">
@@ -131,7 +131,7 @@ export const AssignAssetsSheet = ({
                   {selected.size} selecionado(s)
                 </span>
                 <select
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                   value={bulkCatId}
                   onChange={(e) => setBulkCatId(e.target.value)}
                 >
@@ -212,7 +212,7 @@ export const AssignAssetsSheet = ({
                           </span>
                         ) : (
                           <select
-                            className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring w-full max-w-48"
+                            className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring w-full max-w-48 cursor-pointer"
                             value={asset.categoryId}
                             onChange={(e) => handleInlineChange(asset.id, e.target.value)}
                             style={color ? { borderColor: color } : undefined}

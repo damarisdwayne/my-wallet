@@ -92,7 +92,7 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
 
   const handleSave = async () => {
     const invested = Number.parseFloat(form.totalInvested)
-    if (invested <= 0) return
+    if (invested <= 0 || !form.operationDate) return
     setSaving(true)
     try {
       const suffix = form.institution ? `-${form.institution.toUpperCase().slice(0, 8)}` : ''
@@ -243,10 +243,11 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label>Data de aplicação</Label>
+              <Label>Data de aplicação *</Label>
               <input
                 className={inputClass}
                 type="date"
+                required
                 value={form.operationDate}
                 onChange={(e) => set('operationDate', e.target.value)}
               />
@@ -296,7 +297,7 @@ export const FixedIncomeDialog = ({ open, onOpenChange, categories, onAdd }: Pro
           </button>
           <button
             onClick={handleSave}
-            disabled={!form.totalInvested || saving}
+            disabled={!form.totalInvested || !form.operationDate || saving}
             className="px-4 py-2 rounded-md text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
           >
             {saving ? 'Salvando...' : 'Confirmar'}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Info } from 'lucide-react'
 import { subscribeToAllDividends } from '@/services/dividends'
 import { subscribeToAssets } from '@/services/assets'
 import { subscribeToTrades } from '@/services/trades'
@@ -59,7 +60,9 @@ export const TaxPage = () => {
 
   const years = useMemo(() => availableYears(trades, dividends), [trades, dividends])
   const currentYear = new Date().getFullYear()
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear)
+  // Abre no último ano-base fechado (ano-calendário anterior) — é a declaração que se entrega agora;
+  // o ano corrente ainda está em andamento.
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear - 1)
   const effectiveYear = years.includes(selectedYear) ? selectedYear : (years[0] ?? currentYear)
 
   const totalIrJcp = useMemo(
@@ -93,6 +96,29 @@ export const TaxPage = () => {
         currentYear={currentYear}
         onSelectYear={setSelectedYear}
       />
+
+      <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3">
+        <Info size={18} className="text-primary shrink-0 mt-0.5" />
+        <p className="text-sm text-foreground leading-relaxed">
+          <span className="font-semibold">
+            Confira com o relatório oficial da B3 antes de declarar.
+          </span>{' '}
+          Os números abaixo são calculados a partir dos seus lançamentos — sempre confronte com a
+          fonte oficial. Em{' '}
+          <a
+            href="https://www.investidor.b3.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            investidor.b3.com.br
+          </a>
+          , acesse{' '}
+          <span className="font-medium text-foreground">Relatórios → Relatório Consolidado</span> e
+          selecione o ano. Ele reúne posição em custódia, proventos recebidos e IR retido no ano —
+          use para bater com este resumo.
+        </p>
+      </div>
 
       <SummaryCards
         totalIsento={totalIsento}

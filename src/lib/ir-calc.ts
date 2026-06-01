@@ -147,6 +147,8 @@ interface DescriptionCtx {
   fiiInfo?: FiiInfo
   stockInfo?: StockInfo
   totalCostUsd?: number
+  principalCost?: number // valor originalmente aplicado (renda fixa)
+  valuationDate?: string // data da posição (YYYY-MM-DD) — usada na descrição da renda fixa
 }
 
 const buildDescription = (
@@ -157,7 +159,8 @@ const buildDescription = (
   totalCost: number,
   ctx: DescriptionCtx = {},
 ): string => {
-  const { asset, fiiInfo, stockInfo, totalCostUsd } = ctx
+  const { asset, fiiInfo, stockInfo, totalCostUsd, principalCost, valuationDate } = ctx
+  const brDate = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
   switch (assetType) {
     case 'fii': {
       const name = fiiInfo?.longName ? ` ${fiiInfo.longName}` : ''
@@ -190,11 +193,14 @@ const buildDescription = (
     case 'tesouro':
       return `${ticker} - ${fmtQty(quantity)} títulos do Tesouro Direto. Custo médio unitário de R$ ${fmtBr(avgCost)}`
     case 'fixed_income': {
-      const maturity = asset?.maturityDate
-        ? `. Vencimento: ${new Date(asset.maturityDate + 'T12:00:00').toLocaleDateString('pt-BR')}`
-        : ''
+      const maturity = asset?.maturityDate ? `. Vencimento: ${brDate(asset.maturityDate)}` : ''
       const institution = asset?.institution ? `, ${asset.institution}` : ''
-      return `${ticker}${institution}. Total aplicado: R$ ${fmtBr(totalCost, 2)}${maturity}`
+      const applied =
+        asset?.operationDate && principalCost != null
+          ? `. Aplicado em ${brDate(asset.operationDate)}: R$ ${fmtBr(principalCost, 2)}`
+          : ''
+      const posLabel = valuationDate ? `Valor em ${brDate(valuationDate)}` : 'Valor'
+      return `${ticker}${institution}${applied}. ${posLabel}: R$ ${fmtBr(totalCost, 2)}${maturity}`
     }
     case 'crypto':
       return `${ticker} - ${fmtQty(quantity)} unidades de criptoativo. Custo médio de aquisição: R$ ${fmtBr(avgCost)}`
@@ -237,7 +243,7 @@ const applyTrade = (map: PositionMap, trade: Trade) => {
 // Fixed income / Tesouro are manually maintained in the portfolio — use asset records
 // directly instead of aggregating by ticker from trade history (which merges distinct
 // products that share a generic ticker like "CDB-INTER").
-const FLAT_INCOME_TYPES = new Set<AssetType>(['fixed_income', 'tesouro'])
+export const FLAT_INCOME_TYPES = new Set<AssetType>(['fixed_income', 'tesouro'])
 
 export const buildPositions = (
   trades: Trade[],
@@ -246,6 +252,9 @@ export const buildPositions = (
   sets?: TickerSets,
   fiiInfoMap?: Record<string, FiiInfo>,
   stockInfoMap?: Record<string, StockInfo>,
+  // Valor marcado (principal + rendimento) por ativo de renda fixa na data `endDate`, keyed por
+  // asset.id. Quando ausente, cai no valor atual do ativo.
+  fiValues?: Record<string, number>,
 ): IrPosition[] => {
   const assetMap = Object.fromEntries(assets.map((a) => [a.ticker.toUpperCase(), a]))
   const map: PositionMap = {}
@@ -301,28 +310,34 @@ export const buildPositions = (
       }
     })
 
-  // One entry per portfolio asset for fixed income / tesouro (preserves distinct products)
+  // One entry per portfolio asset for fixed income / tesouro (preserves distinct products).
+  // Fixed income carries no dated trades, so the acquisition date (operationDate) gates which
+  // year it shows in — an asset applied in 2026 must not appear in the 31/12/2025 column.
+  // When operationDate is unknown we can't place it in time, so it falls back to showing in all
+  // years (the user should fill the application date for an accurate prior-year column).
   const flatIncomePositions: IrPosition[] = assets
     .filter((a) => FLAT_INCOME_TYPES.has(a.type) && a.quantity > 0)
+    .filter((a) => !a.operationDate || a.operationDate <= endDate)
     .map((a) => {
       const label = getFiLabel(a)
+      const principal = a.avgPrice * a.quantity
+      // Valor na data do corte (principal + rendimento). Sem o valor marcado, cai no atual.
+      const value = fiValues?.[a.id] ?? a.currentPrice * a.quantity
+      const unit = a.quantity > 0 ? value / a.quantity : value
       return {
         ticker: label,
         assetName: label,
         assetType: a.type,
         quantity: a.quantity,
-        avgCost: a.currentPrice,
-        totalCost: a.currentPrice * a.quantity,
+        avgCost: unit,
+        totalCost: value,
         dirpfGroup: DIRPF[a.type].group,
         dirpfCode: DIRPF[a.type].code,
-        description: buildDescription(
-          label,
-          a.type,
-          a.quantity,
-          a.currentPrice,
-          a.currentPrice * a.quantity,
-          { asset: a },
-        ),
+        description: buildDescription(label, a.type, a.quantity, unit, value, {
+          asset: a,
+          principalCost: principal,
+          valuationDate: endDate,
+        }),
         cnpj: a.cnpj,
       }
     })
@@ -553,8 +568,10 @@ export const calcRendimentosExterior = (
   const byTicker: Record<string, { gross: number; ir: number }> = {}
   for (const d of filtered) {
     if (!byTicker[d.ticker]) byTicker[d.ticker] = { gross: 0, ir: 0 }
-    const gross = d.currency === 'USD' ? (d.amountUsd ?? 0) * usdRate : d.amount
-    const ir = d.currency === 'USD' ? (d.irUsd ?? 0) * usdRate : (d.ir ?? 0)
+    // Para USD, usa o valor já convertido na PTAX da data do pagamento (amountBrl/irBrl — fonte de
+    // verdade). Só cai no câmbio atual (usdRate) se o histórico não estiver salvo.
+    const gross = d.currency === 'USD' ? (d.amountBrl ?? (d.amountUsd ?? 0) * usdRate) : d.amount
+    const ir = d.currency === 'USD' ? (d.irBrl ?? (d.irUsd ?? 0) * usdRate) : (d.ir ?? 0)
     byTicker[d.ticker].gross += gross
     byTicker[d.ticker].ir += ir
   }

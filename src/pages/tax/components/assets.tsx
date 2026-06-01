@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertCircle, Check, Copy } from 'lucide-react'
-import { buildPositions } from '@/lib/ir-calc'
+import { buildPositions, FLAT_INCOME_TYPES } from '@/lib/ir-calc'
+import { calcFixedIncomeValue, calcTesouroValue } from '@/services/bcb-rates'
 import { formatCurrency } from '@/lib/utils'
 import type { TickerSets } from '@/services/quotes'
 import type { Asset, FiiInfo, StockInfo, Trade } from '@/types'
@@ -35,12 +36,68 @@ type Props = {
 
 export const AssetsSection = ({ year, trades, assets, sets, fiiInfoMap, stockInfoMap }: Props) => {
   const [filterType, setFilterType] = useState<string | null>(null)
+  // Valor marcado (principal + rendimento) da renda fixa em 31/12 de cada ano, keyed por asset.id.
+  const [fiValues, setFiValues] = useState<{
+    current: Record<string, number>
+    prior: Record<string, number>
+  }>({ current: {}, prior: {} })
 
   const currentDate = `${year}-12-31`
   const priorDate = `${year - 1}-12-31`
 
-  const current = buildPositions(trades, currentDate, assets, sets, fiiInfoMap, stockInfoMap)
-  const prior = buildPositions(trades, priorDate, assets, sets, fiiInfoMap, stockInfoMap)
+  useEffect(() => {
+    let cancelled = false
+    const cur = `${year}-12-31`
+    const pri = `${year - 1}-12-31`
+    const fiAssets = assets.filter(
+      (a) => FLAT_INCOME_TYPES.has(a.type) && a.quantity > 0 && a.operationDate,
+    )
+
+    const valueAt = async (a: Asset, endDate: string): Promise<[string, number] | null> => {
+      if (!a.operationDate || a.operationDate > endDate) return null
+      const principal = a.avgPrice * a.quantity
+      try {
+        const v =
+          a.type === 'tesouro'
+            ? await calcTesouroValue(principal, a.quantity, a.ticker, a.operationDate, a.prefixedRate, endDate) // prettier-ignore
+            : await calcFixedIncomeValue(principal, a.rateType ?? '', a.indexerRate, a.prefixedRate, a.operationDate, endDate) // prettier-ignore
+        return [a.id, v]
+      } catch {
+        return null
+      }
+    }
+
+    const build = async (endDate: string): Promise<Record<string, number>> => {
+      const entries = await Promise.all(fiAssets.map((a) => valueAt(a, endDate)))
+      return Object.fromEntries(entries.filter((e): e is [string, number] => e !== null))
+    }
+
+    Promise.all([build(cur), build(pri)]).then(([current, prior]) => {
+      if (!cancelled) setFiValues({ current, prior })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [assets, year])
+
+  const current = buildPositions(
+    trades,
+    currentDate,
+    assets,
+    sets,
+    fiiInfoMap,
+    stockInfoMap,
+    fiValues.current,
+  )
+  const prior = buildPositions(
+    trades,
+    priorDate,
+    assets,
+    sets,
+    fiiInfoMap,
+    stockInfoMap,
+    fiValues.prior,
+  )
 
   const priorMap = Object.fromEntries(prior.map((p) => [p.ticker, p.totalCost]))
 

@@ -98,24 +98,22 @@ export const CatFormFields = ({
         </div>
       </div>
 
-      {/* Target % — hidden only for 'none' (no tracking) */}
-      {form.tracking !== 'none' && (
-        <div>
-          <label htmlFor={`${prefix}-target`} className="text-xs text-muted-foreground mb-1 block">
-            Meta de alocação (%)
-          </label>
-          <input
-            id={`${prefix}-target`}
-            className={inputClass}
-            type="number"
-            min={0}
-            max={100}
-            step={0.1}
-            value={form.targetPercent}
-            onChange={(e) => set('targetPercent', e.target.value)}
-          />
-        </div>
-      )}
+      {/* Target % — sempre editável; o card sempre exibe a meta no topo */}
+      <div>
+        <label htmlFor={`${prefix}-target`} className="text-xs text-muted-foreground mb-1 block">
+          Meta de alocação (%)
+        </label>
+        <input
+          id={`${prefix}-target`}
+          className={inputClass}
+          type="number"
+          min={0}
+          max={100}
+          step={0.1}
+          value={form.targetPercent}
+          onChange={(e) => set('targetPercent', e.target.value)}
+        />
+      </div>
 
       {/* Diagram link — only when tracking includes diagram */}
       {hasDiagram(form.tracking) && (

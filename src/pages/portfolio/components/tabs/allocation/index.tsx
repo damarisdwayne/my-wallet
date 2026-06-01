@@ -188,6 +188,7 @@ export const AllocationTab = ({
       }),
     )
     setSavingManual(null)
+    setExpandedCatId((id) => (id === catId ? null : id)) // colapsa os ativos após salvar
   }
 
   const getDiagram = (cat: PortfolioCategory): Diagram | null =>

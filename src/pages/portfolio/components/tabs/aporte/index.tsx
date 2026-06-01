@@ -25,7 +25,8 @@ export const AporteTab = ({
   const toggle = (id: string) =>
     setExpanded((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
 
@@ -40,7 +41,8 @@ export const AporteTab = ({
 
   const toggleCat = (id: string) => {
     const next = new Set(excludedCatIds)
-    next.has(id) ? next.delete(id) : next.add(id)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
     setExcludedCatIds(next)
     runCalc(next)
   }
@@ -53,6 +55,13 @@ export const AporteTab = ({
   }
 
   const aporte = distribution ? Number.parseFloat(aporteInput) || 0 : 0
+
+  // Chips só aparecem para categorias que receberam aporte recomendado — ou que o usuário
+  // excluiu manualmente (mantém o chip para permitir reincluir).
+  const aporteByCat = new Map(distribution?.map((a) => [a.cat.id, a.catAporte]) ?? [])
+  const chipCats = categories?.filter(
+    (cat) => (aporteByCat.get(cat.id) ?? 0) > 0 || excludedCatIds.has(cat.id),
+  )
 
   return (
     <div className="space-y-6">
@@ -86,9 +95,9 @@ export const AporteTab = ({
         </button>
       </div>
 
-      {distribution !== null && categories.length > 0 && (
+      {distribution !== null && chipCats?.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
+          {chipCats?.map((cat) => {
             const excluded = excludedCatIds.has(cat.id)
             return (
               <button

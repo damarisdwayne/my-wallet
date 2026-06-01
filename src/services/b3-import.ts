@@ -387,7 +387,10 @@ const positionsToAssets = (positions: Map<string, Accumulator>, sets?: TickerSet
   const result: B3Asset[] = []
   for (const [ticker, { netQty, buysQty, totalBuyCost }] of positions) {
     const qty = cleanQty(netQty)
-    if (qty <= 0) continue
+    // Keep net-negative deltas (sells): importFromB3 applies them to the existing position and
+    // deletes it when it reaches zero. Only a true zero net means "no change", so it's skipped.
+    // New tickers with a negative delta are filtered downstream (can't open a short position).
+    if (qty === 0) continue
     const avgPrice = buysQty > 0 ? totalBuyCost / buysQty : 0
     result.push({
       ticker,
@@ -477,3 +480,66 @@ export const parseB3Excel = async (buffer: ArrayBuffer): Promise<B3ParseResult> 
   }
   return { assets, trades: state.trades, dividends: state.dividends }
 }
+
+// Replays a single trade onto the positions map. Mirrors applyPosition, but works from the
+// stored trade shape (type + label) instead of the raw "Movimentação" string.
+const replayTrade = (t: B3RawTrade, positions: Map<string, Accumulator>) => {
+  const prev = positions.get(t.ticker) ?? { netQty: 0, buysQty: 0, totalBuyCost: 0 }
+  if (t.type === 'buy') {
+    // buys, bonificações and desdobramentos all carry their cost contribution in `total`
+    positions.set(t.ticker, {
+      netQty: prev.netQty + t.quantity,
+      buysQty: prev.buysQty + t.quantity,
+      totalBuyCost: prev.totalBuyCost + t.total,
+    })
+  } else if (t.label === 'grupamento') {
+    // Reverse split — shares removed, total cost unchanged, PM increases
+    const newQty = Math.max(0, prev.netQty - t.quantity)
+    const ratio = prev.buysQty > 0 && prev.netQty > 0 ? newQty / prev.netQty : 1
+    positions.set(t.ticker, {
+      netQty: newQty,
+      buysQty: prev.buysQty * ratio,
+      totalBuyCost: prev.totalBuyCost,
+    })
+  } else {
+    positions.set(t.ticker, { ...prev, netQty: prev.netQty - t.quantity })
+  }
+}
+
+// Re-aggregates a (possibly filtered) list of trades back into net positions. Used when the
+// user excludes duplicate operations in the import preview, so the resulting position/PM
+// reflects only the operations actually being imported. Trades must stay in chronological
+// order (parseB3Excel already sorts them) for the grupamento ratio to be correct.
+export const aggregateTradesToAssets = async (trades: B3RawTrade[]): Promise<B3Asset[]> => {
+  const sets = await fetchTickerSets().catch(() => undefined)
+  const positions = new Map<string, Accumulator>()
+  for (const t of trades) replayTrade(t, positions)
+  return positionsToAssets(positions, sets)
+}
+
+// Duplicate-detection signature: ticker + date + type + value. Two operations with the same
+// signature are treated as the same operation across imports (B3/Inter re-export the same source
+// data, so a repeated operation has an identical value). Different dates never collide.
+// For international trades the USD value is preferred — it's rate-independent, so a re-import
+// can't slip through just because the PTAX conversion shifted by a few cents.
+export const tradeSignature = (t: {
+  ticker: string
+  date: string
+  type: string
+  total: number
+  totalUsd?: number
+}): string => `${t.ticker.toUpperCase()}|${t.date}|${t.type}|${(t.totalUsd ?? t.total).toFixed(2)}`
+
+// Same idea for dividends/rendimentos. USD dividends (dividendo_ext) carry amount = 0 and use
+// amountUsd as the source of truth, so prefer it; otherwise fall back to the BRL amount.
+export const dividendSignature = (d: {
+  ticker: string
+  paymentDate: string
+  type: string
+  amount: number
+  amountUsd?: number
+  amountBrl?: number
+}): string =>
+  `${d.ticker.toUpperCase()}|${d.paymentDate}|${
+    d.type === 'dividendo_ext' ? 'dividendo' : d.type
+  }|${(d.amountUsd ?? d.amountBrl ?? d.amount).toFixed(2)}`

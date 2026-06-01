@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { ExpenseCategory, FixedExpense, InstallmentExpense } from '@/types'
+import type { Expense, ExpenseCategory, FixedExpense, InstallmentExpense } from '@/types'
 import { formatMonthLabel } from '../utils'
-import { AddExpenseDialog } from './dialog'
+import { AddExpenseDialog, OFXImportDialog } from './dialog'
 
 type Props = {
   selectedMonth: string
@@ -9,6 +9,8 @@ type Props = {
   canGoNext: boolean
   onPrev: () => void
   onNext: () => void
+  existingExpenses: Expense[]
+  onImportOfx: (items: Omit<Expense, 'id'>[]) => Promise<void>
   onAddFixed: (item: Omit<FixedExpense, 'id'>) => Promise<void>
   onAddInstallment: (item: Omit<InstallmentExpense, 'id'>) => Promise<void>
   onAddExpense: (expense: {
@@ -26,6 +28,8 @@ export const PageHeader = ({
   canGoNext,
   onPrev,
   onNext,
+  existingExpenses,
+  onImportOfx,
   onAddFixed,
   onAddInstallment,
   onAddExpense,
@@ -54,6 +58,7 @@ export const PageHeader = ({
       </div>
     </div>
     <div className="flex items-center gap-2">
+      <OFXImportDialog existingExpenses={existingExpenses} onImport={onImportOfx} />
       <AddExpenseDialog
         onAdd={onAddExpense}
         onAddFixed={onAddFixed}

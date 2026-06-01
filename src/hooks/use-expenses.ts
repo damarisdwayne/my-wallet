@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   addExpense as addExpenseService,
   addExpenses as addExpensesService,
+  addOfxExpenses as addOfxExpensesService,
   deleteExpense as deleteExpenseService,
   addFixedExpense as addFixedExpenseService,
   addInstallmentExpense as addInstallmentExpenseService,
@@ -100,6 +101,11 @@ export const useExpenses = () => {
     return addExpensesService(user.uid, items)
   }
 
+  const addOfxExpenses = (items: Omit<Expense, 'id'>[]) => {
+    if (!user) return Promise.resolve()
+    return addOfxExpensesService(user.uid, items)
+  }
+
   const deleteExpense = (id: string) => {
     if (!user) return Promise.resolve()
     return deleteExpenseService(user.uid, id)
@@ -139,6 +145,7 @@ export const useExpenses = () => {
     getRecurringForMonth,
     addExpense,
     addExpenses,
+    addOfxExpenses,
     deleteExpense,
     updateSalary,
     addFixedExpense,

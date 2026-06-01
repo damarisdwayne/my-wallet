@@ -51,7 +51,7 @@ export const TransactionsList = ({ entries, selectedMonth, onDelete }: Props) =>
                 <span className="text-sm font-semibold text-destructive">
                   - {formatCurrency(e.amount)}
                 </span>
-                {e.source === 'manual' && (
+                {(e.source === 'manual' || e.source === 'bank') && (
                   <button
                     onClick={() => onDelete(e.id)}
                     className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"

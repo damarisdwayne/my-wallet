@@ -60,6 +60,8 @@ export const PortfolioPage = () => {
     deleteAsset,
     importFromB3,
     revertImport,
+    cleanupOrphanTrades,
+    orphanTradeCount,
     saveCategory,
     deleteCategory,
     saveDiagram,
@@ -219,6 +221,8 @@ export const PortfolioPage = () => {
             onSyncMissingTrades={syncMissingTrades}
             importRecords={importRecords}
             onRevertImport={revertImport}
+            onCleanupOrphanTrades={cleanupOrphanTrades}
+            orphanTradeCount={orphanTradeCount}
           />
         )}
       </Suspense>

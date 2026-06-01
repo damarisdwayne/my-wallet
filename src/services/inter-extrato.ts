@@ -91,14 +91,19 @@ const parseExtratoText = (text: string): RawEntry[] => {
       pendingText = ''
       return
     }
-    const typeLabel = pendingType === 'div' ? 'Pagamento De Dividendos' : 'Imposto Sobre Dividendos'
-    const idx = combined.indexOf(typeLabel)
-    if (idx === -1) {
+    // Inter labels dividends as "Dividendos"; older exports used "Pagamento De Dividendos".
+    const divLabels = ['Pagamento De Dividendos', 'Dividendos']
+    const label =
+      pendingType === 'div'
+        ? divLabels.find((l) => combined.includes(l))
+        : 'Imposto Sobre Dividendos'
+    const idx = label ? combined.indexOf(label) : -1
+    if (idx === -1 || !label) {
       pendingType = null
       pendingText = ''
       return
     }
-    const afterType = combined.slice(idx + typeLabel.length).trim()
+    const afterType = combined.slice(idx + label.length).trim()
     const fundName = afterType.split(/[+-]?\s*US\$\s*[\d.,]+/)[0].trim()
     const amount = parseUsdAmount(amountMatch[0])
     if (fundName && amount !== 0) {
@@ -120,8 +125,9 @@ const parseExtratoText = (text: string): RawEntry[] => {
       else pendingText += ` ${line}`
       continue
     }
-    const isDiv = line.startsWith('Pagamento De Dividendos')
     const isTax = line.startsWith('Imposto Sobre Dividendos')
+    const isDiv =
+      !isTax && (line.startsWith('Dividendos') || line.startsWith('Pagamento De Dividendos'))
     if (!isDiv && !isTax) continue
     pendingType = isDiv ? 'div' : 'tax'
     pendingText = line

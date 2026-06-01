@@ -23,6 +23,7 @@ export const ExpensesPage = () => {
     salaryByMonth,
     loading,
     addExpense,
+    addOfxExpenses,
     deleteExpense,
     updateSalary,
     getRecurringForMonth,
@@ -124,6 +125,10 @@ export const ExpensesPage = () => {
         canGoNext={canGoNext}
         onPrev={prevMonth}
         onNext={() => canGoNext && setSelectedMonth(availableMonths[currentIndex - 1])}
+        existingExpenses={expenses}
+        onImportOfx={async (items) => {
+          await addOfxExpenses(items)
+        }}
         onAddFixed={async (item) => {
           await addFixedExpense(item)
         }}

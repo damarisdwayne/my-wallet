@@ -42,7 +42,8 @@ export interface Expense {
   amount: number
   category: ExpenseCategory
   date: string
-  source: 'manual'
+  source: 'manual' | 'bank'
+  fitId?: string // OFX FITID — present on bank-imported expenses; used for dedup on re-import
 }
 
 export interface FixedExpense {
@@ -72,7 +73,7 @@ export interface DisplayExpense {
   amount: number
   category: ExpenseCategory
   date: string
-  source: 'manual' | 'fixed' | 'installment'
+  source: 'manual' | 'bank' | 'fixed' | 'installment'
   installmentNumber?: number
   totalInstallments?: number
 }

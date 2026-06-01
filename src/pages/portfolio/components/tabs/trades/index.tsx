@@ -13,6 +13,8 @@ interface Props {
   onSyncMissingTrades: () => Promise<void>
   importRecords: ImportRecord[]
   onRevertImport: (record: ImportRecord) => Promise<void>
+  onCleanupOrphanTrades: () => Promise<void>
+  orphanTradeCount: number
 }
 
 export const TradesTab = ({
@@ -23,6 +25,8 @@ export const TradesTab = ({
   onSyncMissingTrades,
   importRecords,
   onRevertImport,
+  onCleanupOrphanTrades,
+  orphanTradeCount,
 }: Props) => {
   const [section, setSection] = useState<'trades' | 'imports'>('trades')
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
@@ -142,7 +146,12 @@ export const TradesTab = ({
     return (
       <div className="space-y-4">
         {subNav}
-        <ImportsTab records={importRecords} onRevert={onRevertImport} />
+        <ImportsTab
+          records={importRecords}
+          onRevert={onRevertImport}
+          onCleanupOrphans={onCleanupOrphanTrades}
+          orphanCount={orphanTradeCount}
+        />
       </div>
     )
   }

@@ -14,17 +14,47 @@ import type { ImportRecord } from '@/types'
 interface Props {
   records: ImportRecord[]
   onRevert: (record: ImportRecord) => Promise<void>
+  onCleanupOrphans: () => Promise<void>
+  orphanCount: number
 }
 
-export const ImportsTab = ({ records, onRevert }: Props) => {
+export const ImportsTab = ({ records, onRevert, onCleanupOrphans, orphanCount }: Props) => {
   const [confirmRecord, setConfirmRecord] = useState<ImportRecord | null>(null)
   const [reverting, setReverting] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const handleCleanup = async () => {
+    setCleaning(true)
+    try {
+      await onCleanupOrphans()
+    } finally {
+      setCleaning(false)
+    }
+  }
+
+  const orphanBanner = orphanCount > 0 && (
+    <div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
+      <p className="flex-1 text-sm text-warning">
+        {orphanCount} operação(ões) órfã(s) de importações já revertidas continuam no histórico e
+        podem ser marcadas como duplicadas. Remova-as para limpar.
+      </p>
+      <button
+        onClick={handleCleanup}
+        disabled={cleaning}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-warning/20 text-warning hover:bg-warning/30 transition-colors disabled:opacity-40"
+      >
+        <Trash2 size={13} />
+        {cleaning ? 'Limpando...' : 'Limpar órfãs'}
+      </button>
+    </div>
+  )
 
   const toggleExpanded = (id: string) =>
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
 
@@ -45,14 +75,18 @@ export const ImportsTab = ({ records, onRevert }: Props) => {
 
   if (sorted.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-12">
-        Nenhuma importação realizada ainda. Use o botão "Importar B3" na aba Visão Geral.
-      </p>
+      <div className="space-y-4">
+        {orphanBanner}
+        <p className="text-sm text-muted-foreground text-center py-12">
+          Nenhuma importação realizada ainda. Use o botão "Importar B3" na aba Visão Geral.
+        </p>
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      {orphanBanner}
       {sorted.map((record) => (
         <div key={record.id} className="border border-border rounded-lg overflow-hidden">
           <button

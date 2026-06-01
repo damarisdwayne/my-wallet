@@ -44,6 +44,22 @@ export const addExpenses = async (userId: string, items: Omit<Expense, 'id'>[]) 
   return batch.commit()
 }
 
+// Firestore doc ids can't contain '/', so the OFX FITID is sanitised before use.
+const ofxDocId = (fitId: string) => `ofx-${fitId.replace(/[^A-Za-z0-9_-]/g, '_')}`
+
+// Imports OFX expenses with a deterministic id derived from the FITID, so re-importing an
+// overlapping statement overwrites the same document instead of creating duplicates.
+export const addOfxExpenses = async (userId: string, items: Omit<Expense, 'id'>[]) => {
+  const batch = writeBatch(db)
+  const col = collection(db, 'users', userId, 'expenses')
+  items.forEach((item) => {
+    const data = Object.fromEntries(Object.entries(item).filter(([, v]) => v !== undefined))
+    const ref = item.fitId ? doc(col, ofxDocId(item.fitId)) : doc(col)
+    batch.set(ref, data)
+  })
+  return batch.commit()
+}
+
 export const subscribeSalary = (userId: string, cb: (salary: Record<string, number>) => void) =>
   onSnapshot(collection(db, 'users', userId, 'salary'), (snap) => {
     const record: Record<string, number> = {}

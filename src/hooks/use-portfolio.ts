@@ -370,10 +370,29 @@ export const usePortfolio = () => {
           }
         }),
       )
+      // Delete the trades this import created (they carry importId), otherwise they linger and a
+      // re-import flags every operation as a duplicate.
+      const importTrades = trades.filter((t) => t.importId === record.id)
+      await Promise.all(importTrades.map((t) => deleteTradeService(uid, t.id)))
       await deleteImportRecord(uid, record.id)
       toast.success('Importação revertida')
     } catch {
       toast.error('Erro ao reverter importação')
+    }
+  }
+
+  // Removes trades left behind by imports that were reverted before revert started cleaning up
+  // trades. An orphan is an import-sourced trade whose ImportRecord no longer exists.
+  const cleanupOrphanTrades = async () => {
+    if (!uid) return
+    const recordIds = new Set(importRecords.map((r) => r.id))
+    const orphans = trades.filter((t) => t.importId && !recordIds.has(t.importId))
+    if (orphans.length === 0) return
+    try {
+      await Promise.all(orphans.map((t) => deleteTradeService(uid, t.id)))
+      toast.success(`${orphans.length} operação(ões) órfã(s) removida(s)`)
+    } catch {
+      toast.error('Erro ao limpar operações órfãs')
     }
   }
 
@@ -407,6 +426,10 @@ export const usePortfolio = () => {
     priceOverride?: number,
   ) => fundamentalsHook.saveManualSnapshot(ticker, partial, priceOverride, assets)
 
+  const orphanTradeCount = trades.filter(
+    (t) => t.importId && !importRecords.some((r) => r.id === t.importId),
+  ).length
+
   return {
     loading,
     uid,
@@ -422,6 +445,8 @@ export const usePortfolio = () => {
     deleteTrade: (tradeId: string) => (uid ? deleteTradeService(uid, tradeId) : Promise.resolve()),
     importFromB3,
     revertImport,
+    cleanupOrphanTrades,
+    orphanTradeCount,
     editAsset: assetsHook.editAsset,
     deleteAsset: assetsHook.deleteAsset,
     saveCategory,

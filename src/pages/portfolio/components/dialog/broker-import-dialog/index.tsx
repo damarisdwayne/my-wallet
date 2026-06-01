@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import {
   Dialog,
@@ -8,11 +8,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import type { B3ParseResult, B3RawTrade } from '@/services/b3-import'
+import { aggregateTradesToAssets, dividendSignature, tradeSignature } from '@/services/b3-import'
 import { parseInterExtrato, extratoToDividends } from '@/services/inter-extrato'
 import type { ExtratoEntry } from '@/services/inter-extrato'
+import { subscribeToTrades } from '@/services/trades'
+import { subscribeToAllDividends } from '@/services/dividends'
+import { useAuth } from '@/store/auth'
+import type { Dividend, Trade } from '@/types'
 import { BROKERS } from './constants'
 import type { Broker } from './constants'
-import type { InterMode, ParsedRow, Props } from './types'
+import type { DividendItem, ExtratoItem, InterMode, ParsedRow, Props, TradeItem } from './types'
 import {
   BrokerSelector,
   ExtratoPreview,
@@ -22,6 +27,7 @@ import {
 } from './components'
 
 export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImport }: Props) => {
+  const { user } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
   const [broker, setBroker] = useState<Broker | null>(null)
   const [interMode, setInterMode] = useState<InterMode | null>(null)
@@ -36,6 +42,32 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
   const [parseError, setParseError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [parsing, setParsing] = useState(false)
+  // User's explicit include/exclude choices, keyed by item key. Default is derived from
+  // duplicate detection (duplicates start unchecked), so only overrides are stored here.
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({})
+
+  // Already-saved operations, used to flag duplicates in the preview.
+  const [existingTrades, setExistingTrades] = useState<Trade[]>([])
+  const [existingDividends, setExistingDividends] = useState<Dividend[]>([])
+
+  useEffect(() => {
+    if (!open || !user?.uid) return
+    const unsubTrades = subscribeToTrades(user.uid, setExistingTrades)
+    const unsubDividends = subscribeToAllDividends(user.uid, setExistingDividends)
+    return () => {
+      unsubTrades()
+      unsubDividends()
+    }
+  }, [open, user?.uid])
+
+  const existingTradeSigs = useMemo(
+    () => new Set(existingTrades.map(tradeSignature)),
+    [existingTrades],
+  )
+  const existingDividendSigs = useMemo(
+    () => new Set(existingDividends.map(dividendSignature)),
+    [existingDividends],
+  )
 
   const resetFile = () => {
     setRows(null)
@@ -45,6 +77,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     setFilename('')
     setParseError(null)
     setParsing(false)
+    setOverrides({})
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -65,10 +98,10 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
           const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
           return a.quantity > 0 || exists
         })
-        .map((a) => {
+        .map((a): ParsedRow => {
           const exists = existingAssets.some((x) => x.ticker.toUpperCase() === a.ticker)
           const action = a.quantity < 0 ? 'sell' : exists ? 'update' : 'new'
-          return { ...a, action } as ParsedRow
+          return { ...a, action }
         })
       setRows(withAction)
     } catch (err) {
@@ -114,17 +147,57 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     }
   }
 
+  const isExtratoMode = broker?.id === 'inter' && interMode === 'extrato'
+
+  // Pair each parsed operation with its duplicate flag and current selection.
+  const tradeItems: TradeItem[] = pendingTrades.map((trade, i) => {
+    const key = `t${i}`
+    const duplicate = existingTradeSigs.has(tradeSignature(trade))
+    return { trade, key, duplicate, included: overrides[key] ?? !duplicate }
+  })
+  const dividendItems: DividendItem[] = pendingDividends.map((dividend, i) => {
+    const key = `d${i}`
+    const duplicate = existingDividendSigs.has(dividendSignature(dividend))
+    return { dividend, key, duplicate, included: overrides[key] ?? !duplicate }
+  })
+
+  const extratoMapped = (extratoResult?.entries ?? []).filter((e) => e.ticker !== null)
+  const extratoUnmapped = (extratoResult?.entries ?? []).filter((e) => e.ticker === null)
+  const extratoItems: ExtratoItem[] = extratoMapped.map((entry, i) => {
+    const key = `e${i}`
+    const duplicate = existingDividendSigs.has(
+      dividendSignature({
+        ticker: entry.ticker!,
+        paymentDate: entry.date,
+        type: 'dividendo_ext',
+        amount: 0,
+        amountUsd: entry.amountUsd,
+      }),
+    )
+    return { entry, key, duplicate, included: overrides[key] ?? !duplicate }
+  })
+
+  const dupByKey: Record<string, boolean> = {}
+  for (const it of [...tradeItems, ...dividendItems, ...extratoItems])
+    dupByKey[it.key] = it.duplicate
+  const handleToggle = (key: string) =>
+    setOverrides((o) => ({ ...o, [key]: !(o[key] ?? !dupByKey[key]) }))
+
   const handleConfirm = async () => {
     setImporting(true)
     try {
-      if (broker?.id === 'inter' && interMode === 'extrato' && extratoResult) {
-        const dividends = extratoToDividends(extratoResult.entries)
+      if (isExtratoMode && extratoResult) {
+        const keptEntries = extratoItems.filter((it) => it.included).map((it) => it.entry)
+        const dividends = extratoToDividends(keptEntries)
         await onImport([], [], dividends, filename, 'inter')
       } else if (rows) {
+        const keptTrades = tradeItems.filter((it) => it.included).map((it) => it.trade)
+        const keptDividends = dividendItems.filter((it) => it.included).map((it) => it.dividend)
+        const assets = await aggregateTradesToAssets(keptTrades)
         await onImport(
-          rows,
-          pendingTrades,
-          pendingDividends,
+          assets,
+          keptTrades,
+          keptDividends,
           filename,
           (broker?.id ?? 'b3') as 'b3' | 'inter',
         )
@@ -136,7 +209,6 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
     }
   }
 
-  const isExtratoMode = broker?.id === 'inter' && interMode === 'extrato'
   const showModeSelector = broker?.id === 'inter' && interMode === null
   const showFileZone = broker !== null && !showModeSelector && !rows && !extratoResult && !parsing
   const canConfirm = rows !== null || extratoResult !== null
@@ -149,7 +221,7 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
         if (!v) resetAll()
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {(broker || interMode) && (
@@ -205,14 +277,21 @@ export const BrokerImportDialog = ({ open, onOpenChange, existingAssets, onImpor
           </div>
         )}
 
-        {rows && (
-          <TradesPreview rows={rows} pendingDividends={pendingDividends} onReset={resetFile} />
+        {rows && !isExtratoMode && (
+          <TradesPreview
+            tradeItems={tradeItems}
+            dividendItems={dividendItems}
+            onToggle={handleToggle}
+            onReset={resetFile}
+          />
         )}
 
         {extratoResult && (
           <ExtratoPreview
-            entries={extratoResult.entries}
+            items={extratoItems}
+            unmappedFunds={extratoUnmapped}
             usdRate={extratoResult.usdRate}
+            onToggle={handleToggle}
             onReset={resetFile}
           />
         )}

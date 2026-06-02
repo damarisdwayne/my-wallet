@@ -160,6 +160,23 @@ export const FII_TIJOLO: FiiIndicatorDef[] = [
     },
   },
   {
+    type: 'number',
+    key: 'occupancyCost',
+    label: 'Custo de Ocupação',
+    format: directPct,
+    trendType: 'up-bad',
+    inputStep: '0.01',
+    inputLabel: 'Custo de ocupação em % (ex: 11.5)',
+    tooltip: {
+      title: 'Custo de Ocupação (para FIIs de Shopping)',
+      description:
+        'Quanto o lojista gasta com aluguel + condomínio + fundo de promoção em relação às suas vendas. Custo alto demais sufoca o lojista e aumenta o risco de inadimplência e devolução de lojas.',
+      ideal:
+        'Saudável em torno de 8% a 13%. Acima disso pressiona os lojistas — quanto menor, melhor.',
+      calc: '(Aluguel + condomínio + fundo de promoção) ÷ vendas dos lojistas × 100',
+    },
+  },
+  {
     type: 'text',
     key: 'operators',
     label: 'Operadores',

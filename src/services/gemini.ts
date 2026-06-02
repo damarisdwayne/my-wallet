@@ -74,7 +74,7 @@ Identifique o tipo do FII (Tijolo, Papel, Híbrido, FOF etc.) a partir do docume
 
 Indicadores comuns a todos os FIIs (liste se mencionados): DY, P/VP, Alavancagem (Dívida/PL), Concentração de Receita, distribuição por cota, patrimônio líquido, valor de mercado.
 
-Se for FII de Tijolo (shoppings, lajes, galpões, residencial etc.), priorize: Vacância Física, Vacância Financeira, NOI/m², Vendas/m², Qtd. Imóveis, Qualidade dos Imóveis, Qtd. Inquilinos, Diversificação por Região, Tipo de Contratos, Prazo Médio dos Contratos, Operadores, ABL.
+Se for FII de Tijolo (shoppings, lajes, galpões, residencial etc.), priorize: Vacância Física, Vacância Financeira, NOI/m², Vendas/m², Custo de Ocupação (% das vendas dos lojistas — essencial em shoppings), Qtd. Imóveis, Qualidade dos Imóveis, Qtd. Inquilinos, Diversificação por Região, Tipo de Contratos, Prazo Médio dos Contratos, Operadores, ABL.
 
 Se for FII de Papel (CRI, CRA, recebíveis), priorize: Qualidade do Crédito, Tipo de Indexação, Segmentos dos Recebíveis, Concentração de Devedores, Spread Médio, LTV, Inadimplência.
 

@@ -248,6 +248,7 @@ export interface FundamentalSnapshot {
   propertyQuality?: string | null
   noiPerSqm?: number | null
   salesPerSqm?: number | null
+  occupancyCost?: number | null
   operators?: string | null
   regionDiversification?: string | null
   rentalContracts?: string | null

@@ -138,7 +138,9 @@ export const TickerRow = ({
                     >
                       Qtd
                     </p>
-                    <p className="tabular-nums text-foreground">{formatQuantity(t.quantity)}</p>
+                    <p className="tabular-nums text-foreground">
+                      {formatQuantity(t.quantity, asset?.type)}
+                    </p>
                   </div>
                   <div>
                     <p
@@ -206,7 +208,7 @@ export const TickerRow = ({
                     </span>
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums text-xs">
-                    {formatQuantity(t.quantity)}
+                    {formatQuantity(t.quantity, asset?.type)}
                   </td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
                     {t.price > 0 ? formatCurrency(t.price) : '—'}

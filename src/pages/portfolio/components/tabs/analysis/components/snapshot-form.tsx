@@ -1,54 +1,39 @@
-import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components'
-import type { FundamentalSnapshot } from '@/types'
-import {
-  fetchInvestidor10FiiIndicators,
-  fetchInvestidor10StockIndicators,
-} from '@/services/investidor10'
+import type { AiAnalysis, FundamentalSnapshot } from '@/types'
 import type { FiiIndicatorDef } from '../types'
 import { inputClass } from '../utils'
+import { analysisToFormValues } from '../parse-indicators'
 import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constants'
 
 export const ManualSnapshotDialog = ({
   ticker,
-  previousTickers,
   isFii,
   open,
   onOpenChange,
   onSave,
+  lastAnalysis,
 }: {
   ticker: string
-  previousTickers?: string[]
   isFii: boolean
   open: boolean
   onOpenChange: (v: boolean) => void
   onSave: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
+  lastAnalysis: AiAnalysis | null
 }) => {
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [fetching, setFetching] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
+  // Reset the form when the dialog closes so reopening starts clean (avoids a setState-in-effect).
+  const handleOpenChange = (v: boolean) => {
+    if (!v) setForm({})
+    onOpenChange(v)
+  }
 
-    setForm({})
-    setFetching(true)
-    const fetchFn = isFii
-      ? fetchInvestidor10FiiIndicators(ticker, previousTickers ?? [])
-      : fetchInvestidor10StockIndicators(ticker, previousTickers ?? [])
-
-    fetchFn
-      .then((data) => {
-        const filled: Record<string, string> = {}
-        for (const [key, val] of Object.entries(data)) {
-          if (val != null && typeof val === 'number') filled[key] = String(val)
-        }
-        setForm(filled)
-      })
-      .catch(() => null)
-      .finally(() => setFetching(false))
-  }, [open, isFii, ticker])
+  const importFromAnalysis = () => {
+    if (lastAnalysis) setForm(analysisToFormValues(lastAnalysis.text, isFii))
+  }
 
   const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
 
@@ -83,8 +68,7 @@ export const ManualSnapshotDialog = ({
         ;(partial as Record<string, string>)['notes'] = form['notes']
       }
       await onSave(ticker, partial)
-      onOpenChange(false)
-      setForm({})
+      handleOpenChange(false)
     } finally {
       setSaving(false)
     }
@@ -124,19 +108,25 @@ export const ManualSnapshotDialog = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Registrar indicadores — {ticker}
-            {fetching && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
-          </DialogTitle>
+          <DialogTitle>Registrar indicadores — {ticker}</DialogTitle>
         </DialogHeader>
-        <p className="text-xs text-muted-foreground -mt-1">
-          {fetching
-            ? 'Buscando dados automaticamente...'
-            : 'Salva os dados do mês atual. Deixe em branco para não alterar.'}
-        </p>
+        <div className="-mt-1 flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Salva os dados do mês atual. Deixe em branco para não alterar.
+          </p>
+          {lastAnalysis && (
+            <button
+              onClick={importFromAnalysis}
+              className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/30 px-2.5 py-1 text-xs text-primary transition-colors hover:bg-primary/5"
+            >
+              <Sparkles size={12} />
+              Importar da última análise
+            </button>
+          )}
+        </div>
 
         {isFii ? (
           <div className="space-y-3 mt-2">
@@ -177,7 +167,7 @@ export const ManualSnapshotDialog = ({
 
         <DialogFooter className="mt-4">
           <button
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             Cancelar

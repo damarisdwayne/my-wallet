@@ -132,8 +132,8 @@ export default defineConfig(({ mode }) => {
           },
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': 'https://statusinvest.com.br/acoes/proventos',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            Referer: 'https://statusinvest.com.br/acoes/proventos',
+            Accept: 'application/json, text/javascript, */*; q=0.01',
           },
         },
         '/api/tesouro': {

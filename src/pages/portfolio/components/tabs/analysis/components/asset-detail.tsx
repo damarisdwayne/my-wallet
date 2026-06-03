@@ -105,6 +105,8 @@ export const AssetDetailView = ({
                 isFii={isFii}
                 sector={stockInfoData?.sector ?? current?.sector ?? undefined}
                 subsector={stockInfoData?.subsector ?? current?.industry ?? undefined}
+                lastAnalysis={aiHistory[0] ?? null}
+                onSaveSnapshot={onSaveSnapshot}
               />
             </div>
           )}
@@ -244,11 +246,11 @@ export const AssetDetailView = ({
 
       <ManualSnapshotDialog
         ticker={asset.ticker}
-        previousTickers={asset.previousTickers}
         isFii={isFii}
         open={registerOpen}
         onOpenChange={setRegisterOpen}
         onSave={onSaveSnapshot}
+        lastAnalysis={aiHistory[0] ?? null}
       />
       {isExterior && (
         <ExteriorInfoDialog

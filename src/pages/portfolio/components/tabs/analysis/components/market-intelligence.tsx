@@ -23,12 +23,7 @@ export const MarketIntelligence = ({ ticker, type }: { ticker: string; type: 'fi
       const result = await fetchMarketIntelligence(ticker, type)
       setData(result)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(
-        msg.includes('429')
-          ? 'Cota da API excedida. Tente novamente em alguns segundos.'
-          : `Erro: ${msg}`,
-      )
+      setError(err instanceof Error ? err.message : 'Erro ao consultar a IA. Tente novamente.')
     } finally {
       setLoading(false)
     }

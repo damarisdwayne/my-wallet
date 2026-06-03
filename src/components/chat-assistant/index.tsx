@@ -62,11 +62,10 @@ export const ChatAssistant = () => {
     try {
       const reply = await chatWithAssistant(text.trim(), messages, getContext())
       setMessages([...next, { role: 'model', text: reply }])
-    } catch {
-      setMessages([
-        ...next,
-        { role: 'model', text: 'Erro ao conectar com o assistente. Tente novamente.' },
-      ])
+    } catch (err) {
+      const errText =
+        err instanceof Error ? err.message : 'Erro ao conectar com o assistente. Tente novamente.'
+      setMessages([...next, { role: 'model', text: errText }])
     } finally {
       setLoading(false)
       setTimeout(() => {

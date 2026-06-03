@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { BookmarkCheck, BrainCircuit, FileText, Upload } from 'lucide-react'
+import { BookmarkCheck, BrainCircuit, FileText, GitCompareArrows, Upload } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -8,10 +8,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { analyzeDocument } from '@/services/gemini'
+import { analyzeDocument, compareAnalyses } from '@/services/gemini'
 import { extractDocumentType, extractReportDate, saveAiAnalysis } from '@/services/ai-analyses'
 import { useAuth } from '@/store/auth'
-import { AiMarkdown } from './ai-analysis'
+import type { AiAnalysis, FundamentalSnapshot } from '@/types'
+import { fmtDate } from '../utils'
+import { buildSnapshotPartial, parseAnalysisIndicators } from '../parse-indicators'
+import { AiMarkdown } from './ai-markdown'
 import { MarketIntelligence } from './market-intelligence'
 
 const getRecommendedDoc = (
@@ -50,11 +53,15 @@ export const AiSheet = ({
   isFii,
   sector,
   subsector,
+  lastAnalysis,
+  onSaveSnapshot,
 }: {
   ticker: string
   isFii: boolean
   sector?: string
   subsector?: string
+  lastAnalysis: AiAnalysis | null
+  onSaveSnapshot: (ticker: string, partial: Partial<FundamentalSnapshot>) => Promise<void>
 }) => {
   const { user } = useAuth()
   const recommendation = getRecommendedDoc(isFii, sector, subsector)
@@ -63,22 +70,65 @@ export const AiSheet = ({
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiSaving, setAiSaving] = useState(false)
+  const [compareText, setCompareText] = useState<string | null>(null)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareError, setCompareError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [edits, setEdits] = useState<Record<string, string>>({})
+
+  const resetCompare = () => {
+    setCompareText(null)
+    setCompareError(null)
+  }
+
+  const resetEdits = () => {
+    setEditing(false)
+    setEdits({})
+  }
 
   const handleSave = async () => {
     if (!user || !aiAnalysis) return
     setAiSaving(true)
-    const reportDate = extractReportDate(aiAnalysis)
-    const documentType = extractDocumentType(aiAnalysis)
-    await saveAiAnalysis(
-      user.uid,
-      ticker,
-      isFii ? 'fii' : 'stock',
-      aiAnalysis,
-      reportDate,
-      documentType,
-    )
-    setAiSaving(false)
-    setAiAnalysis(null)
+    try {
+      // Persist the structured indicators (AI-extracted + the user's inline corrections) as a
+      // monthly snapshot, then save the narrative analysis itself.
+      const partial = buildSnapshotPartial(parseAnalysisIndicators(aiAnalysis, isFii), edits)
+      if (Object.keys(partial).length > 0) await onSaveSnapshot(ticker, partial)
+
+      const reportDate = extractReportDate(aiAnalysis)
+      const documentType = extractDocumentType(aiAnalysis)
+      await saveAiAnalysis(
+        user.uid,
+        ticker,
+        isFii ? 'fii' : 'stock',
+        aiAnalysis,
+        reportDate,
+        documentType,
+      )
+      setAiAnalysis(null)
+      resetCompare()
+      resetEdits()
+    } finally {
+      setAiSaving(false)
+    }
+  }
+
+  const handleCompare = async () => {
+    if (!aiAnalysis || !lastAnalysis) return
+    setCompareLoading(true)
+    setCompareError(null)
+    setCompareText(null)
+    try {
+      // lastAnalysis is the older (saved) one; the freshly generated analysis is the newer.
+      const result = await compareAnalyses(lastAnalysis.text, aiAnalysis)
+      setCompareText(result.text)
+    } catch (err) {
+      setCompareError(
+        err instanceof Error ? err.message : 'Erro ao comparar análises. Tente novamente.',
+      )
+    } finally {
+      setCompareLoading(false)
+    }
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +141,8 @@ export const AiSheet = ({
     setAiLoading(true)
     setAiError(null)
     setAiAnalysis(null)
+    resetCompare()
+    resetEdits()
     try {
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
@@ -100,8 +152,7 @@ export const AiSheet = ({
       })
       setAiAnalysis(await analyzeDocument(base64, isFii ? 'fii' : 'stock', ticker))
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setAiError(msg.includes('429') ? 'Cota da API excedida. Tente novamente.' : `Erro: ${msg}`)
+      setAiError(err instanceof Error ? err.message : 'Erro ao consultar a IA. Tente novamente.')
     } finally {
       setAiLoading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -117,7 +168,10 @@ export const AiSheet = ({
         </button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col overflow-y-auto p-0">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-2xl flex flex-col overflow-y-auto p-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+      >
         <SheetHeader className="px-6 pt-6">
           <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
             <BrainCircuit size={15} className="text-primary/70" />
@@ -185,8 +239,51 @@ export const AiSheet = ({
 
             {aiAnalysis && !aiLoading && (
               <div className="rounded-lg border border-border p-4 space-y-4">
-                <AiMarkdown text={aiAnalysis} />
-                <div className="pt-2 border-t border-border flex justify-end">
+                <AiMarkdown
+                  text={aiAnalysis}
+                  indicatorEdit={{
+                    editing,
+                    values: edits,
+                    onToggle: () => setEditing((v) => !v),
+                    onChange: (label, value) => setEdits((p) => ({ ...p, [label]: value })),
+                  }}
+                />
+
+                {(compareLoading || compareText || compareError) && (
+                  <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+                    <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                      <GitCompareArrows size={12} className="text-primary/70" />
+                      Comparação com {fmtDate(lastAnalysis?.analyzedAt ?? '')}
+                    </p>
+                    {compareLoading && (
+                      <div className="space-y-2 animate-pulse">
+                        {['w-[70%]', 'w-[85%]', 'w-[60%]'].map((w) => (
+                          <div key={w} className={`h-2 rounded bg-muted ${w}`} />
+                        ))}
+                      </div>
+                    )}
+                    {compareError && !compareLoading && (
+                      <p className="text-xs text-destructive">{compareError}</p>
+                    )}
+                    {compareText && !compareLoading && <AiMarkdown text={compareText} />}
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                  {lastAnalysis && !compareText ? (
+                    <button
+                      onClick={handleCompare}
+                      disabled={compareLoading}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                    >
+                      <GitCompareArrows size={12} />
+                      {compareLoading
+                        ? 'Comparando...'
+                        : `Comparar com a última (${fmtDate(lastAnalysis.analyzedAt)})`}
+                    </button>
+                  ) : (
+                    <span />
+                  )}
                   <button
                     onClick={handleSave}
                     disabled={aiSaving}

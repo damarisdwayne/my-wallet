@@ -5,98 +5,15 @@ import { deleteAiAnalysis } from '@/services/ai-analyses'
 import { compareAnalyses } from '@/services/gemini'
 import { useAuth } from '@/store/auth'
 import type { AiAnalysis } from '@/types'
-import { renderInline, verdictFromText } from '../utils'
-import { VERDICT_MAP } from '../constants'
-
-export const AiMarkdown = ({ text }: { text: string }) => {
-  type Block =
-    | { kind: 'heading'; text: string }
-    | { kind: 'bullets'; items: string[] }
-    | { kind: 'paragraph'; text: string }
-
-  const blocks: Block[] = []
-  const lines = text.split('\n')
-  let bullets: string[] = []
-
-  const flushBullets = () => {
-    if (bullets.length) {
-      blocks.push({ kind: 'bullets', items: [...bullets] })
-      bullets = []
-    }
-  }
-
-  for (const raw of lines) {
-    const line = raw.trim()
-    if (!line) {
-      flushBullets()
-      continue
-    }
-    if (/^\*\*[^*]+\*\*\s*$/.test(line) || /^\*\*\d+\.\s/.test(line)) {
-      flushBullets()
-      blocks.push({ kind: 'heading', text: line.replace(/\*\*/g, '') })
-    } else if (/^[*-]\s+/.test(line)) {
-      bullets.push(line.replace(/^[*-]\s+/, ''))
-    } else {
-      flushBullets()
-      blocks.push({ kind: 'paragraph', text: line })
-    }
-  }
-  flushBullets()
-
-  const lowerText = text.toLowerCase()
-  const verdict = Object.keys(VERDICT_MAP).find((k) => lowerText.includes(k))
-
-  return (
-    <div className="space-y-4">
-      {verdict && (
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${VERDICT_MAP[verdict].className}`}
-          >
-            {VERDICT_MAP[verdict].label}
-          </span>
-        </div>
-      )}
-      {blocks.map((block, i) => {
-        if (block.kind === 'heading') {
-          return (
-            <div key={i} className="pt-1">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 pb-1.5 border-b border-border">
-                {block.text}
-              </p>
-            </div>
-          )
-        }
-        if (block.kind === 'bullets') {
-          return (
-            <ul key={i} className="space-y-1.5 pl-1">
-              {block.items.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2 text-sm text-foreground leading-relaxed"
-                >
-                  <span className="mt-1.5 w-1 h-1 rounded-full bg-primary/60 shrink-0" />
-                  <span>{renderInline(item)}</span>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-        return (
-          <p key={i} className="text-sm text-foreground leading-relaxed">
-            {renderInline(block.text)}
-          </p>
-        )
-      })}
-    </div>
-  )
-}
+import { verdictFromText } from '../utils'
+import { AiMarkdown } from './ai-markdown'
 
 export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
   const [modalItem, setModalItem] = useState<AiAnalysis | null>(null)
   const [compareMode, setCompareMode] = useState(false)
   const [selected, setSelected] = useState<AiAnalysis[]>([])
   const [compareText, setCompareText] = useState<string | null>(null)
+  const [compareError, setCompareError] = useState<string | null>(null)
   const [compareLoading, setCompareLoading] = useState(false)
   const [compareOpen, setCompareOpen] = useState(false)
   const { user } = useAuth()
@@ -128,9 +45,15 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
     )
     setCompareLoading(true)
     setCompareOpen(true)
+    setCompareError(null)
+    setCompareText(null)
     try {
       const result = await compareAnalyses(sorted[0].text, sorted[1].text)
       setCompareText(result.text)
+    } catch (err) {
+      setCompareError(
+        err instanceof Error ? err.message : 'Erro ao comparar análises. Tente novamente.',
+      )
     } finally {
       setCompareLoading(false)
     }
@@ -259,7 +182,7 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
           if (!v) setModalItem(null)
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles size={15} className="text-primary/70" />
@@ -285,7 +208,7 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
           }
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GitCompareArrows size={15} className="text-primary/70" />
@@ -307,6 +230,10 @@ export const AiHistorySection = ({ history }: { history: AiAnalysis[] }) => {
               {['w-[70%]', 'w-[85%]', 'w-[60%]', 'w-[90%]', 'w-[75%]'].map((w) => (
                 <div key={w} className={`h-2 rounded bg-muted ${w}`} />
               ))}
+            </div>
+          ) : compareError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {compareError}
             </div>
           ) : compareText ? (
             <AiMarkdown text={compareText} />

@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { AssetType } from '@/types'
+import type { AssetType, Trade } from '@/types'
 import type { TickerSets } from '@/lib/ir-calc'
 import { fetchTickerSets } from '@/services/quotes'
 
@@ -503,6 +503,72 @@ const replayTrade = (t: B3RawTrade, positions: Map<string, Accumulator>) => {
     })
   } else {
     positions.set(t.ticker, { ...prev, netQty: prev.netQty - t.quantity })
+  }
+}
+
+export interface RecomputedPosition {
+  quantity: number
+  avgPrice: number // BRL
+  avgPriceUsd: number | null // null when no trade carried a USD cost (leave the asset's USD PM as-is)
+}
+
+// Chronological, buys before sells on the same day — keeps the grupamento ratio and the
+// sell-clamping correct, same ordering the import relies on.
+const byChronology = (a: Trade, b: Trade): number => {
+  if (a.date !== b.date) return a.date < b.date ? -1 : 1
+  if (a.type !== b.type) return a.type === 'buy' ? -1 : 1
+  return 0
+}
+
+interface PositionAcc {
+  netQty: number
+  buysQty: number
+  totalBuyCost: number
+  totalBuyCostUsd: number
+  hasUsd: boolean
+}
+
+const EMPTY_ACC: PositionAcc = {
+  netQty: 0,
+  buysQty: 0,
+  totalBuyCost: 0,
+  totalBuyCostUsd: 0,
+  hasUsd: false,
+}
+
+// Folds one trade into the running position, mirroring replayTrade's three branches.
+const foldTrade = (acc: PositionAcc, t: Trade): PositionAcc => {
+  if (t.type === 'buy') {
+    // buys, bonificações and desdobramentos carry their cost in `total` (0 for splits)
+    return {
+      netQty: acc.netQty + t.quantity,
+      buysQty: acc.buysQty + t.quantity,
+      totalBuyCost: acc.totalBuyCost + t.total,
+      totalBuyCostUsd: acc.totalBuyCostUsd + (t.totalUsd ?? 0),
+      hasUsd: acc.hasUsd || t.totalUsd != null,
+    }
+  }
+  if (t.label === 'grupamento') {
+    // Reverse split — shares removed, cost basis unchanged, PM increases
+    const newQty = Math.max(0, acc.netQty - t.quantity)
+    const ratio = acc.buysQty > 0 && acc.netQty > 0 ? newQty / acc.netQty : 1
+    return { ...acc, netQty: newQty, buysQty: acc.buysQty * ratio }
+  }
+  // sell / amortização / vencimento — reduce the net quantity
+  return { ...acc, netQty: acc.netQty - t.quantity }
+}
+
+// Recomputes a single ticker's net position from the app's own Trade[] (not B3 raw rows),
+// mirroring replayTrade's math but also tracking USD cost for dollar-priced assets (crypto,
+// stock_us, etf_us). Returns null when the net position is zero (sold out / closed).
+export const recomputePositionFromTrades = (trades: Trade[]): RecomputedPosition | null => {
+  const acc = [...trades].sort(byChronology).reduce((a, t) => foldTrade(a, t), EMPTY_ACC)
+  const quantity = cleanQty(acc.netQty)
+  if (quantity === 0) return null
+  return {
+    quantity,
+    avgPrice: acc.buysQty > 0 ? acc.totalBuyCost / acc.buysQty : 0,
+    avgPriceUsd: acc.hasUsd && acc.buysQty > 0 ? acc.totalBuyCostUsd / acc.buysQty : null,
   }
 }
 

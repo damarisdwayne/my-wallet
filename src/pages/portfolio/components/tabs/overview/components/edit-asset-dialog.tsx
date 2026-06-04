@@ -30,9 +30,6 @@ export const EditAssetDialog = ({
   const [editCategoryId, setEditCategoryId] = useState('')
   const [editTicker, setEditTicker] = useState('')
   const [editName, setEditName] = useState('')
-  const [editQty, setEditQty] = useState('')
-  const [editAvgPrice, setEditAvgPrice] = useState('')
-  const [editAvgPriceUsd, setEditAvgPriceUsd] = useState('')
   const [splitRatio, setSplitRatio] = useState('')
   const [previousTickers, setPreviousTickers] = useState('')
   const [pauseAporte, setPauseAporte] = useState(false)
@@ -46,9 +43,6 @@ export const EditAssetDialog = ({
       setEditCategoryId(asset.categoryId)
       setEditTicker(asset.ticker)
       setEditName(asset.name)
-      setEditQty(String(asset.quantity))
-      setEditAvgPrice(String(Math.ceil(asset.avgPrice * 100) / 100))
-      setEditAvgPriceUsd(asset.avgPriceUsd ? String(asset.avgPriceUsd) : '')
       setSplitRatio('')
       setPreviousTickers(asset.previousTickers?.join(', ') ?? '')
       setPauseAporte(asset.pauseAporte ?? false)
@@ -63,21 +57,11 @@ export const EditAssetDialog = ({
       const newTicker =
         asset.type === 'fixed_income' ? editTicker.trim() : editTicker.trim().toUpperCase()
       const ratio = splitRatio ? Number(splitRatio) : null
-      const directQty = Number(editQty)
-      const directAvg = Number(editAvgPrice)
-
-      const srcQty =
-        ratio && ratio > 0 && ratio !== 1
-          ? Math.round(asset.quantity * ratio)
-          : directQty > 0
-            ? directQty
-            : asset.quantity
-      const srcAvg =
-        ratio && ratio > 0 && ratio !== 1
-          ? asset.avgPrice / ratio
-          : directAvg > 0
-            ? directAvg
-            : asset.avgPrice
+      // Quantidade/PM não são editados aqui — só mudam por desdobro/grupamento (evento corporativo)
+      // ou pelas movimentações. O resto é metadado.
+      const splitApplied = !!(ratio && ratio > 0 && ratio !== 1)
+      const srcQty = splitApplied ? Math.round(asset.quantity * ratio) : asset.quantity
+      const srcAvg = splitApplied ? asset.avgPrice / ratio : asset.avgPrice
 
       const duplicate = assets.find(
         (a) => a.id !== asset.id && a.ticker.toUpperCase() === newTicker,
@@ -94,17 +78,18 @@ export const EditAssetDialog = ({
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
         const parsedCeiling = Number.parseFloat(ceilingPrice)
-        const parsedUsd = Number.parseFloat(editAvgPriceUsd)
         const updates: Partial<Asset> = {
           categoryId: editCategoryId,
           ticker: newTicker,
           name: editName.trim(),
-          quantity: srcQty,
-          avgPrice: srcAvg,
-          avgPriceUsd: parsedUsd > 0 ? parsedUsd : undefined,
           previousTickers: prev.length > 0 ? prev : undefined,
           pauseAporte: isFixedIncome ? false : pauseAporte,
           ceilingPrice: !isFixedIncome && parsedCeiling > 0 ? parsedCeiling : undefined,
+        }
+        // Só mexe em quantidade/PM quando há desdobro/grupamento.
+        if (splitApplied) {
+          updates.quantity = srcQty
+          updates.avgPrice = srcAvg
         }
         await editAsset(asset.id, updates)
       }
@@ -163,54 +148,24 @@ export const EditAssetDialog = ({
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="edit-qty" className="text-xs text-muted-foreground mb-1 block">
-                Quantidade
-              </label>
-              <input
-                id="edit-qty"
-                type="number"
-                min="0"
-                step="any"
-                className={inputClass}
-                value={editQty}
-                onChange={(e) => setEditQty(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="edit-avg" className="text-xs text-muted-foreground mb-1 block">
-                PM (R$)
-              </label>
-              <input
-                id="edit-avg"
-                type="number"
-                min="0"
-                step="any"
-                className={inputClass}
-                value={editAvgPrice}
-                onChange={(e) => setEditAvgPrice(e.target.value)}
-              />
-            </div>
-          </div>
-          {asset &&
-            (asset.type === 'crypto' || asset.type === 'stock_us' || asset.type === 'etf_us') && (
-              <div>
-                <label htmlFor="edit-avg-usd" className="text-xs text-muted-foreground mb-1 block">
-                  PM ($) — opcional, custo original em dólar
-                </label>
-                <input
-                  id="edit-avg-usd"
-                  type="number"
-                  min="0"
-                  step="any"
-                  placeholder="ex: 84518.68"
-                  className={inputClass}
-                  value={editAvgPriceUsd}
-                  onChange={(e) => setEditAvgPriceUsd(e.target.value)}
-                />
+          {asset && (
+            <div className="rounded-md border border-border bg-muted/20 px-3 py-2.5 space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Quantidade</span>
+                <span className="font-medium text-foreground">{asset.quantity}</span>
               </div>
-            )}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Preço médio</span>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(asset.avgPrice)}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground/80 pt-1">
+                Quantidade e PM vêm das movimentações. Para corrigir, edite na aba{' '}
+                <span className="font-medium">Movimentações</span> (assim o IR fica consistente).
+              </p>
+            </div>
+          )}
           {!isFixedIncome && asset?.type !== 'crypto' && (
             <>
               <div>

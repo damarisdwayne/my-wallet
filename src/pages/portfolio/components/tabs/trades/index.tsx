@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Asset, ImportRecord, PortfolioCategory, Trade } from '@/types'
 import { ALL } from '../../../constants'
@@ -10,7 +12,8 @@ interface Props {
   assets: Asset[]
   categories: PortfolioCategory[]
   onDeleteTrade: (tradeId: string) => Promise<void>
-  onSyncMissingTrades: () => Promise<void>
+  onEditTrade: (tradeId: string, patch: Partial<Trade>) => Promise<void>
+  onRecomputeAll: () => Promise<{ updated: number; closed: number }>
   importRecords: ImportRecord[]
   onRevertImport: (record: ImportRecord) => Promise<void>
   onCleanupOrphanTrades: () => Promise<void>
@@ -22,7 +25,8 @@ export const TradesTab = ({
   assets,
   categories,
   onDeleteTrade,
-  onSyncMissingTrades,
+  onEditTrade,
+  onRecomputeAll,
   importRecords,
   onRevertImport,
   onCleanupOrphanTrades,
@@ -31,14 +35,20 @@ export const TradesTab = ({
   const [section, setSection] = useState<'trades' | 'imports'>('trades')
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
   const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
-  const [syncing, setSyncing] = useState(false)
+  const [recomputing, setRecomputing] = useState(false)
 
-  const handleSync = async () => {
-    setSyncing(true)
+  // Recompute every ticker's position from its movements.
+  const handleRecompute = async () => {
+    setRecomputing(true)
     try {
-      await onSyncMissingTrades()
+      const { updated, closed } = await onRecomputeAll()
+      const closedMsg = closed ? `, ${closed} fechada(s)` : ''
+      if (updated === 0 && closed === 0) toast.info('Nenhuma posição precisou de ajuste')
+      else toast.success(`${updated} posição(ões) recalculada(s)${closedMsg}`)
+    } catch {
+      toast.error('Erro ao recalcular posições')
     } finally {
-      setSyncing(false)
+      setRecomputing(false)
     }
   }
 
@@ -164,13 +174,6 @@ export const TradesTab = ({
           <p className="text-sm text-muted-foreground">
             Nenhuma movimentação registrada. Importe uma nota B3 ou registre em "Visão Geral".
           </p>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="px-4 py-2 rounded-md text-sm bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-          >
-            {syncing ? 'Sincronizando...' : 'Sincronizar ativos existentes'}
-          </button>
         </div>
       </div>
     )
@@ -182,14 +185,23 @@ export const TradesTab = ({
       <FilterBar
         filterCatId={filterCatId}
         activeCategories={activeCategories}
-        syncing={syncing}
         onSetFilterCatId={setFilterCatId}
-        onSync={handleSync}
       />
 
-      <p className="text-xs text-muted-foreground">
-        {grouped.length} ativo(s) · {filteredTrades.length} operação(ões)
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {grouped.length} ativo(s) · {filteredTrades.length} operação(ões)
+        </p>
+        <button
+          onClick={handleRecompute}
+          disabled={recomputing}
+          title="Recalcula quantidade e preço médio de cada ativo a partir das movimentações"
+          className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+        >
+          <RefreshCw size={12} className={recomputing ? 'animate-spin' : ''} />
+          {recomputing ? 'Recalculando...' : 'Recalcular posições'}
+        </button>
+      </div>
 
       {grouped.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
@@ -208,6 +220,7 @@ export const TradesTab = ({
                 isExpanded={expandedTickers.has(ticker)}
                 onToggle={toggle}
                 onDeleteTrade={onDeleteTrade}
+                onEditTrade={onEditTrade}
                 asset={tickerToAsset[ticker.toUpperCase()]}
               />
             </div>

@@ -55,7 +55,8 @@ export const PortfolioPage = () => {
     recordTrade,
     addManualTrade,
     deleteTrade,
-    syncMissingTrades,
+    editTrade,
+    recomputeAllPositions,
     editAsset,
     deleteAsset,
     importFromB3,
@@ -218,7 +219,8 @@ export const PortfolioPage = () => {
             assets={assets}
             categories={categories}
             onDeleteTrade={deleteTrade}
-            onSyncMissingTrades={syncMissingTrades}
+            onEditTrade={editTrade}
+            onRecomputeAll={recomputeAllPositions}
             importRecords={importRecords}
             onRevertImport={revertImport}
             onCleanupOrphanTrades={cleanupOrphanTrades}

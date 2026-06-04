@@ -1,4 +1,13 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+} from 'firebase/firestore'
 import { db } from '@/lib/firestore'
 import type { Trade } from '@/types'
 
@@ -12,6 +21,9 @@ export const addTrade = (userId: string, trade: Omit<Trade, 'id'>) =>
 
 export const addTrades = (userId: string, trades: Omit<Trade, 'id'>[]) =>
   Promise.all(trades.map((t) => addTrade(userId, t)))
+
+export const updateTrade = (userId: string, tradeId: string, data: Partial<Trade>) =>
+  updateDoc(doc(db, 'users', userId, 'trades', tradeId), data)
 
 export const deleteTrade = (userId: string, tradeId: string) =>
   deleteDoc(doc(db, 'users', userId, 'trades', tradeId))

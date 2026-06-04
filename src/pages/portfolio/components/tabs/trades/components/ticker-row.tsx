@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { ChevronDown, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Trash2 } from 'lucide-react'
 import { cn, formatCurrency, formatQuantity } from '@/lib/utils'
 import type { Asset, Trade } from '@/types'
 import { tradeLabel, tradeColor, sourceLabel } from '../utils'
 import { getFiLabel } from '@/lib/fi'
+import { EditTradeDialog } from './edit-trade-dialog'
 
 interface Props {
   ticker: string
@@ -14,8 +15,19 @@ interface Props {
   isExpanded: boolean
   onToggle: (ticker: string) => void
   onDeleteTrade: (tradeId: string) => Promise<void>
+  onEditTrade: (tradeId: string, patch: Partial<Trade>) => Promise<void>
   asset: Asset | undefined
 }
+
+const EditButton = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+    aria-label="Editar movimentação"
+  >
+    <Pencil size={12} />
+  </button>
+)
 
 const DeleteControl = ({
   tradeId,
@@ -64,9 +76,11 @@ export const TickerRow = ({
   isExpanded,
   onToggle,
   onDeleteTrade,
+  onEditTrade,
   asset,
 }: Props) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
 
   const isFixedIncome = asset?.type === 'fixed_income'
   const displayName = isFixedIncome && asset ? getFiLabel(asset) : ticker
@@ -122,13 +136,16 @@ export const TickerRow = ({
                       {tradeLabel(t)}
                     </span>
                   </div>
-                  <DeleteControl
-                    tradeId={t.id}
-                    confirmDeleteId={confirmDeleteId}
-                    onDelete={handleDelete}
-                    onConfirm={setConfirmDeleteId}
-                    onCancel={() => setConfirmDeleteId(null)}
-                  />
+                  <div className="flex items-center gap-0.5">
+                    <EditButton onClick={() => setEditingTrade(t)} />
+                    <DeleteControl
+                      tradeId={t.id}
+                      confirmDeleteId={confirmDeleteId}
+                      onDelete={handleDelete}
+                      onConfirm={setConfirmDeleteId}
+                      onCancel={() => setConfirmDeleteId(null)}
+                    />
+                  </div>
                 </div>
                 <div className="mt-1.5 flex items-start justify-between text-xs">
                   <div>
@@ -220,13 +237,16 @@ export const TickerRow = ({
                     {sourceLabel(t)}
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <DeleteControl
-                      tradeId={t.id}
-                      confirmDeleteId={confirmDeleteId}
-                      onDelete={handleDelete}
-                      onConfirm={setConfirmDeleteId}
-                      onCancel={() => setConfirmDeleteId(null)}
-                    />
+                    <div className="flex items-center justify-end gap-0.5">
+                      <EditButton onClick={() => setEditingTrade(t)} />
+                      <DeleteControl
+                        tradeId={t.id}
+                        confirmDeleteId={confirmDeleteId}
+                        onDelete={handleDelete}
+                        onConfirm={setConfirmDeleteId}
+                        onCancel={() => setConfirmDeleteId(null)}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -234,6 +254,13 @@ export const TickerRow = ({
           </table>
         </div>
       )}
+
+      <EditTradeDialog
+        key={editingTrade?.id}
+        trade={editingTrade}
+        onClose={() => setEditingTrade(null)}
+        onSave={onEditTrade}
+      />
     </>
   )
 }

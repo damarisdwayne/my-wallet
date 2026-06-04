@@ -1,6 +1,5 @@
 export * from './add-asset-dialog'
 export * from './b3-import-dialog'
 export * from './broker-import-dialog'
-export * from './crypto-dialog'
 export * from './fixed-income-dialog'
 export * from './inter-import-dialog'

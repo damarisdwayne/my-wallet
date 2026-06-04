@@ -19,9 +19,15 @@ import {
   subscribeToDiagrams,
 } from '@/services/diagrams'
 import { deleteImportRecord, saveImportRecord, subscribeToImports } from '@/services/imports'
-import { addTrades, deleteTrade as deleteTradeService, subscribeToTrades } from '@/services/trades'
+import {
+  addTrades,
+  deleteTrade as deleteTradeService,
+  subscribeToTrades,
+  updateTrade as updateTradeService,
+} from '@/services/trades'
 import { useAuth } from '@/store/auth'
 import type {
+  Asset,
   AssetAnswers,
   Diagram,
   ImportItem,
@@ -29,13 +35,25 @@ import type {
   PortfolioCategory,
   Trade,
 } from '@/types'
-import type { B3Asset, B3Dividend, B3RawTrade } from '@/services/b3-import'
+import type { B3Asset, B3Dividend, B3RawTrade, RecomputedPosition } from '@/services/b3-import'
+import { recomputePositionFromTrades } from '@/services/b3-import'
 import { addDividends } from '@/services/dividends'
 import { useAssets } from './use-assets'
 import { useFundamentals } from './use-fundamentals'
 import { toast } from 'sonner'
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+
+// Builds the asset update for a recomputed position, or null when nothing changed (so we skip
+// needless Firestore writes). avgPriceUsd is only touched for USD assets with USD trade data.
+const positionUpdate = (asset: Asset, pos: RecomputedPosition): Partial<Asset> | null => {
+  const usdChanged =
+    asset.avgPriceUsd != null && pos.avgPriceUsd != null && asset.avgPriceUsd !== pos.avgPriceUsd
+  if (asset.quantity === pos.quantity && asset.avgPrice === pos.avgPrice && !usdChanged) return null
+  const update: Partial<Asset> = { quantity: pos.quantity, avgPrice: pos.avgPrice }
+  if (asset.avgPriceUsd != null && pos.avgPriceUsd != null) update.avgPriceUsd = pos.avgPriceUsd
+  return update
+}
 
 const makeDefaultCategories = (): PortfolioCategory[] => [
   {
@@ -396,24 +414,90 @@ export const usePortfolio = () => {
     }
   }
 
-  const syncMissingTrades = async () => {
+  // Deleting a trade recomputes the affected ticker's position from the remaining trades, so the
+  // overview stays in sync. If no trade remains for the ticker, the position is left untouched —
+  // it may be a manual-only asset (e.g. crypto added by hand) with no trade behind it.
+  const deleteTrade = async (tradeId: string) => {
     if (!uid) return
-    const today = new Date().toISOString().slice(0, 10)
-    const tickersWithTrades = new Set(trades.map((t) => t.ticker.toUpperCase()))
-    const missing = assets.filter((a) => !tickersWithTrades.has(a.ticker.toUpperCase()))
-    if (missing.length === 0) return
-    await addTrades(
-      uid,
-      missing.map((a) => ({
-        ticker: a.ticker,
-        type: 'buy' as const,
-        quantity: a.quantity,
-        price: a.avgPrice,
-        total: a.avgPrice * a.quantity,
-        date: a.operationDate ?? today,
-        source: 'manual' as const,
-      })),
-    )
+    const trade = trades.find((t) => t.id === tradeId)
+    await deleteTradeService(uid, tradeId)
+    if (!trade) return
+
+    const tk = trade.ticker.toUpperCase()
+    const remaining = trades.filter((t) => t.id !== tradeId && t.ticker.toUpperCase() === tk)
+    if (remaining.length === 0) return
+
+    const asset = assets.find((a) => a.ticker.toUpperCase() === tk)
+    if (!asset) return
+
+    const pos = recomputePositionFromTrades(remaining)
+    if (!pos) {
+      await deleteAssetService(uid, asset.id)
+      toast.success(`${tk}: posição zerada e removida (recalculada das movimentações)`)
+      return
+    }
+    const update = positionUpdate(asset, pos)
+    if (!update) return
+    await updateAssetService(uid, asset.id, update)
+    toast.success(`${tk}: posição recalculada (${asset.quantity} → ${pos.quantity})`)
+  }
+
+  // Editing a trade updates it and recomputes the ticker's position from the post-edit trades —
+  // same single-source-of-truth model as deletion. Ticker isn't editable here (qty/price/date/type).
+  const editTrade = async (tradeId: string, patch: Partial<Trade>) => {
+    if (!uid) return
+    const original = trades.find((t) => t.id === tradeId)
+    if (!original) return
+    await updateTradeService(uid, tradeId, patch)
+
+    const tk = original.ticker.toUpperCase()
+    const updated = trades
+      .map((t) => (t.id === tradeId ? { ...t, ...patch } : t))
+      .filter((t) => t.ticker.toUpperCase() === tk)
+
+    const asset = assets.find((a) => a.ticker.toUpperCase() === tk)
+    if (!asset) return
+
+    const pos = recomputePositionFromTrades(updated)
+    if (!pos) {
+      await deleteAssetService(uid, asset.id)
+      toast.success(`${tk}: posição zerada e removida (recalculada das movimentações)`)
+      return
+    }
+    const update = positionUpdate(asset, pos)
+    if (update) await updateAssetService(uid, asset.id, update)
+    toast.success(`${tk}: movimentação editada e posição recalculada`)
+  }
+
+  // Temporary manual sync: recomputes every ticker that HAS trades, leaving trade-less (manual)
+  // assets untouched. Fixes positions that drifted before delete-time recompute existed.
+  const recomputeAllPositions = async () => {
+    if (!uid) return { updated: 0, closed: 0 }
+    const byTicker = new Map<string, Trade[]>()
+    for (const t of trades) {
+      const k = t.ticker.toUpperCase()
+      const list = byTicker.get(k)
+      if (list) list.push(t)
+      else byTicker.set(k, [t])
+    }
+
+    let updated = 0
+    let closed = 0
+    for (const [tk, tks] of byTicker) {
+      const asset = assets.find((a) => a.ticker.toUpperCase() === tk)
+      if (!asset) continue
+      const pos = recomputePositionFromTrades(tks)
+      if (!pos) {
+        await deleteAssetService(uid, asset.id)
+        closed++
+        continue
+      }
+      const update = positionUpdate(asset, pos)
+      if (!update) continue
+      await updateAssetService(uid, asset.id, update)
+      updated++
+    }
+    return { updated, closed }
   }
 
   // Wrap fundamentals actions that need assets from this hook
@@ -442,7 +526,9 @@ export const usePortfolio = () => {
     addAsset: assetsHook.addAsset,
     recordTrade,
     addManualTrade,
-    deleteTrade: (tradeId: string) => (uid ? deleteTradeService(uid, tradeId) : Promise.resolve()),
+    deleteTrade,
+    editTrade,
+    recomputeAllPositions,
     importFromB3,
     revertImport,
     cleanupOrphanTrades,
@@ -472,6 +558,5 @@ export const usePortfolio = () => {
     saveManualSnapshot,
     deleteSnapshot: fundamentalsHook.deleteSnapshot,
     saveFiiManual: fundamentalsHook.saveFiiManual,
-    syncMissingTrades,
   }
 }

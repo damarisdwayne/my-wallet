@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fetchPtaxRate } from '@/services/quotes'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import { Field } from '../utils'
 import { inputClass } from '../constants'
+
+// Ações/ETFs no exterior são cotados em dólar — o formulário coleta o preço em US$ e converte
+// por PTAX, guardando avgPriceUsd/currentPriceUsd para o PM em dólar e o IR ficarem corretos.
+const isExteriorType = (t: AssetType) => t === 'stock_us' || t === 'etf_us'
 
 export const StandardForm = ({
   type,
@@ -13,6 +19,7 @@ export const StandardForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
+  const isExterior = isExteriorType(type)
   const [form, setForm] = useState({
     ticker: '',
     name: '',
@@ -23,6 +30,25 @@ export const StandardForm = ({
     categoryId: '',
     autoCategory: true,
   })
+  const [usdRate, setUsdRate] = useState('')
+  const [rateLoading, setRateLoading] = useState(false)
+
+  // PTAX atual (referência oficial usada pela Receita) para converter os preços em dólar.
+  useEffect(() => {
+    if (!isExterior) return
+    let cancelled = false
+    setRateLoading(true)
+    fetchPtaxRate()
+      .then((rate) => {
+        if (!cancelled && rate > 0) setUsdRate(rate.toFixed(4))
+      })
+      .finally(() => {
+        if (!cancelled) setRateLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isExterior])
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -32,7 +58,14 @@ export const StandardForm = ({
     ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma encontrada')
     : (categories.find((c) => c.id === form.categoryId)?.name ?? '—')
 
-  const canSave = form.ticker.trim() && form.name.trim()
+  const parsedAvg = Number.parseFloat(form.avgPrice) || 0
+  const parsedCurrent = Number.parseFloat(form.currentPrice) || 0
+  const rate = Number.parseFloat(usdRate) || 0
+  const avgPriceBrl = isExterior ? parsedAvg * rate : parsedAvg
+  const currentPriceBrl = isExterior ? parsedCurrent * rate : parsedCurrent
+  const cur = isExterior ? 'US$' : 'R$'
+
+  const canSave = !!(form.ticker.trim() && form.name.trim() && (!isExterior || rate > 0))
 
   return (
     <div className="space-y-3 mt-2">
@@ -40,7 +73,7 @@ export const StandardForm = ({
         <Field label="Ticker">
           <input
             className={inputClass}
-            placeholder="PETR4"
+            placeholder={isExterior ? 'AAPL' : 'PETR4'}
             value={form.ticker}
             onChange={(e) => set('ticker', e.target.value)}
           />
@@ -48,7 +81,7 @@ export const StandardForm = ({
         <Field label="Nome">
           <input
             className={inputClass}
-            placeholder="Petrobras PN"
+            placeholder={isExterior ? 'Apple Inc.' : 'Petrobras PN'}
             value={form.name}
             onChange={(e) => set('name', e.target.value)}
           />
@@ -60,34 +93,66 @@ export const StandardForm = ({
             className={inputClass}
             type="number"
             min={0}
+            step="any"
             placeholder="100"
             value={form.quantity}
             onChange={(e) => set('quantity', e.target.value)}
           />
         </Field>
-        <Field label="PM (R$)">
+        <Field label={`PM (${cur})`}>
           <input
             className={inputClass}
             type="number"
             min={0}
             step={0.01}
-            placeholder="30.00"
+            placeholder={isExterior ? '180.00' : '30.00'}
             value={form.avgPrice}
             onChange={(e) => set('avgPrice', e.target.value)}
           />
         </Field>
-        <Field label="Atual (R$)" className="col-span-2 sm:col-span-1">
+        <Field label={`Atual (${cur})`} className="col-span-2 sm:col-span-1">
           <input
             className={inputClass}
             type="number"
             min={0}
             step={0.01}
-            placeholder="35.00"
+            placeholder={isExterior ? '195.00' : '35.00'}
             value={form.currentPrice}
             onChange={(e) => set('currentPrice', e.target.value)}
           />
         </Field>
       </div>
+      {isExterior && (
+        <div className="grid grid-cols-2 gap-2">
+          <Field
+            label={
+              <span className="flex items-center gap-1">
+                Cotação USD/BRL
+                {rateLoading && <Loader2 size={11} className="animate-spin" />}
+              </span>
+            }
+          >
+            <input
+              className={inputClass}
+              type="number"
+              min={0}
+              step="any"
+              placeholder="ex: 5.40"
+              value={usdRate}
+              onChange={(e) => setUsdRate(e.target.value)}
+            />
+          </Field>
+          {parsedAvg > 0 && rate > 0 && (
+            <p className="text-xs text-muted-foreground self-end pb-2">
+              PM: R${' '}
+              {avgPriceBrl.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </p>
+          )}
+        </div>
+      )}
       <Field label="% alvo na categoria">
         <input
           className={inputClass}
@@ -145,8 +210,10 @@ export const StandardForm = ({
             type,
             categoryId: resolvedCatId,
             quantity: Number.parseFloat(form.quantity) || 0,
-            avgPrice: Number.parseFloat(form.avgPrice) || 0,
-            currentPrice: Number.parseFloat(form.currentPrice) || 0,
+            avgPrice: avgPriceBrl,
+            avgPriceUsd: isExterior && parsedAvg > 0 ? parsedAvg : undefined,
+            currentPrice: currentPriceBrl,
+            currentPriceUsd: isExterior && parsedCurrent > 0 ? parsedCurrent : undefined,
             targetPercent: Number.parseFloat(form.targetPercent) || 0,
           })
         }

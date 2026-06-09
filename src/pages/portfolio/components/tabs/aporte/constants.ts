@@ -1,4 +1,4 @@
-import type { Asset, AssetAnswers, Diagram, PortfolioCategory } from '@/types'
+import type { Asset, AssetAnswers, Diagram, PortfolioCategory, Trade } from '@/types'
 
 export interface AssetAllocation {
   asset: Asset
@@ -27,4 +27,6 @@ export interface Props {
   totalValue: number
   refreshPrices: () => Promise<void>
   refreshingPrices: boolean
+  registerTrade: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
+  saveFixedIncome: (asset: Partial<Asset>) => Promise<void>
 }

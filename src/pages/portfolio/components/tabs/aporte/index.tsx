@@ -15,6 +15,8 @@ export const AporteTab = ({
   totalValue,
   refreshPrices,
   refreshingPrices,
+  registerTrade,
+  saveFixedIncome,
 }: Props) => {
   const [aporteInput, setAporteInput] = useState('')
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
@@ -128,16 +130,16 @@ export const AporteTab = ({
           {distribution
             .filter((a) => a.catAporte > 0)
             .map((allocation) => {
-              const isFixedIncome = allocation.cat.assetTypes.some(
-                (t) => t === 'fixed_income' || t === 'tesouro',
-              )
-              const isOpen = !isFixedIncome && expanded.has(allocation.cat.id)
+              const isOpen = expanded.has(allocation.cat.id)
               return (
                 <CategoryRow
                   key={allocation.cat.id}
                   allocation={allocation}
                   isOpen={isOpen}
                   onToggle={() => toggle(allocation.cat.id)}
+                  categories={categories}
+                  onRegister={registerTrade}
+                  onSaveFixedIncome={saveFixedIncome}
                 />
               )
             })}

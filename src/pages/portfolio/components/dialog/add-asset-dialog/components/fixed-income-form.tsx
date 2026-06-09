@@ -12,9 +12,11 @@ import {
 export const FixedIncomeForm = ({
   categories,
   onSave,
+  defaultTotalInvested = '',
 }: {
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
+  defaultTotalInvested?: string
 }) => {
   const fiCatId =
     categories.find(
@@ -27,7 +29,7 @@ export const FixedIncomeForm = ({
     rateType: 'pos_cdi' as RateType,
     indexerRate: '100',
     prefixedRate: '',
-    totalInvested: '',
+    totalInvested: defaultTotalInvested,
     quantity: '',
     avgPrice: '',
     maturityYear: '',

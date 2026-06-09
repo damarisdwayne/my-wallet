@@ -329,6 +329,82 @@ export const usePortfolio = () => {
     if (uid) await addTrades(uid, [{ ...trade, source: 'manual' as const }])
   }
 
+  // Cria (ou funde a uma posição existente) um ativo a partir de um Partial<Asset> e registra o
+  // trade — espelha o handleSaveAsset do add-asset-dialog. Usado pelo lançamento de renda fixa
+  // na simulação de aporte (preserva metadados: tipo, taxa, vencimento, instituição).
+  const saveManualAsset = async (partial: Partial<Asset>) => {
+    if (!uid) return
+    const today = new Date().toISOString().slice(0, 10)
+    try {
+      const ticker = (partial.ticker ?? '').toUpperCase()
+      const existing = assets.find(
+        (a) => a.ticker.toUpperCase() === ticker && a.type === partial.type,
+      )
+      if (existing) {
+        const newQty = partial.quantity ?? 0
+        const newAvg = partial.avgPrice ?? 0
+        const totalQty = existing.quantity + newQty
+        const weighted = (a: number, b: number) =>
+          totalQty > 0 ? (a * existing.quantity + b * newQty) / totalQty : a
+        const existingUsd = existing.avgPriceUsd
+        const newUsd = partial.avgPriceUsd
+        const mergedUsd =
+          existingUsd != null && newUsd != null
+            ? weighted(existingUsd, newUsd)
+            : (existingUsd ?? newUsd)
+        await updateAssetService(uid, existing.id, {
+          quantity: totalQty,
+          avgPrice: weighted(existing.avgPrice, newAvg),
+          avgPriceUsd: mergedUsd,
+          currentPrice: partial.currentPrice ?? existing.currentPrice,
+          currentPriceUsd: partial.currentPriceUsd ?? existing.currentPriceUsd,
+        })
+        if (newAvg > 0 && newQty > 0) {
+          await addTrades(uid, [
+            {
+              ticker: existing.ticker,
+              type: 'buy',
+              quantity: newQty,
+              price: newAvg,
+              total: newAvg * newQty,
+              date: partial.operationDate ?? today,
+              source: 'manual',
+            },
+          ])
+        }
+      } else {
+        const asset = {
+          id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          ticker,
+          name: partial.name ?? '',
+          type: partial.type ?? 'other',
+          categoryId: partial.categoryId ?? '',
+          quantity: partial.quantity ?? 0,
+          avgPrice: partial.avgPrice ?? 0,
+          currentPrice: partial.currentPrice ?? 0,
+          targetPercent: partial.targetPercent ?? 0,
+          ...partial,
+        }
+        await addAssetService(uid, asset)
+        if (asset.avgPrice > 0 && asset.quantity > 0) {
+          await addTrades(uid, [
+            {
+              ticker: asset.ticker,
+              type: 'buy',
+              quantity: asset.quantity,
+              price: asset.avgPrice,
+              total: asset.avgPrice * asset.quantity,
+              date: asset.operationDate ?? today,
+              source: 'manual',
+            },
+          ])
+        }
+      }
+    } catch {
+      toast.error('Erro ao registrar ativo')
+    }
+  }
+
   const addManualTrade = async (trade: Omit<Trade, 'id' | 'source'>) => {
     if (!uid) return
     try {
@@ -349,7 +425,14 @@ export const usePortfolio = () => {
               ? (existing.quantity * existing.avgPrice + trade.quantity * trade.price) /
                 (existing.quantity + trade.quantity)
               : existing.avgPrice
-          await updateAssetService(uid, existing.id, { quantity: newQty, avgPrice: newAvg })
+          const update: Partial<Asset> = { quantity: newQty, avgPrice: newAvg }
+          // Funde o PM em dólar quando a compra carrega preço em USD (cripto/exterior).
+          if (trade.type === 'buy' && trade.priceUsd != null && existing.avgPriceUsd != null) {
+            update.avgPriceUsd =
+              (existing.quantity * existing.avgPriceUsd + trade.quantity * trade.priceUsd) /
+              (existing.quantity + trade.quantity)
+          }
+          await updateAssetService(uid, existing.id, update)
         }
       } else if (trade.type === 'buy') {
         const newAsset = {
@@ -526,6 +609,7 @@ export const usePortfolio = () => {
     addAsset: assetsHook.addAsset,
     recordTrade,
     addManualTrade,
+    saveManualAsset,
     deleteTrade,
     editTrade,
     recomputeAllPositions,

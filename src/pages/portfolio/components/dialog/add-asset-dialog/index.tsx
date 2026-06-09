@@ -57,6 +57,12 @@ export const AddAssetDialog = ({
     }
   }
 
+  // Campos em dólar do trade (cripto/exterior) — usados pelo IR para o custo em USD.
+  const usdTradeFields = (priceBrl: number, qty: number, priceUsd?: number) =>
+    priceUsd != null && priceUsd > 0
+      ? { priceUsd, totalUsd: priceUsd * qty, usdRateAtTrade: priceBrl / priceUsd }
+      : {}
+
   const handleSaveAsset = async (partial: Partial<Asset>) => {
     setSaving(true)
     try {
@@ -95,6 +101,7 @@ export const AddAssetDialog = ({
             price: newAvg,
             total: newAvg * newQty,
             date: partial.operationDate ?? new Date().toISOString().slice(0, 10),
+            ...usdTradeFields(newAvg, newQty, partial.avgPriceUsd),
           })
         }
       } else {
@@ -119,6 +126,7 @@ export const AddAssetDialog = ({
             price: asset.avgPrice,
             total: asset.avgPrice * asset.quantity,
             date: asset.operationDate ?? new Date().toISOString().slice(0, 10),
+            ...usdTradeFields(asset.avgPrice, asset.quantity, asset.avgPriceUsd),
           })
         }
       }

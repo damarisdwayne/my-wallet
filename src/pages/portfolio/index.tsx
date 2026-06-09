@@ -54,6 +54,7 @@ export const PortfolioPage = () => {
     addAsset,
     recordTrade,
     addManualTrade,
+    saveManualAsset,
     deleteTrade,
     editTrade,
     recomputeAllPositions,
@@ -193,6 +194,8 @@ export const PortfolioPage = () => {
             totalValue={totalValue}
             refreshPrices={refreshPricesIfStale}
             refreshingPrices={refreshingPrices}
+            registerTrade={addManualTrade}
+            saveFixedIncome={saveManualAsset}
           />
         )}
         {activeTab === 4 && <DividendsTab assets={assets} />}

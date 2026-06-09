@@ -1,3 +1,5 @@
+import { fetchUsdBrlRate } from './quotes'
+
 export interface MarketData {
   usdBrl: number
   usdBrlChange: number
@@ -24,6 +26,8 @@ function loadCache(): MarketData | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as MarketData
     if (Date.now() - parsed.updatedAt > TTL_MS) return null
+    // Cache salvo com dólar zerado (API fora do ar) — força refetch.
+    if (!(parsed.usdBrl > 0)) return null
     return parsed
   } catch {
     return null
@@ -70,8 +74,13 @@ export async function fetchMarketData(): Promise<MarketData> {
     safeJson<BcbEntry[]>(`${BCB}.189/dados/ultimos/12?formato=json`), // IGP-M mensal
   ])
 
-  const usdBrl = awesome ? parseFloat(awesome.USDBRL?.bid ?? '0') : 0
-  const usdBrlChange = awesome ? parseFloat(awesome.USDBRL?.pctChange ?? '0') : 0
+  let usdBrl = awesome ? parseFloat(awesome.USDBRL?.bid ?? '0') : 0
+  let usdBrlChange = awesome ? parseFloat(awesome.USDBRL?.pctChange ?? '0') : 0
+  // awesomeapi às vezes cai (522) — busca o dólar pela cadeia de fallback.
+  if (!(usdBrl > 0)) {
+    usdBrl = await fetchUsdBrlRate()
+    usdBrlChange = 0
+  }
 
   const btcBrl = cg?.bitcoin?.brl ?? 0
   const btcBrlChange = cg?.bitcoin?.brl_24h_change ?? 0

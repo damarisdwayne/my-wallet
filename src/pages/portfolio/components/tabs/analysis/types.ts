@@ -26,6 +26,9 @@ export interface Props {
 
 export type TrendType = 'up-good' | 'up-bad' | 'neutral'
 
+// Absolute quality of an indicator value, independent of its trend over time.
+export type Rating = 'good' | 'ok' | 'bad'
+
 export interface IndicatorTooltip {
   title: string
   description: string
@@ -38,6 +41,8 @@ export interface IndicatorDef {
   label: string
   format: (v: number) => string
   trendType: TrendType
+  // Classifies the absolute value as good/ok/bad (e.g. payout > 90% is bad).
+  rating?: (v: number) => Rating
   inputStep?: string
   inputLabel?: string
   tooltip?: IndicatorTooltip
@@ -57,6 +62,7 @@ export interface FiiNumericDef {
   label: string
   format: (v: number) => string
   trendType: TrendType
+  rating?: (v: number) => Rating
   inputStep?: string
   inputLabel?: string
   tooltip?: IndicatorTooltip

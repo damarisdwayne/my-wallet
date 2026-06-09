@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Clock, HelpCircle, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import type { FundamentalSnapshot } from '@/types'
-import type { IndicatorDef } from '../types'
-import { fmtDate } from '../utils'
+import type { IndicatorDef, Rating } from '../types'
+import { fmtDate, ratingTextColor, ratingLabel } from '../utils'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components'
+
+// Colored dot + label summarizing the absolute quality of the current value.
+const RatingLine = ({ rating }: { rating: Rating }) => {
+  const dot =
+    rating === 'good' ? 'bg-success' : rating === 'ok' ? 'bg-yellow-600' : 'bg-destructive'
+  return (
+    <p className="flex items-center gap-1.5 text-xs">
+      <span className={`size-1.5 rounded-full ${dot}`} />
+      <span className="font-medium text-foreground">Avaliação:</span>
+      <span className={ratingTextColor[rating]}>{ratingLabel[rating]}</span>
+    </p>
+  )
+}
 
 export const TrendIcon = ({
   isIncrease,
@@ -130,6 +143,7 @@ export const IndicatorCard = ({
   const val = withValue.length > 0 ? (withValue[0][def.key] as number) : null
   if (val == null && withValue.length === 0) return null
 
+  const rating = val != null && def.rating ? def.rating(val) : null
   const prevVal = withValue.length >= 2 ? (withValue[1][def.key] as number | null) : null
   const delta = val != null && prevVal != null ? val - prevVal : null
   const isIncrease = delta !== null ? delta > 0 : null
@@ -168,6 +182,7 @@ export const IndicatorCard = ({
                       {def.tooltip.ideal}
                     </p>
                   )}
+                  {rating && <RatingLine rating={rating} />}
                   {def.tooltip.calc && (
                     <p className="text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">Cálculo:</span>{' '}
@@ -181,7 +196,11 @@ export const IndicatorCard = ({
           <div className="flex items-baseline justify-between gap-1.5">
             <div className="flex items-baseline gap-1.5 flex-wrap">
               {val !== null ? (
-                <span className="text-sm font-bold text-foreground">{def.format(val)}</span>
+                <span
+                  className={`text-sm font-bold ${rating ? ratingTextColor[rating] : 'text-foreground'}`}
+                >
+                  {def.format(val)}
+                </span>
               ) : (
                 <span className="text-sm text-muted-foreground/40">—</span>
               )}

@@ -1,5 +1,9 @@
-import type { IndicatorDef } from './types'
-import { directPct, ratio, num1 } from './utils'
+import type { IndicatorDef, Rating } from './types'
+import { directPct, ratio, num1, higherBetter, lowerBetter, positiveBetter } from './utils'
+
+// Payout: 30–70% saudável (bom), 70–90% ou abaixo de 20% aceitável (médio),
+// acima de 90% insustentável — distribui mais do que gera (ruim).
+const payoutRating = (v: number): Rating => (v > 90 ? 'bad' : v >= 70 || v < 20 ? 'ok' : 'good')
 
 export const STOCK_INDICATORS: IndicatorDef[] = [
   {
@@ -7,6 +11,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'P/L',
     format: num1,
     trendType: 'neutral',
+    rating: lowerBetter(15, 25),
     inputStep: '0.1',
     inputLabel: 'P/L (ex: 12.5)',
     tooltip: {
@@ -22,6 +27,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'P/VP',
     format: ratio,
     trendType: 'neutral',
+    rating: lowerBetter(1.5, 2.5),
     inputStep: '0.01',
     inputLabel: 'P/VP (ex: 1.40)',
     tooltip: {
@@ -38,6 +44,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'DY',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(5, 3),
     inputStep: '0.1',
     inputLabel: 'DY em % (ex: 6)',
     tooltip: {
@@ -53,6 +60,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Payout',
     format: directPct,
     trendType: 'neutral',
+    rating: payoutRating,
     inputStep: '0.1',
     inputLabel: 'Payout em % (ex: 40)',
     tooltip: {
@@ -68,6 +76,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Mg. Líquida',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(10, 5),
     inputStep: '0.1',
     inputLabel: 'Margem Líquida em % (ex: 18)',
     tooltip: {
@@ -84,6 +93,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Mg. Bruta',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(30, 15),
     inputStep: '0.1',
     inputLabel: 'Margem Bruta em % (ex: 45)',
     tooltip: {
@@ -99,6 +109,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Mg. EBITDA',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(20, 10),
     inputStep: '0.1',
     inputLabel: 'Margem EBITDA em % (ex: 30)',
     tooltip: {
@@ -114,6 +125,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'EV/EBITDA',
     format: ratio,
     trendType: 'neutral',
+    rating: lowerBetter(8, 15),
     inputStep: '0.01',
     inputLabel: 'EV/EBITDA (ex: 8.5)',
     tooltip: {
@@ -129,6 +141,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'ROE',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(15, 8),
     inputStep: '0.1',
     inputLabel: 'ROE em % (ex: 25)',
     tooltip: {
@@ -144,6 +157,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'ROIC',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(15, 8),
     inputStep: '0.1',
     inputLabel: 'ROIC em % (ex: 15)',
     tooltip: {
@@ -160,6 +174,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'ROA',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(10, 5),
     inputStep: '0.1',
     inputLabel: 'ROA em % (ex: 10)',
     tooltip: {
@@ -176,6 +191,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Dívida/PL',
     format: ratio,
     trendType: 'up-bad',
+    rating: lowerBetter(1, 3),
     inputStep: '0.01',
     inputLabel: 'Dívida/PL (ex: 1.60)',
     tooltip: {
@@ -191,6 +207,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Dív. Líq./EBITDA',
     format: ratio,
     trendType: 'up-bad',
+    rating: lowerBetter(2, 4),
     inputStep: '0.01',
     inputLabel: 'Dívida Líquida/EBITDA (ex: 2.5)',
     tooltip: {
@@ -206,6 +223,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Cresc. Receita',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(10, 0),
     inputStep: '0.1',
     inputLabel: 'Crescimento de Receita em % (ex: 8)',
     tooltip: {
@@ -221,6 +239,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Cresc. Lucro',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(10, 0),
     inputStep: '0.1',
     inputLabel: 'Crescimento de Lucro em % (ex: 12)',
     tooltip: {
@@ -237,6 +256,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'FCF',
     format: (v) => `R$ ${v.toFixed(0)} M`,
     trendType: 'up-good',
+    rating: positiveBetter,
     inputStep: '1',
     inputLabel: 'FCF em R$ milhões (ex: 2300)',
     tooltip: {
@@ -252,6 +272,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'FCF Yield',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(8, 5),
     inputStep: '0.1',
     inputLabel: 'FCF Yield em % (ex: 8)',
     tooltip: {
@@ -267,6 +288,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'Conv. de Caixa',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(80, 50),
     inputStep: '0.1',
     inputLabel: 'Conversão de Caixa em % (ex: 80)',
     tooltip: {
@@ -283,6 +305,7 @@ export const STOCK_INDICATORS: IndicatorDef[] = [
     label: 'PEG Ratio',
     format: ratio,
     trendType: 'neutral',
+    rating: lowerBetter(1, 2),
     inputStep: '0.01',
     inputLabel: 'PEG Ratio (ex: 1.5)',
     tooltip: {

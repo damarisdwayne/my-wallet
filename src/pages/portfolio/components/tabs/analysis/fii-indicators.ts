@@ -1,5 +1,5 @@
 import type { FiiIndicatorDef } from './types'
-import { directPct, ratio } from './utils'
+import { directPct, ratio, higherBetter, lowerBetter } from './utils'
 
 export const FII_COMMON: FiiIndicatorDef[] = [
   {
@@ -8,6 +8,7 @@ export const FII_COMMON: FiiIndicatorDef[] = [
     label: 'DY',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(8, 6),
     inputStep: '0.01',
     inputLabel: 'DY em % (ex: 8.5)',
     tooltip: {
@@ -24,6 +25,7 @@ export const FII_COMMON: FiiIndicatorDef[] = [
     label: 'P/VP',
     format: ratio,
     trendType: 'neutral',
+    rating: lowerBetter(1.05, 1.2),
     inputStep: '0.01',
     inputLabel: 'P/VP (ex: 0.95)',
     tooltip: {
@@ -40,6 +42,7 @@ export const FII_COMMON: FiiIndicatorDef[] = [
     label: 'Alavancagem (Dívida/PL)',
     format: ratio,
     trendType: 'up-bad',
+    rating: lowerBetter(0.3, 0.5),
     inputStep: '0.01',
     inputLabel: 'Alavancagem (Dívida/PL) (ex: 0.30)',
     tooltip: {
@@ -71,6 +74,7 @@ export const FII_TIJOLO: FiiIndicatorDef[] = [
     label: 'Vacância Física',
     format: directPct,
     trendType: 'up-bad',
+    rating: lowerBetter(5, 10),
     inputStep: '0.01',
     inputLabel: 'Vacância Física em % (ex: 8)',
     tooltip: {
@@ -87,6 +91,7 @@ export const FII_TIJOLO: FiiIndicatorDef[] = [
     label: 'Vacância Financeira',
     format: directPct,
     trendType: 'up-bad',
+    rating: lowerBetter(5, 10),
     inputStep: '0.01',
     inputLabel: 'Vacância Financeira em % (ex: 6)',
     tooltip: {
@@ -165,6 +170,7 @@ export const FII_TIJOLO: FiiIndicatorDef[] = [
     label: 'Custo de Ocupação',
     format: directPct,
     trendType: 'up-bad',
+    rating: lowerBetter(13, 18),
     inputStep: '0.01',
     inputLabel: 'Custo de ocupação em % (ex: 11.5)',
     tooltip: {
@@ -298,6 +304,7 @@ export const FII_PAPEL: FiiIndicatorDef[] = [
     label: 'Spread Médio',
     format: directPct,
     trendType: 'up-good',
+    rating: higherBetter(7, 5),
     inputStep: '0.01',
     inputLabel: 'Spread em % (ex: 8)',
     tooltip: {
@@ -314,6 +321,7 @@ export const FII_PAPEL: FiiIndicatorDef[] = [
     label: 'LTV',
     format: directPct,
     trendType: 'up-bad',
+    rating: lowerBetter(65, 75),
     inputStep: '0.01',
     inputLabel: 'LTV em % (ex: 60)',
     tooltip: {
@@ -330,6 +338,7 @@ export const FII_PAPEL: FiiIndicatorDef[] = [
     label: 'Inadimplência',
     format: directPct,
     trendType: 'up-bad',
+    rating: lowerBetter(2, 5),
     inputStep: '0.01',
     inputLabel: 'Inadimplência em % (ex: 2)',
     tooltip: {

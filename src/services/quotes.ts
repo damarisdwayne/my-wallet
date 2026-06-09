@@ -85,7 +85,9 @@ export const fetchUsdBrlRateForDate = async (date: string): Promise<number> => {
       }
     }
   } catch {}
-  return fetchUsdBrlRate()
+  // Fallback: PTAX do BCB para a mesma data; por fim, cotação atual.
+  const ptax = await fetchPtaxFromBcb(date)
+  return ptax ?? fetchUsdBrlRate()
 }
 
 // PTAX venda (BCB série 10813) — referência oficial usada pela Receita Federal.
@@ -136,6 +138,33 @@ export const fetchPtaxRate = async (): Promise<number> => {
   return fetchUsdBrlRate()
 }
 
+// Fonte primária: awesomeapi. Às vezes retorna 522 (Cloudflare) — daí os fallbacks.
+const fetchUsdFromAwesome = async (): Promise<number | null> => {
+  try {
+    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
+    if (!res.ok) return null
+    const data = (await res.json()) as { USDBRL?: { bid?: string } }
+    const rate = Number.parseFloat(data.USDBRL?.bid ?? '0')
+    return rate > 0 ? rate : null
+  } catch {
+    return null
+  }
+}
+
+// Fallback gratuito sem chave (open.er-api.com — atualizado diariamente).
+const fetchUsdFromErApi = async (): Promise<number | null> => {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD')
+    if (!res.ok) return null
+    const data = (await res.json()) as { rates?: { BRL?: number } }
+    const rate = data.rates?.BRL ?? 0
+    return rate > 0 ? rate : null
+  } catch {
+    return null
+  }
+}
+
+// Cotação USD/BRL atual com cache. Tenta awesomeapi → open.er-api → PTAX do BCB.
 export const fetchUsdBrlRate = async (): Promise<number> => {
   try {
     const cached = localStorage.getItem(USD_RATE_KEY)
@@ -144,18 +173,18 @@ export const fetchUsdBrlRate = async (): Promise<number> => {
       if (Date.now() - updatedAt < USD_TTL_MS) return rate
     }
   } catch {}
-  try {
-    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
-    if (!res.ok) return 1
-    const data = (await res.json()) as { USDBRL: { bid: string } }
-    const rate = Number.parseFloat(data.USDBRL.bid)
-    if (rate > 0) {
-      try {
-        localStorage.setItem(USD_RATE_KEY, JSON.stringify({ rate, updatedAt: Date.now() }))
-      } catch {}
-      return rate
-    }
-  } catch {}
+
+  const rate =
+    (await fetchUsdFromAwesome()) ??
+    (await fetchUsdFromErApi()) ??
+    (await fetchPtaxFromBcb(new Date().toISOString().slice(0, 10)))
+
+  if (rate && rate > 0) {
+    try {
+      localStorage.setItem(USD_RATE_KEY, JSON.stringify({ rate, updatedAt: Date.now() }))
+    } catch {}
+    return rate
+  }
   return 1
 }
 

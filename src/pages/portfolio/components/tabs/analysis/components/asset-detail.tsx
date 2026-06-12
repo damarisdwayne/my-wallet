@@ -102,6 +102,7 @@ export const AssetDetailView = ({
             <div className="ml-auto shrink-0">
               <AiSheet
                 ticker={asset.ticker}
+                previousTickers={asset.previousTickers}
                 isFii={isFii}
                 sector={stockInfoData?.sector ?? current?.sector ?? undefined}
                 subsector={stockInfoData?.subsector ?? current?.industry ?? undefined}
@@ -246,6 +247,7 @@ export const AssetDetailView = ({
 
       <ManualSnapshotDialog
         ticker={asset.ticker}
+        previousTickers={asset.previousTickers}
         isFii={isFii}
         open={registerOpen}
         onOpenChange={setRegisterOpen}

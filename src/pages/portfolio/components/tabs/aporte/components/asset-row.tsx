@@ -25,9 +25,12 @@ export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
   const [open, setOpen] = useState(false)
   const [done, setDone] = useState(false)
 
-  // Cripto compra frações (ex: 0,0577 BTC) — não arredonda; demais ativos são unidades inteiras.
-  const isCrypto = asset.type === 'crypto'
-  const displayQty = isCrypto ? quantityToBuy : Math.floor(quantityToBuy)
+  // Cripto e ativos no exterior (stock_us/etf_us) permitem fração (ex: 0,2 ações, 0,0577 BTC) —
+  // não arredonda; ativos da B3 são unidades inteiras.
+  const allowsFraction =
+    asset.type === 'crypto' || asset.type === 'stock_us' || asset.type === 'etf_us'
+  const fractionDigits = asset.type === 'crypto' ? 8 : 4
+  const displayQty = allowsFraction ? quantityToBuy : Math.floor(quantityToBuy)
 
   const handleConfirm = async (trade: Omit<Trade, 'id' | 'source'>) => {
     await onRegister(trade)
@@ -49,11 +52,8 @@ export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
         <p className="font-medium text-foreground">{fmt(assetAporte)}</p>
         {asset.currentPrice > 0 && (
           <p className="text-xs text-muted-foreground">
-            ~
-            {isCrypto
-              ? displayQty.toLocaleString('pt-BR', { maximumFractionDigits: 8 })
-              : displayQty}{' '}
-            unid. ({fmt(displayQty * asset.currentPrice)})
+            ~{displayQty.toLocaleString('pt-BR', { maximumFractionDigits: fractionDigits })} unid. (
+            {fmt(displayQty * asset.currentPrice)})
           </p>
         )}
       </div>

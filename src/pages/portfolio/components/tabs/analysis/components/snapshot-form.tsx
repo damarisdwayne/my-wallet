@@ -1,7 +1,11 @@
 import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components'
 import type { AiAnalysis, FundamentalSnapshot } from '@/types'
+import {
+  fetchInvestidor10FiiIndicators,
+  fetchInvestidor10StockIndicators,
+} from '@/services/investidor10'
 import type { FiiIndicatorDef } from '../types'
 import { inputClass } from '../utils'
 import { analysisToFormValues } from '../parse-indicators'
@@ -9,6 +13,7 @@ import { FII_COMMON, FII_PAPEL, FII_TIJOLO, STOCK_INDICATORS } from '../constant
 
 export const ManualSnapshotDialog = ({
   ticker,
+  previousTickers,
   isFii,
   open,
   onOpenChange,
@@ -16,6 +21,7 @@ export const ManualSnapshotDialog = ({
   lastAnalysis,
 }: {
   ticker: string
+  previousTickers?: string[]
   isFii: boolean
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -24,6 +30,7 @@ export const ManualSnapshotDialog = ({
 }) => {
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [filling, setFilling] = useState(false)
 
   // Reset the form when the dialog closes so reopening starts clean (avoids a setState-in-effect).
   const handleOpenChange = (v: boolean) => {
@@ -31,8 +38,29 @@ export const ManualSnapshotDialog = ({
     onOpenChange(v)
   }
 
-  const importFromAnalysis = () => {
-    if (lastAnalysis) setForm(analysisToFormValues(lastAnalysis.text, isFii))
+  // Preenche os indicadores: busca o conjunto do Investidor 10 (dados de mercado) e sobrepõe os
+  // valores da última análise (que vêm do relatório). Funciona para qualquer análise, nova ou antiga.
+  const fillIndicators = async () => {
+    setFilling(true)
+    try {
+      const fromAnalysis = lastAnalysis ? analysisToFormValues(lastAnalysis.text, isFii) : {}
+      const i10 = await (isFii
+        ? fetchInvestidor10FiiIndicators(ticker, previousTickers ?? [])
+        : fetchInvestidor10StockIndicators(ticker, previousTickers ?? []))
+      const fromI10: Record<string, string> = {}
+      for (const [k, v] of Object.entries(i10)) {
+        if (typeof v === 'number' && Number.isFinite(v)) fromI10[k] = String(Number(v.toFixed(2)))
+      }
+      // Prioridade: o que o usuário já digitou > análise (relatório) > Investidor 10. Nunca apaga
+      // um campo já preenchido — só completa os vazios.
+      setForm((prev) => {
+        const merged: Record<string, string> = { ...fromI10, ...fromAnalysis }
+        for (const [k, v] of Object.entries(prev)) if (v !== '') merged[k] = v
+        return merged
+      })
+    } finally {
+      setFilling(false)
+    }
   }
 
   const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
@@ -109,7 +137,7 @@ export const ManualSnapshotDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <DialogHeader>
           <DialogTitle>Registrar indicadores — {ticker}</DialogTitle>
         </DialogHeader>
@@ -117,15 +145,14 @@ export const ManualSnapshotDialog = ({
           <p className="text-xs text-muted-foreground">
             Salva os dados do mês atual. Deixe em branco para não alterar.
           </p>
-          {lastAnalysis && (
-            <button
-              onClick={importFromAnalysis}
-              className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/30 px-2.5 py-1 text-xs text-primary transition-colors hover:bg-primary/5"
-            >
-              <Sparkles size={12} />
-              Importar da última análise
-            </button>
-          )}
+          <button
+            onClick={fillIndicators}
+            disabled={filling}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/30 px-2.5 py-1 text-xs text-primary transition-colors hover:bg-primary/5 disabled:opacity-50"
+          >
+            {filling ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {filling ? 'Buscando...' : 'Preencher automaticamente'}
+          </button>
         </div>
 
         {isFii ? (

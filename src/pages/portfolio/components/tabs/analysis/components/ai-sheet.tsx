@@ -10,10 +10,18 @@ import {
 } from '@/components/ui/sheet'
 import { analyzeDocument, compareAnalyses } from '@/services/gemini'
 import { extractDocumentType, extractReportDate, saveAiAnalysis } from '@/services/ai-analyses'
+import {
+  fetchInvestidor10FiiIndicators,
+  fetchInvestidor10StockIndicators,
+} from '@/services/investidor10'
 import { useAuth } from '@/store/auth'
 import type { AiAnalysis, FundamentalSnapshot } from '@/types'
 import { fmtDate } from '../utils'
-import { buildSnapshotPartial, parseAnalysisIndicators } from '../parse-indicators'
+import {
+  buildSnapshotPartial,
+  mergeI10IntoAnalysis,
+  parseAnalysisIndicators,
+} from '../parse-indicators'
 import { AiMarkdown } from './ai-markdown'
 import { MarketIntelligence } from './market-intelligence'
 
@@ -50,6 +58,7 @@ const getRecommendedDoc = (
 
 export const AiSheet = ({
   ticker,
+  previousTickers,
   isFii,
   sector,
   subsector,
@@ -57,6 +66,7 @@ export const AiSheet = ({
   onSaveSnapshot,
 }: {
   ticker: string
+  previousTickers?: string[]
   isFii: boolean
   sector?: string
   subsector?: string
@@ -150,7 +160,13 @@ export const AiSheet = ({
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
-      setAiAnalysis(await analyzeDocument(base64, isFii ? 'fii' : 'stock', ticker))
+      // Gera a análise do documento e complementa com os indicadores do Investidor 10 os campos
+      // que a IA marcou como "não informado" (múltiplos de mercado: P/L, P/VP, Payout, DY...).
+      const analysis = await analyzeDocument(base64, isFii ? 'fii' : 'stock', ticker)
+      const i10 = await (isFii
+        ? fetchInvestidor10FiiIndicators(ticker, previousTickers ?? [])
+        : fetchInvestidor10StockIndicators(ticker, previousTickers ?? []))
+      setAiAnalysis(mergeI10IntoAnalysis(analysis, i10, isFii))
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'Erro ao consultar a IA. Tente novamente.')
     } finally {

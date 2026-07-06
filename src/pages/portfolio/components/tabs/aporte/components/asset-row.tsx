@@ -10,9 +10,11 @@ import { RegisterTradeDialog } from './register-trade-dialog'
 interface AssetRowProps {
   allocation: AssetAllocation
   onRegister: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
+  launched: boolean
+  onLaunched: () => void
 }
 
-export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
+export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: AssetRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const {
@@ -23,7 +25,6 @@ export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
     valueAfterAporte,
   } = allocation
   const [open, setOpen] = useState(false)
-  const [done, setDone] = useState(false)
 
   // Cripto e ativos no exterior (stock_us/etf_us) permitem fração (ex: 0,2 ações, 0,0577 BTC) —
   // não arredonda; ativos da B3 são unidades inteiras.
@@ -34,7 +35,7 @@ export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
 
   const handleConfirm = async (trade: Omit<Trade, 'id' | 'source'>) => {
     await onRegister(trade)
-    setDone(true)
+    onLaunched()
     toast.success(`${asset.ticker}: compra lançada na carteira`)
   }
 
@@ -57,7 +58,7 @@ export const AssetRow = ({ allocation, onRegister }: AssetRowProps) => {
           </p>
         )}
       </div>
-      {done ? (
+      {launched ? (
         <span className="flex items-center gap-1 text-xs text-success shrink-0">
           <Check size={14} /> Lançado
         </span>

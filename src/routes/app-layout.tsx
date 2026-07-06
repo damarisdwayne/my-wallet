@@ -20,6 +20,7 @@ const pageTitles: Record<string, string> = {
   '/sales': 'Vendas',
   '/calculators': 'Calculadoras',
   '/knowledge': 'Conhecimento',
+  '/guide': 'Como usar',
 }
 
 export const AppLayout = () => {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   BookOpen,
   Calculator,
+  HelpCircle,
   Home,
   LayoutDashboard,
   PanelLeft,
@@ -20,6 +21,7 @@ const navItems = [
   // { to: '/sales', label: 'Vendas', icon: <ShoppingBag size={20} /> },
   { to: '/calculators', label: 'Calculadoras', icon: <Calculator size={20} /> },
   { to: '/knowledge', label: 'Conhecimento', icon: <BookOpen size={20} /> },
+  { to: '/guide', label: 'Como usar', icon: <HelpCircle size={20} /> },
 ]
 
 // Collapsed sidebar width is w-15 = 60px. Icon slot matches this so the

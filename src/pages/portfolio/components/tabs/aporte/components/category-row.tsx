@@ -16,6 +16,8 @@ interface CategoryRowProps {
   categories: PortfolioCategory[]
   onRegister: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
   onSaveFixedIncome: (asset: Partial<Asset>) => Promise<void>
+  launched: Set<string>
+  onLaunched: (key: string) => void
 }
 
 export const CategoryRow = ({
@@ -25,6 +27,8 @@ export const CategoryRow = ({
   categories,
   onRegister,
   onSaveFixedIncome,
+  launched,
+  onLaunched,
 }: CategoryRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
@@ -39,7 +43,17 @@ export const CategoryRow = ({
   } = allocation
   const isFixedIncome = cat.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro')
   const [fiOpen, setFiOpen] = useState(false)
-  const [fiDone, setFiDone] = useState(false)
+  const fiKey = `fi:${cat.id}`
+  const fiDone = launched.has(fiKey)
+
+  // Progresso de lançamentos da categoria, pra mostrar no cabeçalho mesmo recolhida.
+  const launchedCount = isFixedIncome
+    ? fiDone
+      ? 1
+      : 0
+    : assetAllocations.filter((a) => launched.has(a.asset.id)).length
+  const totalCount = isFixedIncome ? 1 : assetAllocations.length
+  const allLaunched = totalCount > 0 && launchedCount === totalCount
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
@@ -57,6 +71,17 @@ export const CategoryRow = ({
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs shrink-0">
+          {launchedCount > 0 && (
+            <span
+              className={cn(
+                'flex items-center gap-1 font-medium',
+                allLaunched ? 'text-success' : 'text-muted-foreground',
+              )}
+            >
+              <Check size={12} />
+              {launchedCount}/{totalCount}
+            </span>
+          )}
           <span className="text-muted-foreground hidden sm:inline">
             {catPercentBefore.toFixed(1)}%<span className="mx-1">→</span>
             <span className="text-foreground font-medium">{catPercentAfter.toFixed(1)}%</span>
@@ -94,7 +119,13 @@ export const CategoryRow = ({
       {isOpen && !isFixedIncome && assetAllocations.length > 0 && (
         <div className="divide-y divide-border">
           {assetAllocations.map((a) => (
-            <AssetRow key={a.asset.id} allocation={a} onRegister={onRegister} />
+            <AssetRow
+              key={a.asset.id}
+              allocation={a}
+              onRegister={onRegister}
+              launched={launched.has(a.asset.id)}
+              onLaunched={() => onLaunched(a.asset.id)}
+            />
           ))}
         </div>
       )}
@@ -112,7 +143,7 @@ export const CategoryRow = ({
           onClose={() => setFiOpen(false)}
           onSave={async (partial) => {
             await onSaveFixedIncome(partial)
-            setFiDone(true)
+            onLaunched(fiKey)
             toast.success('Renda fixa lançada na carteira')
           }}
         />

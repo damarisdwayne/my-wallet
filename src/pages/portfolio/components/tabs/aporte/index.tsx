@@ -22,6 +22,10 @@ export const AporteTab = ({
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [excludedCatIds, setExcludedCatIds] = useState<Set<string>>(new Set())
+  // Marca quais ativos/categorias já foram lançados nesta simulação. Mora aqui (e não no
+  // AssetRow) porque a linha desmonta ao recolher a categoria — o estado se perderia.
+  const [launched, setLaunched] = useState<Set<string>>(new Set())
+  const markLaunched = (key: string) => setLaunched((prev) => new Set(prev).add(key))
   const { hideValues } = usePrivacy()
 
   const toggle = (id: string) =>
@@ -83,6 +87,7 @@ export const AporteTab = ({
             onChange={(e) => {
               setAporteInput(e.target.value)
               setDistribution(null)
+              setLaunched(new Set())
             }}
             onKeyDown={(e) => e.key === 'Enter' && calcular()}
             autoFocus
@@ -140,6 +145,8 @@ export const AporteTab = ({
                   categories={categories}
                   onRegister={registerTrade}
                   onSaveFixedIncome={saveFixedIncome}
+                  launched={launched}
+                  onLaunched={markLaunched}
                 />
               )
             })}

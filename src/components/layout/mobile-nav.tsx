@@ -1,4 +1,12 @@
-import { BookOpen, Calculator, Home, LayoutDashboard, Receipt, TrendingUp } from 'lucide-react'
+import {
+  BookOpen,
+  Calculator,
+  HelpCircle,
+  Home,
+  LayoutDashboard,
+  Receipt,
+  TrendingUp,
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
@@ -9,6 +17,7 @@ const navItems = [
   { to: '/tax', label: 'IR', icon: Home },
   { to: '/calculators', label: 'Calc', icon: Calculator },
   { to: '/knowledge', label: 'Info', icon: BookOpen },
+  { to: '/guide', label: 'Ajuda', icon: HelpCircle },
 ]
 
 export const MobileNav = () => (

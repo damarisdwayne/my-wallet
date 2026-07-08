@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fetchPtaxRate } from '@/services/quotes'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import { Field } from '../utils'
 import { inputClass } from '../constants'
 
-// Renda variável nacional (ações, FIIs, ETFs, BDRs), cotada em real. Ativos no exterior usam o
-// ExteriorForm (compra ao preço atual em dólar, sem PM).
-export const StandardForm = ({
+// Ações/ETFs no exterior são cotados em dólar. Aqui não há PM: a compra é feita ao preço atual.
+// O usuário informa o preço do ativo e o valor (US$) que vai investir; a quantidade é derivada
+// (valor / preço). Guardamos avgPriceUsd/currentPriceUsd para o PM em dólar e o IR ficarem corretos.
+export const ExteriorForm = ({
   type,
   categories,
   onSave,
@@ -18,13 +21,29 @@ export const StandardForm = ({
   const [form, setForm] = useState({
     ticker: '',
     name: '',
-    quantity: '',
-    avgPrice: '',
     currentPrice: '',
+    investUsd: '',
     targetPercent: '10',
     categoryId: '',
     autoCategory: true,
   })
+  const [usdRate, setUsdRate] = useState('')
+  const [rateLoading, setRateLoading] = useState(true)
+
+  // PTAX atual (referência oficial usada pela Receita) para converter os preços em dólar.
+  useEffect(() => {
+    let cancelled = false
+    fetchPtaxRate()
+      .then((rate) => {
+        if (!cancelled && rate > 0) setUsdRate(rate.toFixed(4))
+      })
+      .finally(() => {
+        if (!cancelled) setRateLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -34,7 +53,19 @@ export const StandardForm = ({
     ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma encontrada')
     : (categories.find((c) => c.id === form.categoryId)?.name ?? '—')
 
-  const canSave = !!(form.ticker.trim() && form.name.trim())
+  const price = Number.parseFloat(form.currentPrice) || 0
+  const investUsd = Number.parseFloat(form.investUsd) || 0
+  const rate = Number.parseFloat(usdRate) || 0
+  const quantity = price > 0 ? investUsd / price : 0
+  const priceBrl = price * rate
+
+  const canSave = !!(
+    form.ticker.trim() &&
+    form.name.trim() &&
+    price > 0 &&
+    quantity > 0 &&
+    rate > 0
+  )
 
   return (
     <div className="space-y-3 mt-2">
@@ -42,7 +73,7 @@ export const StandardForm = ({
         <Field label="Ticker">
           <input
             className={inputClass}
-            placeholder="PETR4"
+            placeholder="AAPL"
             value={form.ticker}
             onChange={(e) => set('ticker', e.target.value)}
           />
@@ -50,47 +81,75 @@ export const StandardForm = ({
         <Field label="Nome">
           <input
             className={inputClass}
-            placeholder="Petrobras PN"
+            placeholder="Apple Inc."
             value={form.name}
             onChange={(e) => set('name', e.target.value)}
           />
         </Field>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <Field label="Quantidade">
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Preço atual (US$)">
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="195.00"
+            value={form.currentPrice}
+            onChange={(e) => set('currentPrice', e.target.value)}
+          />
+        </Field>
+        <Field
+          label={
+            <span className="flex items-center gap-1">
+              Cotação USD/BRL
+              {rateLoading && <Loader2 size={11} className="animate-spin" />}
+            </span>
+          }
+        >
           <input
             className={inputClass}
             type="number"
             min={0}
             step="any"
-            placeholder="100"
-            value={form.quantity}
-            onChange={(e) => set('quantity', e.target.value)}
-          />
-        </Field>
-        <Field label="PM (R$)">
-          <input
-            className={inputClass}
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="30.00"
-            value={form.avgPrice}
-            onChange={(e) => set('avgPrice', e.target.value)}
-          />
-        </Field>
-        <Field label="Atual (R$)" className="col-span-2 sm:col-span-1">
-          <input
-            className={inputClass}
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="35.00"
-            value={form.currentPrice}
-            onChange={(e) => set('currentPrice', e.target.value)}
+            placeholder="ex: 5.40"
+            value={usdRate}
+            onChange={(e) => setUsdRate(e.target.value)}
           />
         </Field>
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Valor a investir (US$)">
+          <input
+            className={inputClass}
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="1000.00"
+            value={form.investUsd}
+            onChange={(e) => set('investUsd', e.target.value)}
+          />
+        </Field>
+        <Field label="Quantidade">
+          <div className={cn(inputClass, 'flex items-center bg-muted text-muted-foreground')}>
+            {quantity > 0 ? quantity.toLocaleString('pt-BR', { maximumFractionDigits: 6 }) : '—'}
+          </div>
+        </Field>
+      </div>
+      {quantity > 0 && rate > 0 && (
+        <p className="text-xs text-muted-foreground">
+          ≈ R${' '}
+          {(investUsd * rate).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{' '}
+          · preço R${' '}
+          {priceBrl.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </p>
+      )}
       <Field label="% alvo na categoria">
         <input
           className={inputClass}
@@ -147,9 +206,12 @@ export const StandardForm = ({
             name: form.name.trim(),
             type,
             categoryId: resolvedCatId,
-            quantity: Number.parseFloat(form.quantity) || 0,
-            avgPrice: Number.parseFloat(form.avgPrice) || 0,
-            currentPrice: Number.parseFloat(form.currentPrice) || 0,
+            quantity,
+            // Sem PM: compra ao preço atual em dólar.
+            avgPrice: priceBrl,
+            avgPriceUsd: price,
+            currentPrice: priceBrl,
+            currentPriceUsd: price,
             targetPercent: Number.parseFloat(form.targetPercent) || 0,
           })
         }

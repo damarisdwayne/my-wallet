@@ -13,6 +13,7 @@ import {
   OpSelector,
   TypeSelector,
   StandardForm,
+  ExteriorForm,
   FixedIncomeForm,
   CryptoForm,
   TradeForm,
@@ -189,10 +190,16 @@ export const AddAssetDialog = ({
 
         {opMode === 'buy' && !selectedType && <TypeSelector onSelect={setSelectedType} />}
 
+        {opMode === 'buy' && (selectedType === 'stock_us' || selectedType === 'etf_us') && (
+          <ExteriorForm type={selectedType} categories={categories} onSave={handleSaveAsset} />
+        )}
+
         {opMode === 'buy' &&
           selectedType &&
           selectedType !== 'fixed_income' &&
-          selectedType !== 'crypto' && (
+          selectedType !== 'crypto' &&
+          selectedType !== 'stock_us' &&
+          selectedType !== 'etf_us' && (
             <StandardForm type={selectedType} categories={categories} onSave={handleSaveAsset} />
           )}
 

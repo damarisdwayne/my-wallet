@@ -33,6 +33,15 @@ export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: Asset
   const fractionDigits = asset.type === 'crypto' ? 8 : 4
   const displayQty = allowsFraction ? quantityToBuy : Math.floor(quantityToBuy)
 
+  // Preço atual na moeda de origem: US$ para ativos do exterior, R$ para os demais.
+  const priceUsd =
+    asset.type === 'stock_us' || asset.type === 'etf_us' ? asset.currentPriceUsd : undefined
+  const priceLabel = hideValues
+    ? MASK
+    : priceUsd != null && priceUsd > 0
+      ? `US$ ${priceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : formatCurrency(asset.currentPrice)
+
   const handleConfirm = async (trade: Omit<Trade, 'id' | 'source'>) => {
     await onRegister(trade)
     onLaunched()
@@ -42,7 +51,12 @@ export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: Asset
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 pl-10 text-sm">
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground">{asset.ticker}</p>
+        <p className="font-semibold text-foreground flex items-center gap-1.5">
+          {asset.ticker}
+          {asset.currentPrice > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">{priceLabel}</span>
+          )}
+        </p>
         <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
           rec. {fmt(recommendedValue)}
           <span className="mx-1">→</span>

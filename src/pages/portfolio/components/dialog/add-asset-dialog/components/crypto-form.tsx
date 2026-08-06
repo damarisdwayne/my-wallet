@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, PortfolioCategory } from '@/types'
 import { Field } from '../utils'
 import { inputClass, KNOWN_CRYPTOS } from '../constants'
@@ -28,28 +29,6 @@ const fetchCryptoPriceForDate = async (
   }
 }
 
-const fetchPtaxForDate = async (isoDate: string): Promise<number | null> => {
-  // BCB PTAX venda (série 10813) — referência oficial usada pela Receita Federal.
-  // Janela de 10 dias até a data para cobrir fins de semana/feriados.
-  const to = new Date(isoDate)
-  const from = new Date(to)
-  from.setDate(from.getDate() - 10)
-  const fmt = (d: Date) =>
-    `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
-  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.10813/dados?formato=json&dataInicial=${fmt(from)}&dataFinal=${fmt(to)}`
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    const json = (await res.json()) as Array<{ data: string; valor: string }>
-    if (!Array.isArray(json) || json.length === 0) return null
-    const last = json.at(-1)
-    const rate = Number.parseFloat(last?.valor ?? '0')
-    return rate > 0 ? rate : null
-  } catch {
-    return null
-  }
-}
-
 export const CryptoForm = ({
   categories,
   onSave,
@@ -57,6 +36,7 @@ export const CryptoForm = ({
   categories: PortfolioCategory[]
   onSave: (asset: Partial<Asset>) => void
 }) => {
+  const { usdRate: currentUsdRate, usdRateLoading } = useDisplayCurrency()
   const cryptoCatId = categories.find((c) => c.assetTypes.includes('crypto'))?.id ?? ''
   const [ticker, setTicker] = useState('BTC')
   const [customTicker, setCustomTicker] = useState('')
@@ -64,28 +44,14 @@ export const CryptoForm = ({
   const [quantity, setQuantity] = useState('')
   const [currency, setCurrency] = useState<'BRL' | 'USD'>('USD')
   const [avgPrice, setAvgPrice] = useState('')
-  const [usdRate, setUsdRate] = useState('')
-  const [rateLoading, setRateLoading] = useState(false)
+  // Cotação do dólar atual (mesma do dashboard), editável — null = ainda seguindo a cotação.
+  const [usdRateEdit, setUsdRateEdit] = useState<string | null>(null)
   const [priceLoading, setPriceLoading] = useState(false)
   const [purchaseDate, setPurchaseDate] = useState(todayStr())
   const [categoryId, setCategoryId] = useState(cryptoCatId)
 
-  useEffect(() => {
-    if (currency !== 'USD' || !purchaseDate) return
-    let cancelled = false
-    setRateLoading(true)
-    fetchPtaxForDate(purchaseDate)
-      .then((rate) => {
-        if (cancelled || rate === null) return
-        setUsdRate(rate.toFixed(4))
-      })
-      .finally(() => {
-        if (!cancelled) setRateLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [currency, purchaseDate])
+  const usdRate = usdRateEdit ?? (currentUsdRate > 0 ? currentUsdRate.toFixed(4) : '')
+  const rateLoading = usdRateEdit === null && usdRateLoading
 
   // Auto-fetch crypto price (USD) via CoinGecko quando ticker e data estiverem definidos.
   useEffect(() => {
@@ -236,7 +202,7 @@ export const CryptoForm = ({
               step="any"
               placeholder="ex: 5.40"
               value={usdRate}
-              onChange={(e) => setUsdRate(e.target.value)}
+              onChange={(e) => setUsdRateEdit(e.target.value)}
             />
           </Field>
         )}

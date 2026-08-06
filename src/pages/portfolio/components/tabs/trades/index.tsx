@@ -1,11 +1,20 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { cn, isUsdQuoted } from '@/lib/utils'
+import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, ImportRecord, PortfolioCategory, Trade } from '@/types'
 import { ALL } from '../../../constants'
-import { FilterBar, TickerRow } from './components'
+import { DividendsSection, FilterBar, TickerRow } from './components'
 import { ImportsTab } from '../imports'
+
+type Section = 'trades' | 'dividends' | 'imports'
+
+const SECTIONS: { value: Section; label: string }[] = [
+  { value: 'trades', label: 'Movimentações' },
+  { value: 'dividends', label: 'Proventos' },
+  { value: 'imports', label: 'Importações' },
+]
 
 interface Props {
   trades: Trade[]
@@ -32,10 +41,11 @@ export const TradesTab = ({
   onCleanupOrphanTrades,
   orphanTradeCount,
 }: Props) => {
-  const [section, setSection] = useState<'trades' | 'imports'>('trades')
+  const [section, setSection] = useState<Section>('trades')
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
   const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
   const [recomputing, setRecomputing] = useState(false)
+  const { usdRate } = useDisplayCurrency()
 
   // Recompute every ticker's position from its movements.
   const handleRecompute = async () => {
@@ -110,6 +120,15 @@ export const TradesTab = ({
   )
 
   const grouped = useMemo(() => {
+    // Total por ticker em USD: usa o valor original quando todas as compras o têm; senão
+    // converte o BRL pelo câmbio atual (aproximado — só pra leitura, nunca persistido).
+    const totalUsdFor = (buys: Trade[], totalBrl: number, asset: Asset | undefined) => {
+      if (buys.length > 0 && buys.every((t) => t.totalUsd != null))
+        return { usd: buys.reduce((s, t) => s + (t.totalUsd ?? 0), 0), approx: false }
+      if (isUsdQuoted(asset?.type) && usdRate > 0) return { usd: totalBrl / usdRate, approx: true }
+      return { usd: undefined, approx: false }
+    }
+
     const map = new Map<string, Trade[]>()
     for (const t of filteredTrades) {
       const list = map.get(t.ticker) ?? []
@@ -118,13 +137,19 @@ export const TradesTab = ({
     }
     return [...map.entries()]
       .map(([ticker, items]) => {
-        const bought = items.filter((t) => t.type === 'buy').reduce((s, t) => s + t.quantity, 0)
+        const buys = items.filter((t) => t.type === 'buy')
+        const bought = buys.reduce((s, t) => s + t.quantity, 0)
         const sold = items.filter((t) => t.type === 'sell').reduce((s, t) => s + t.quantity, 0)
-        const totalInvested = items.filter((t) => t.type === 'buy').reduce((s, t) => s + t.total, 0)
-        return { ticker, items, bought, sold, totalInvested }
+        const totalInvested = buys.reduce((s, t) => s + t.total, 0)
+        const { usd: totalInvestedUsd, approx } = totalUsdFor(
+          buys,
+          totalInvested,
+          tickerToAsset[ticker.toUpperCase()],
+        )
+        return { ticker, items, bought, sold, totalInvested, totalInvestedUsd, approx }
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker))
-  }, [filteredTrades])
+  }, [filteredTrades, tickerToAsset, usdRate])
 
   const toggle = (ticker: string) =>
     setExpandedTickers((prev) => {
@@ -136,21 +161,30 @@ export const TradesTab = ({
 
   const subNav = (
     <div className="flex gap-2">
-      {(['trades', 'imports'] as const).map((s) => (
+      {SECTIONS.map(({ value, label }) => (
         <button
-          key={s}
-          onClick={() => setSection(s)}
+          key={value}
+          onClick={() => setSection(value)}
           className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-            section === s
+            section === value
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:text-foreground'
           }`}
         >
-          {s === 'trades' ? 'Movimentações' : 'Importações'}
+          {label}
         </button>
       ))}
     </div>
   )
+
+  if (section === 'dividends') {
+    return (
+      <div className="space-y-4">
+        {subNav}
+        <DividendsSection />
+      </div>
+    )
+  }
 
   if (section === 'imports') {
     return (
@@ -209,19 +243,21 @@ export const TradesTab = ({
         </p>
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">
-          {grouped.map(({ ticker, items, bought, sold, totalInvested }, idx) => (
-            <div key={ticker} className={cn(idx > 0 && 'border-t border-border')}>
+          {grouped.map((g, idx) => (
+            <div key={g.ticker} className={cn(idx > 0 && 'border-t border-border')}>
               <TickerRow
-                ticker={ticker}
-                items={items}
-                bought={bought}
-                sold={sold}
-                totalInvested={totalInvested}
-                isExpanded={expandedTickers.has(ticker)}
+                ticker={g.ticker}
+                items={g.items}
+                bought={g.bought}
+                sold={g.sold}
+                totalInvested={g.totalInvested}
+                totalInvestedUsd={g.totalInvestedUsd}
+                totalInvestedUsdApprox={g.approx}
+                isExpanded={expandedTickers.has(g.ticker)}
                 onToggle={toggle}
                 onDeleteTrade={onDeleteTrade}
                 onEditTrade={onEditTrade}
-                asset={tickerToAsset[ticker.toUpperCase()]}
+                asset={tickerToAsset[g.ticker.toUpperCase()]}
               />
             </div>
           ))}

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react'
-import { cn, formatCurrency, formatQuantity } from '@/lib/utils'
+import { cn, formatQuantity } from '@/lib/utils'
 import type { Asset, Trade } from '@/types'
 import { tradeLabel, tradeColor, sourceLabel } from '../utils'
 import { getFiLabel } from '@/lib/fi'
 import { EditTradeDialog } from './edit-trade-dialog'
+import { TradeMoney } from './trade-money'
 
 interface Props {
   ticker: string
@@ -12,6 +13,8 @@ interface Props {
   bought: number
   sold: number
   totalInvested: number
+  totalInvestedUsd?: number
+  totalInvestedUsdApprox?: boolean
   isExpanded: boolean
   onToggle: (ticker: string) => void
   onDeleteTrade: (tradeId: string) => Promise<void>
@@ -73,6 +76,8 @@ export const TickerRow = ({
   bought,
   sold,
   totalInvested,
+  totalInvestedUsd,
+  totalInvestedUsdApprox,
   isExpanded,
   onToggle,
   onDeleteTrade,
@@ -112,11 +117,19 @@ export const TickerRow = ({
           {displayName}
         </span>
         <span className="text-xs text-muted-foreground">{items.length} op.</span>
-        <span className="text-xs text-success ml-2">+{bought}</span>
-        {sold > 0 && <span className="text-xs text-destructive">-{sold}</span>}
-        <span className="text-xs text-muted-foreground ml-auto">
-          {totalInvested > 0 ? formatCurrency(totalInvested) : '—'}
-        </span>
+        <span className="text-xs text-success ml-2">+{formatQuantity(bought, asset?.type)}</span>
+        {sold > 0 && (
+          <span className="text-xs text-destructive">-{formatQuantity(sold, asset?.type)}</span>
+        )}
+        <TradeMoney
+          brl={totalInvested}
+          usd={totalInvestedUsd}
+          usdApprox={totalInvestedUsdApprox}
+          usdTitle={
+            totalInvestedUsdApprox ? 'Convertido pelo câmbio atual (valor aproximado)' : undefined
+          }
+          className="text-xs text-muted-foreground ml-auto tabular-nums"
+        />
       </button>
 
       {isExpanded && (
@@ -166,9 +179,11 @@ export const TickerRow = ({
                     >
                       Preço
                     </p>
-                    <p className="tabular-nums text-muted-foreground">
-                      {t.price > 0 ? formatCurrency(t.price) : '—'}
-                    </p>
+                    <TradeMoney
+                      brl={t.price}
+                      usd={t.priceUsd}
+                      className="tabular-nums text-muted-foreground"
+                    />
                   </div>
                   <div>
                     <p
@@ -177,9 +192,11 @@ export const TickerRow = ({
                     >
                       Total
                     </p>
-                    <p className="tabular-nums font-medium text-foreground">
-                      {t.total > 0 ? formatCurrency(t.total) : '—'}
-                    </p>
+                    <TradeMoney
+                      brl={t.total}
+                      usd={t.totalUsd}
+                      className="tabular-nums font-medium text-foreground"
+                    />
                   </div>
                   <div>
                     <p
@@ -228,10 +245,10 @@ export const TickerRow = ({
                     {formatQuantity(t.quantity, asset?.type)}
                   </td>
                   <td className="px-4 py-2 text-right text-muted-foreground tabular-nums text-xs">
-                    {t.price > 0 ? formatCurrency(t.price) : '—'}
+                    <TradeMoney brl={t.price} usd={t.priceUsd} />
                   </td>
                   <td className="px-4 py-2 text-right font-medium tabular-nums text-xs">
-                    {t.total > 0 ? formatCurrency(t.total) : '—'}
+                    <TradeMoney brl={t.total} usd={t.totalUsd} />
                   </td>
                   <td className="px-4 py-2 text-right text-xs text-muted-foreground">
                     {sourceLabel(t)}

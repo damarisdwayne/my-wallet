@@ -6,7 +6,7 @@ export const displayUsdAtom = atom(false)
 
 export const useDisplayCurrency = () => {
   const [displayUsd, setDisplayUsd] = useAtom(displayUsdAtom)
-  const { data } = useMarketData()
+  const { data, loading: usdRateLoading } = useMarketData()
   const usdRate = data?.usdBrl ?? 0
   const canShowUsd = usdRate > 0
 
@@ -18,11 +18,6 @@ export const useDisplayCurrency = () => {
     return formatCurrency(brl)
   }
 
-  /**
-   * Quando o ativo tem o valor original em USD armazenado, usa-o diretamente
-   * em vez de conversão reversa (BRL ÷ cotação atual).
-   * Usar pra PM, Total investido, Preço atual e Total atual de cripto/exterior.
-   */
   const fmtPreferUsd = (brl: number, usdOriginal: number | undefined): string => {
     if (displayUsd && usdOriginal != null && usdOriginal > 0) return formatUsd(usdOriginal)
     return fmt(brl)
@@ -33,6 +28,7 @@ export const useDisplayCurrency = () => {
     setDisplayUsd,
     toggleDisplayUsd: () => setDisplayUsd((v) => !v),
     usdRate,
+    usdRateLoading,
     canShowUsd,
     fmt,
     fmtPreferUsd,

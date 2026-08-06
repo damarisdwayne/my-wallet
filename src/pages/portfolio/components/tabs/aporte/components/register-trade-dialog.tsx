@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { formatCurrency } from '@/lib/utils'
-import { fetchPtaxRateForDate } from '@/services/quotes'
+import { formatCurrency, isUsdQuoted } from '@/lib/utils'
+import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, Trade } from '@/types'
 
 const inputClass =
@@ -18,7 +18,6 @@ const todayStr = new Date().toISOString().slice(0, 10)
 
 // Cripto e exterior são cotados em dólar — o trade precisa carregar priceUsd/totalUsd/usdRateAtTrade
 // para o PM em USD e o IR (custo em dólar) ficarem corretos.
-const isUsdType = (t: Asset['type']) => t === 'crypto' || t === 'stock_us' || t === 'etf_us'
 
 interface Props {
   asset: Asset
@@ -30,7 +29,8 @@ interface Props {
 // Pré-preenche com a quantidade recomendada e o preço atual, ambos editáveis —
 // o preço no momento da compra pode diferir do preço usado na simulação.
 export const RegisterTradeDialog = ({ asset, defaultQuantity, onClose, onConfirm }: Props) => {
-  const usdMode = isUsdType(asset.type) && asset.currentPriceUsd != null
+  const { usdRate: currentUsdRate, usdRateLoading } = useDisplayCurrency()
+  const usdMode = isUsdQuoted(asset.type) && asset.currentPriceUsd != null
   const initialPrice = usdMode ? (asset.currentPriceUsd ?? 0) : asset.currentPrice
 
   // Arredonda pra no máximo 8 casas (cripto) e remove zeros à direita; inteiros ficam inteiros.
@@ -39,26 +39,12 @@ export const RegisterTradeDialog = ({ asset, defaultQuantity, onClose, onConfirm
   )
   const [price, setPrice] = useState(initialPrice > 0 ? String(initialPrice) : '')
   const [date, setDate] = useState(todayStr)
-  const [usdRate, setUsdRate] = useState('')
-  const [rateLoading, setRateLoading] = useState(false)
+  // Cotação do dólar atual (mesma do dashboard), editável — null = ainda seguindo a cotação.
+  const [usdRateEdit, setUsdRateEdit] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // PTAX da data (mesma referência usada no IR e nas importações) para converter o preço em dólar.
-  useEffect(() => {
-    if (!usdMode || !date) return
-    let cancelled = false
-    setRateLoading(true)
-    fetchPtaxRateForDate(date)
-      .then((rate) => {
-        if (!cancelled && rate > 0) setUsdRate(rate.toFixed(4))
-      })
-      .finally(() => {
-        if (!cancelled) setRateLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [usdMode, date])
+  const usdRate = usdRateEdit ?? (currentUsdRate > 0 ? currentUsdRate.toFixed(4) : '')
+  const rateLoading = usdRateEdit === null && usdRateLoading
 
   const qty = Number(quantity) || 0
   const prc = Number(price) || 0
@@ -156,7 +142,7 @@ export const RegisterTradeDialog = ({ asset, defaultQuantity, onClose, onConfirm
                   step="any"
                   className={inputClass}
                   value={usdRate}
-                  onChange={(e) => setUsdRate(e.target.value)}
+                  onChange={(e) => setUsdRateEdit(e.target.value)}
                 />
               </div>
             )}

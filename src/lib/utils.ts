@@ -62,6 +62,10 @@ export const formatDateShort = (iso: string): string =>
 
 const HIGH_PRECISION_TYPES = new Set(['crypto', 'stock_us', 'etf_us'])
 
+/** Asset types quoted in USD — crypto and foreign equity. */
+export const isUsdQuoted = (type?: string): boolean =>
+  type === 'crypto' || type === 'stock_us' || type === 'etf_us'
+
 export const formatQuantity = (v: number, type?: string): string => {
   if (v % 1 === 0) return String(Math.round(v))
   const allowHighPrecision = type ? HIGH_PRECISION_TYPES.has(type) : false

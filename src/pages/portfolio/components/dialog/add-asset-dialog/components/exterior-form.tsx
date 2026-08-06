@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { fetchPtaxRate } from '@/services/quotes'
+import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import { Field } from '../utils'
 import { inputClass } from '../constants'
@@ -27,23 +27,12 @@ export const ExteriorForm = ({
     categoryId: '',
     autoCategory: true,
   })
-  const [usdRate, setUsdRate] = useState('')
-  const [rateLoading, setRateLoading] = useState(true)
+  // Cotação do dólar atual (mesma do dashboard), editável — null = ainda seguindo a cotação.
+  const [usdRateEdit, setUsdRateEdit] = useState<string | null>(null)
+  const { usdRate: currentUsdRate, usdRateLoading } = useDisplayCurrency()
 
-  // PTAX atual (referência oficial usada pela Receita) para converter os preços em dólar.
-  useEffect(() => {
-    let cancelled = false
-    fetchPtaxRate()
-      .then((rate) => {
-        if (!cancelled && rate > 0) setUsdRate(rate.toFixed(4))
-      })
-      .finally(() => {
-        if (!cancelled) setRateLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const usdRate = usdRateEdit ?? (currentUsdRate > 0 ? currentUsdRate.toFixed(4) : '')
+  const rateLoading = usdRateEdit === null && usdRateLoading
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -114,7 +103,7 @@ export const ExteriorForm = ({
             step="any"
             placeholder="ex: 5.40"
             value={usdRate}
-            onChange={(e) => setUsdRate(e.target.value)}
+            onChange={(e) => setUsdRateEdit(e.target.value)}
           />
         </Field>
       </div>

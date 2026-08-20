@@ -90,14 +90,14 @@ export const DividendsList = ({
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-muted-foreground hidden sm:block">
-                    {formatDate(d.paymentDate)}
-                  </span>
                   {getDividendIrBrl(d, usdRate) > 0 && (
                     <span className="text-xs text-muted-foreground">
                       IR: {fmt(getDividendIrBrl(d, usdRate))}
                     </span>
                   )}
+                  <span className="text-xs text-muted-foreground hidden sm:block">
+                    {formatDate(d.paymentDate)}
+                  </span>
                   <span className="text-sm font-semibold text-success">
                     +{fmt(getDividendBrl(d, usdRate))}
                   </span>

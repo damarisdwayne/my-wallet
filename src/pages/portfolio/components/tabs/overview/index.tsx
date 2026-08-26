@@ -210,7 +210,6 @@ export const OverviewTab = ({
         categories={categories}
         totalValue={totalValue}
         filteredTotal={filteredTotal}
-        assets={assets}
         assetTargets={assetTargets}
         fixedIncomeCatId={fixedIncomeCatId}
         onToggleSort={toggleSort}

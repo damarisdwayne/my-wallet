@@ -19,7 +19,6 @@ interface AssetsTableProps {
   categories: PortfolioCategory[]
   totalValue: number
   filteredTotal: number
-  assets: Asset[]
   assetTargets: Map<string, number>
   fixedIncomeCatId: string | null
   onToggleSort: (col: SortCol) => void
@@ -37,7 +36,6 @@ export const AssetsTable = memo(
     categories,
     totalValue,
     filteredTotal,
-    assets,
     assetTargets,
     fixedIncomeCatId,
     onToggleSort,
@@ -263,12 +261,10 @@ export const AssetsTable = memo(
                 const pct = baseValue > 0 ? (totalAtual / baseValue) * 100 : 0
                 const targetPct = assetTargets.get(a.id) ?? 0
                 const cat = categories.find((c) => c.id === a.categoryId)
-                const catCurrentValue = assets
-                  .filter((x) => x.categoryId === a.categoryId)
-                  .reduce((s, x) => s + x.currentPrice * x.quantity, 0)
+                const catTargetValue = cat ? (cat.targetPercent / 100) * totalValue : 0
                 const withinCatRatio =
                   cat && cat.targetPercent > 0 ? targetPct / cat.targetPercent : 0
-                const recommended = withinCatRatio * catCurrentValue
+                const recommended = withinCatRatio * catTargetValue
 
                 const flatFI = isFlatFixedIncome(a)
                 return (

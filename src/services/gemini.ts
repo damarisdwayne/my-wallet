@@ -26,6 +26,10 @@ const friendlyMessage = (raw: string, status: number | null): string => {
     return 'Cota da IA excedida. Tente novamente em alguns minutos.'
   if (status === 401 || /api key not valid|api_key_invalid|invalid api key/i.test(raw))
     return 'Chave da API do Gemini inválida ou ausente. Verifique a configuração.'
+  if (status === 503 || /unavailable|overloaded|high demand/i.test(raw))
+    return 'O modelo de IA está sobrecarregado no momento. Tentamos novamente sem sucesso — aguarde alguns instantes e repita.'
+  if (status === 500 || status === 502 || status === 504)
+    return 'A IA falhou temporariamente. Tente novamente em alguns instantes.'
   if (/failed to fetch|networkerror|network request failed/i.test(raw))
     return 'Falha de conexão com a IA. Verifique sua internet e tente novamente.'
   return 'Erro ao consultar a IA. Tente novamente.'
@@ -38,12 +42,25 @@ const toGeminiError = (err: unknown): GeminiError => {
   return new GeminiError(friendlyMessage(raw, status), status, { cause: err })
 }
 
-// Runs a Gemini call and normalizes any failure into a GeminiError with a user-facing message.
+// 503/500 from Gemini mean the model is momentarily overloaded — worth retrying.
+const RETRIABLE_STATUS = new Set([500, 502, 503, 504])
+const MAX_ATTEMPTS = 3
+const BASE_DELAY_MS = 1500
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Runs a Gemini call, retrying transient overload errors, and normalizes any
+// remaining failure into a GeminiError with a user-facing message.
 const guard = async <T>(fn: () => Promise<T>): Promise<T> => {
-  try {
-    return await fn()
-  } catch (err) {
-    throw toGeminiError(err)
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      const error = toGeminiError(err)
+      if (attempt >= MAX_ATTEMPTS || error.status === null || !RETRIABLE_STATUS.has(error.status))
+        throw error
+      await wait(BASE_DELAY_MS * 2 ** (attempt - 1) + Math.random() * 500)
+    }
   }
 }
 

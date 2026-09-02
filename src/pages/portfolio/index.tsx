@@ -9,6 +9,7 @@ import {
 import { usePortfolio } from '@/hooks/use-portfolio'
 import { PortfolioSkeleton } from '@/skeleton'
 import { PageLoader } from '@/components'
+import { PriceChangesDialog } from './components/dialog'
 
 const OverviewTab = lazy(() =>
   import('./components/tabs/overview').then((m) => ({ default: m.OverviewTab })),
@@ -231,6 +232,8 @@ export const PortfolioPage = () => {
           />
         )}
       </Suspense>
+
+      <PriceChangesDialog />
     </div>
   )
 }

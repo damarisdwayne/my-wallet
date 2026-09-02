@@ -9,11 +9,74 @@ import {
 } from '@/services/assets'
 import { calcFixedIncomeValue } from '@/services/bcb-rates'
 import { clearQuoteCache, fetchLivePrices } from '@/services/quotes'
+import type { PriceMap } from '@/services/quotes'
 import { addTrade } from '@/services/trades'
 import { clearTesouroBondsCache } from '@/services/tesouro'
-import { freshPricesAtom } from '@/store/prices'
+import { freshPricesAtom, priceChangesAtom, priceChangesOpenAtom } from '@/store/prices'
+import type { PriceChange } from '@/store/prices'
 import type { Asset } from '@/types'
 import { toast } from 'sonner'
+
+// Movements smaller than this are noise — they would bury the meaningful ones.
+const MIN_CHANGE_PCT = 0.5
+
+// Comparing against the last saved price is useless: the page auto-refreshes on
+// mount, so a manual refresh moments later would diff against itself and show
+// nothing. Instead we pin a baseline snapshot and only renew it once it is stale,
+// so every refresh in between reports the movement since that fixed point.
+const BASELINE_KEY = 'mw_price_baseline_v1'
+const BASELINE_MAX_AGE_MS = 12 * 60 * 60 * 1000
+
+interface PriceBaseline {
+  at: number
+  prices: Record<string, number>
+}
+
+const getBaseline = (): PriceBaseline | null => {
+  try {
+    const raw = localStorage.getItem(BASELINE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PriceBaseline
+    return parsed.at && parsed.prices ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const saveBaseline = (prices: PriceMap) => {
+  const flat = Object.fromEntries(Object.entries(prices).map(([t, p]) => [t, p.brl]))
+  try {
+    localStorage.setItem(BASELINE_KEY, JSON.stringify({ at: Date.now(), prices: flat }))
+  } catch {
+    // storage unavailable (private mode) — the summary just falls back to saved prices
+  }
+}
+
+const buildPriceChanges = (
+  assets: Asset[],
+  prices: PriceMap,
+  baseline: PriceBaseline | null,
+): PriceChange[] =>
+  assets
+    .flatMap((a) => {
+      const p = prices[a.ticker.toUpperCase()]
+      const reference = baseline?.prices[a.ticker.toUpperCase()] ?? a.currentPrice
+      if (p === undefined || !reference) return []
+      const pct = ((p.brl - reference) / reference) * 100
+      if (Math.abs(pct) < MIN_CHANGE_PCT) return []
+      return [
+        {
+          ticker: a.ticker,
+          type: a.type,
+          quantity: a.quantity,
+          oldPrice: reference,
+          newPrice: p.brl,
+          pct,
+          impactBrl: (p.brl - reference) * a.quantity,
+        },
+      ]
+    })
+    .sort((a, b) => Math.abs(b.impactBrl) - Math.abs(a.impactBrl))
 
 const deleteExpiredAssets = async (uid: string, assets: Asset[]) => {
   await Promise.all(
@@ -40,6 +103,8 @@ export const useAssets = (uid: string | null) => {
   const [refreshingPrices, setRefreshingPrices] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
   const setFreshPrices = useSetAtom(freshPricesAtom)
+  const setPriceChanges = useSetAtom(priceChangesAtom)
+  const setPriceChangesOpen = useSetAtom(priceChangesOpenAtom)
   const PRICE_TS_KEY = 'mw_price_refreshed_at'
   const getPriceTs = () => {
     try {
@@ -98,8 +163,9 @@ export const useAssets = (uid: string | null) => {
     }
   }
 
-  const refreshPrices = async () => {
+  const refreshPrices = async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!uid || assets.length === 0) return
+    const baseline = getBaseline()
     setRefreshingPrices(true)
     setPriceError(null)
     clearQuoteCache()
@@ -123,6 +189,15 @@ export const useAssets = (uid: string | null) => {
       )
       setFreshPrices(prices)
 
+      const changes = buildPriceChanges(priceable, prices, baseline)
+      setPriceChanges({
+        changes,
+        previousRefreshAt: baseline?.at ?? getPriceTs(),
+        refreshedAt: Date.now(),
+      })
+      if (!silent && changes.length > 0) setPriceChangesOpen(true)
+      if (!baseline || Date.now() - baseline.at > BASELINE_MAX_AGE_MS) saveBaseline(prices)
+
       // Flat fixed income (CDB, LCI, LCA…) — calculate via BCB rates API
       const flatFI = assets.filter((a) => a.type === 'fixed_income')
       await Promise.all(
@@ -144,7 +219,19 @@ export const useAssets = (uid: string | null) => {
           }),
       )
       setPriceTs()
-      toast.success('Preços atualizados')
+      if (silent && changes.length > 0) {
+        toast.success('Preços atualizados', {
+          description: `${changes.length} ${changes.length === 1 ? 'ativo se moveu' : 'ativos se moveram'} desde a última atualização`,
+          duration: 10000,
+          action: { label: 'Ver', onClick: () => setPriceChangesOpen(true) },
+        })
+      } else if (!silent && changes.length === 0) {
+        toast.success('Preços atualizados', {
+          description: 'Nenhuma variação relevante desde a última referência',
+        })
+      } else {
+        toast.success('Preços atualizados')
+      }
     } catch (err) {
       setPriceError(err instanceof Error ? err.message : 'Erro ao atualizar preços')
       toast.error(err instanceof Error ? err.message : 'Erro ao atualizar preços')
@@ -156,7 +243,7 @@ export const useAssets = (uid: string | null) => {
   const refreshPricesIfStale = async (maxAgeMs = 2 * 60 * 60 * 1000) => {
     const last = getPriceTs()
     if (last && Date.now() - last < maxAgeMs) return
-    await refreshPrices()
+    await refreshPrices({ silent: true })
   }
 
   return {

@@ -21,7 +21,7 @@ export const Toolbar = ({
   <div className="flex items-center justify-end gap-3">
     {priceError && <p className="text-xs text-destructive">{priceError}</p>}
     <button
-      onClick={onRefreshPrices}
+      onClick={() => onRefreshPrices()}
       disabled={refreshingPrices}
       title={refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
       className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm hover:text-foreground transition-colors disabled:opacity-50"

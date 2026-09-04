@@ -33,6 +33,19 @@ export const saveAiAnalysis = async (
 export const deleteAiAnalysis = (userId: string, analysisId: string): Promise<void> =>
   deleteDoc(doc(db, 'users', userId, 'ai-analyses', analysisId))
 
+// Every analysis of every ticker — one listener for the consolidated overview,
+// instead of one per asset.
+export const subscribeToAllAiAnalyses = (
+  userId: string,
+  callback: (analyses: AiAnalysis[]) => void,
+): (() => void) =>
+  onSnapshot(collection(db, 'users', userId, 'ai-analyses'), (snap) => {
+    const sorted = snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<AiAnalysis, 'id'>) }))
+      .sort((a, b) => b.analyzedAt.localeCompare(a.analyzedAt))
+    callback(sorted)
+  })
+
 export const subscribeToAiAnalyses = (
   userId: string,
   ticker: string,

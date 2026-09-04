@@ -2,14 +2,22 @@ import { useState } from 'react'
 import type { Props } from './types'
 import {
   AssetCompactCard,
+  CategoryPills,
   AssetDetailView,
   FiiSectorBreakdown,
   StockSectorBreakdown,
 } from './components'
 import { DocumentGuide } from './components/document-guide'
 import { WatchlistTab } from './components/watchlist/watchlist-tab'
+import { PanoramaTab } from './components/panorama'
 
-type TopTab = 'portfolio' | 'watchlist'
+type TopTab = 'portfolio' | 'panorama' | 'watchlist'
+
+const TOP_TABS: { id: TopTab; label: string }[] = [
+  { id: 'portfolio', label: 'Minha Carteira' },
+  { id: 'panorama', label: 'Panorama' },
+  { id: 'watchlist', label: 'Em Avaliação' },
+]
 
 export const AnalysisTab = ({
   uid,
@@ -74,12 +82,7 @@ export const AnalysisTab = ({
   return (
     <div className="space-y-5">
       <div className="flex gap-1">
-        {(
-          [
-            { id: 'portfolio', label: 'Minha Carteira' },
-            { id: 'watchlist', label: 'Em Avaliação' },
-          ] as { id: TopTab; label: string }[]
-        ).map((tab) => (
+        {TOP_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => {
@@ -95,22 +98,18 @@ export const AnalysisTab = ({
 
       {topTab === 'watchlist' ? (
         <WatchlistTab uid={uid} />
+      ) : topTab === 'panorama' ? (
+        <PanoramaTab uid={uid} assets={assets} categories={availableCategories} />
       ) : (
         <>
-          <div className="flex flex-wrap gap-1">
-            {availableCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setSubCategoryId(cat.id)
-                  setSelectedTicker(null)
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${subCategoryId === cat.id ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          <CategoryPills
+            categories={availableCategories}
+            selectedId={subCategoryId}
+            onSelect={(id) => {
+              setSubCategoryId(id)
+              setSelectedTicker(null)
+            }}
+          />
 
           {showDocGuide && <DocumentGuide type={isFiiCategory ? 'fii' : 'stock'} />}
 

@@ -73,16 +73,51 @@ export const renderInline = (text: string) => {
   )
 }
 
+// The verdict lives in the closing "Avaliação Geral" section. Scanning the whole
+// text would match the word wherever it appears — "o mercado não está otimista"
+// in the market commentary would flip the badge.
+const VERDICT_SECTION_RE = /\*\*\s*6?\.?\s*Avalia[çc][ãa]o Geral\s*:?\s*\*\*([\s\S]*)/i
+
+const VERDICTS = [
+  {
+    word: 'otimista',
+    label: 'Otimista',
+    className: 'bg-success/10 text-success border-success/20',
+  },
+  {
+    word: 'pessimista',
+    label: 'Pessimista',
+    className: 'bg-destructive/10 text-destructive border-destructive/20',
+  },
+  {
+    word: 'neutro',
+    label: 'Neutro',
+    className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  },
+]
+
+// The closing conclusion from section 6, as plain text. The verdict word is kept:
+// the AI often qualifies it ("Neutra a Ligeiramente Pessimista"), which says more
+// than the badge. Only markdown emphasis is stripped, since this renders raw.
+export const verdictSummaryFromText = (text: string): string | null => {
+  const section = VERDICT_SECTION_RE.exec(text)
+  if (!section) return null
+  const body = section[1]
+    .replaceAll('*', '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+  return body || null
+}
+
 export const verdictFromText = (text: string): { label: string; className: string } | null => {
-  const lower = text.toLowerCase()
-  if (lower.includes('otimista'))
-    return { label: 'Otimista', className: 'bg-success/10 text-success border-success/20' }
-  if (lower.includes('pessimista'))
-    return {
-      label: 'Pessimista',
-      className: 'bg-destructive/10 text-destructive border-destructive/20',
-    }
-  if (lower.includes('neutro'))
-    return { label: 'Neutro', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' }
-  return null
+  const section = VERDICT_SECTION_RE.exec(text)
+  const scope = (section ? section[1] : text).toLowerCase()
+  // Earliest match wins: "Neutro com viés otimista" is a neutral verdict, not an optimistic one.
+  const found = VERDICTS.map((v) => ({ ...v, at: scope.indexOf(v.word) }))
+    .filter((v) => v.at >= 0)
+    .sort((a, b) => a.at - b.at)[0]
+  return found ? { label: found.label, className: found.className } : null
 }

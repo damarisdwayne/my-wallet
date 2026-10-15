@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { TooltipProvider } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
 
@@ -22,6 +23,7 @@ export const AporteTab = ({
   const [distribution, setDistribution] = useState<CategoryAllocation[] | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [excludedCatIds, setExcludedCatIds] = useState<Set<string>>(new Set())
+  const [catOverrides, setCatOverrides] = useState<Map<string, number>>(new Map())
   // Marca quais ativos/categorias já foram lançados nesta simulação. Mora aqui (e não no
   // AssetRow) porque a linha desmonta ao recolher a categoria — o estado se perderia.
   const [launched, setLaunched] = useState<Set<string>>(new Set())
@@ -36,12 +38,12 @@ export const AporteTab = ({
       return next
     })
 
-  const runCalc = (excluded: Set<string>) => {
+  const runCalc = (excluded: Set<string>, overrides: Map<string, number> = catOverrides) => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
     const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
     setDistribution(
-      calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded),
+      calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded, overrides),
     )
   }
 
@@ -53,6 +55,14 @@ export const AporteTab = ({
     runCalc(next)
   }
 
+  const overrideCat = (id: string, value: number | null) => {
+    const next = new Map(catOverrides)
+    if (value === null) next.delete(id)
+    else next.set(id, value)
+    setCatOverrides(next)
+    runCalc(excludedCatIds, next)
+  }
+
   const calcular = async () => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
@@ -61,6 +71,9 @@ export const AporteTab = ({
   }
 
   const aporte = distribution ? Number.parseFloat(aporteInput) || 0 : 0
+
+  const totalDistributed = distribution?.reduce((s, c) => s + c.catAporte, 0) ?? 0
+  const undistributed = aporte - totalDistributed
 
   // Chips só aparecem para categorias que receberam aporte recomendado — ou que o usuário
   // excluiu manualmente (mantém o chip para permitir reincluir).
@@ -88,6 +101,7 @@ export const AporteTab = ({
               setAporteInput(e.target.value)
               setDistribution(null)
               setLaunched(new Set())
+              setCatOverrides(new Map())
             }}
             onKeyDown={(e) => e.key === 'Enter' && calcular()}
             autoFocus
@@ -131,35 +145,43 @@ export const AporteTab = ({
       )}
 
       {aporte > 0 && distribution && distribution.length > 0 && (
-        <div className="space-y-2">
-          {distribution
-            .filter((a) => a.catAporte > 0)
-            .map((allocation) => {
-              const isOpen = expanded.has(allocation.cat.id)
-              return (
-                <CategoryRow
-                  key={allocation.cat.id}
-                  allocation={allocation}
-                  isOpen={isOpen}
-                  onToggle={() => toggle(allocation.cat.id)}
-                  categories={categories}
-                  onRegister={registerTrade}
-                  onSaveFixedIncome={saveFixedIncome}
-                  launched={launched}
-                  onLaunched={markLaunched}
-                />
-              )
-            })}
+        <TooltipProvider delayDuration={200}>
+          <div className="space-y-2">
+            {distribution
+              .filter((a) => a.catAporte > 0 || a.catOverridden)
+              .map((allocation) => {
+                const isOpen = expanded.has(allocation.cat.id)
+                return (
+                  <CategoryRow
+                    key={allocation.cat.id}
+                    allocation={allocation}
+                    isOpen={isOpen}
+                    onToggle={() => toggle(allocation.cat.id)}
+                    categories={categories}
+                    onRegister={registerTrade}
+                    onSaveFixedIncome={saveFixedIncome}
+                    launched={launched}
+                    onLaunched={markLaunched}
+                    maxAporte={aporte}
+                    onOverride={(value) => overrideCat(allocation.cat.id, value)}
+                  />
+                )
+              })}
 
-          <div className="flex justify-between items-center pt-3 border-t border-border">
-            <span className="text-sm text-muted-foreground">Total distribuído</span>
-            <span className="font-semibold text-foreground">
-              {hideValues
-                ? MASK
-                : formatCurrency(distribution.reduce((s, c) => s + c.catAporte, 0))}
-            </span>
+            <div className="flex justify-between items-center pt-3 border-t border-border">
+              <span className="text-sm text-muted-foreground">Total distribuído</span>
+              <span className="font-semibold text-foreground">
+                {hideValues ? MASK : formatCurrency(totalDistributed)}
+              </span>
+            </div>
+            {undistributed > 0.01 && (
+              <p className="text-xs text-warning text-right">
+                {hideValues ? MASK : formatCurrency(undistributed)} sem destino — ajuste os valores
+                editados ou reinclua categorias
+              </p>
+            )}
           </div>
-        </div>
+        </TooltipProvider>
       )}
     </div>
   )

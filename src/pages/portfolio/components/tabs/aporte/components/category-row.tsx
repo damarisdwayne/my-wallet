@@ -7,6 +7,7 @@ import { MASK, usePrivacy } from '@/store/privacy'
 import type { Asset, PortfolioCategory, Trade } from '@/types'
 import type { CategoryAllocation } from '../constants'
 import { AssetRow } from './asset-row'
+import { CategoryAporteEditor } from './category-aporte-editor'
 import { RegisterFixedIncomeDialog } from './register-fixed-income-dialog'
 
 interface CategoryRowProps {
@@ -18,6 +19,8 @@ interface CategoryRowProps {
   onSaveFixedIncome: (asset: Partial<Asset>) => Promise<void>
   launched: Set<string>
   onLaunched: (key: string) => void
+  maxAporte: number
+  onOverride: (value: number | null) => void
 }
 
 export const CategoryRow = ({
@@ -29,12 +32,15 @@ export const CategoryRow = ({
   onSaveFixedIncome,
   launched,
   onLaunched,
+  maxAporte,
+  onOverride,
 }: CategoryRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const {
     cat,
     catAporte,
+    catOverridden,
     catRecommendedValue,
     catValueAfterAporte,
     catPercentBefore,
@@ -57,8 +63,11 @@ export const CategoryRow = ({
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
         className="w-full flex items-center gap-3 px-4 py-3 bg-muted/30 text-left transition-colors hover:bg-muted/50 cursor-pointer"
       >
         <div className="w-3 h-3 rounded-full shrink-0" style={{ background: cat.color }} />
@@ -86,15 +95,18 @@ export const CategoryRow = ({
             {catPercentBefore.toFixed(1)}%<span className="mx-1">→</span>
             <span className="text-foreground font-medium">{catPercentAfter.toFixed(1)}%</span>
           </span>
-          <span className="font-semibold text-foreground text-sm min-w-20 text-right">
-            {fmt(catAporte)}
-          </span>
+          <CategoryAporteEditor
+            value={catAporte}
+            overridden={catOverridden}
+            max={maxAporte}
+            onChange={onOverride}
+          />
           <ChevronDown
             size={14}
             className={cn('text-muted-foreground transition-transform', isOpen && 'rotate-180')}
           />
         </div>
-      </button>
+      </div>
 
       {isOpen && isFixedIncome && (
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">

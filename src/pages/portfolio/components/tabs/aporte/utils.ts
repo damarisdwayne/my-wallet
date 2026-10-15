@@ -8,10 +8,10 @@ export const calcDistribution = (
   totalValue: number,
   assetTargets: Map<string, number>,
   excludedCatIds: Set<string> = new Set(),
+  catOverrides: Map<string, number> = new Map(),
 ): CategoryAllocation[] => {
   const activeCats = categories.filter((c) => !excludedCatIds.has(c.id))
   const newTotal = totalValue + aporte
-  const totalTargetPct = activeCats.reduce((s, c) => s + c.targetPercent, 0)
 
   const catData = activeCats.map((cat) => {
     const catAssets = assets.filter((a) => a.categoryId === cat.id)
@@ -21,17 +21,10 @@ export const calcDistribution = (
     return { cat, catAssets, catCurrentValue, catTargetValue, catDeficit }
   })
 
-  const totalDeficit = catData.reduce((s, c) => s + c.catDeficit, 0)
+  const catAportes = splitCategoryAportes(aporte, catData, catOverrides)
 
-  return catData.map(({ cat, catAssets, catCurrentValue, catTargetValue, catDeficit }) => {
-    const rawCatAporte =
-      totalDeficit > 0
-        ? (catDeficit / totalDeficit) * aporte
-        : totalTargetPct > 0
-          ? (cat.targetPercent / totalTargetPct) * aporte
-          : aporte / Math.max(categories.length, 1)
-
-    const catAporte = Math.min(rawCatAporte, catDeficit)
+  return catData.map(({ cat, catAssets, catCurrentValue, catTargetValue }) => {
+    const catAporte = catAportes.get(cat.id) ?? 0
 
     const newCatTotal = catCurrentValue + catAporte
 
@@ -73,6 +66,7 @@ export const calcDistribution = (
       cat,
       catCurrentValue,
       catAporte,
+      catOverridden: catOverrides.has(cat.id),
       catRecommendedValue: catTargetValue,
       catValueAfterAporte: catCurrentValue + catAporte,
       catPercentBefore: totalValue > 0 ? (catCurrentValue / totalValue) * 100 : 0,
@@ -80,4 +74,43 @@ export const calcDistribution = (
       assetAllocations,
     }
   })
+}
+
+interface CategoryDeficit {
+  cat: PortfolioCategory
+  catDeficit: number
+}
+
+const splitCategoryAportes = (
+  aporte: number,
+  catData: CategoryDeficit[],
+  catOverrides: Map<string, number>,
+): Map<string, number> => {
+  const result = new Map<string, number>()
+  const fixedTotal = catData.reduce((s, { cat }) => s + (catOverrides.get(cat.id) ?? 0), 0)
+  catData.forEach(({ cat }) => {
+    if (catOverrides.has(cat.id)) result.set(cat.id, catOverrides.get(cat.id) ?? 0)
+  })
+
+  let remaining = Math.max(0, aporte - fixedTotal)
+  let open = catData.filter(({ cat, catDeficit }) => !catOverrides.has(cat.id) && catDeficit > 0)
+
+  while (remaining > 0.01 && open.length > 0) {
+    const totalDeficit = open.reduce((s, c) => s + c.catDeficit, 0)
+    let distributed = 0
+    open.forEach(({ cat, catDeficit }) => {
+      const current = result.get(cat.id) ?? 0
+      const add = Math.min((catDeficit / totalDeficit) * remaining, catDeficit - current)
+      result.set(cat.id, current + add)
+      distributed += add
+    })
+    remaining -= distributed
+    open = open.filter(({ cat, catDeficit }) => catDeficit - (result.get(cat.id) ?? 0) > 0.01)
+  }
+
+  catData.forEach(({ cat }) => {
+    if (!result.has(cat.id)) result.set(cat.id, 0)
+  })
+
+  return result
 }

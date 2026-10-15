@@ -12,6 +12,7 @@ export interface CategoryAllocation {
   cat: PortfolioCategory
   catCurrentValue: number
   catAporte: number
+  catOverridden: boolean
   catRecommendedValue: number
   catValueAfterAporte: number
   catPercentBefore: number

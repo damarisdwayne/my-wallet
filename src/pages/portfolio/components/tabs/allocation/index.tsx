@@ -145,6 +145,8 @@ export const AllocationTab = ({
 
   const enterManual = (catId: string, catAssets: Asset[], cat: PortfolioCategory) => {
     const share = (100 / catAssets.length).toFixed(1)
+    const hasTargets =
+      cat.targetPercent > 0 && catAssets.some((a) => (assetTargets.get(a.id) ?? 0) > 0)
     setDiagramViewCats((prev) => {
       const s = new Set(prev)
       s.delete(catId)
@@ -153,12 +155,12 @@ export const AllocationTab = ({
     setManualDrafts((prev) => ({
       ...prev,
       [catId]: Object.fromEntries(
-        catAssets.map((a) => {
-          if (a.targetPercent > 0 && cat.targetPercent > 0) {
-            return [a.id, ((a.targetPercent / cat.targetPercent) * 100).toFixed(1)]
-          }
-          return [a.id, share]
-        }),
+        catAssets.map((a) => [
+          a.id,
+          hasTargets
+            ? (((assetTargets.get(a.id) ?? 0) / cat.targetPercent) * 100).toFixed(1)
+            : share,
+        ]),
       ),
     }))
   }
@@ -172,8 +174,16 @@ export const AllocationTab = ({
     })
   }
 
-  const updateDraft = (catId: string, assetId: string, value: string) => {
-    setManualDrafts((prev) => ({ ...prev, [catId]: { ...prev[catId], [assetId]: value } }))
+  const updateDraft = (
+    cat: PortfolioCategory,
+    catAssets: Asset[],
+    assetId: string,
+    value: string,
+  ) => {
+    setManualDrafts((prev) => ({
+      ...prev,
+      [cat.id]: { ...(prev[cat.id] ?? getDraft(cat.id, catAssets, cat)), [assetId]: value },
+    }))
   }
 
   const saveManual = async (catId: string, catAssets: Asset[]) => {
@@ -299,7 +309,7 @@ export const AllocationTab = ({
             onDelete={() => handleDelete(cat.id)}
             onExitManual={() => exitManual(cat.id)}
             onEnterManual={() => enterManual(cat.id, catAssets, cat)}
-            onUpdateDraft={(assetId, value) => updateDraft(cat.id, assetId, value)}
+            onUpdateDraft={(assetId, value) => updateDraft(cat, catAssets, assetId, value)}
             onSaveManual={() => saveManual(cat.id, catAssets)}
             onAnswerAsset={(asset) => setAnsweringAsset(asset)}
             onEditQuestions={() => setEditQCatId(cat.id)}

@@ -1,5 +1,7 @@
-import type { Asset, PortfolioCategory } from '@/types'
+import type { Asset, AssetType, PortfolioCategory } from '@/types'
 import type { AssetAllocation, CategoryAllocation } from './constants'
+
+export const isForeignType = (type: AssetType) => type === 'stock_us' || type === 'etf_us'
 
 export const calcDistribution = (
   aporte: number,

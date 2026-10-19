@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { TooltipProvider } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
+import { useDisplayCurrency } from '@/store/display-currency'
 
 import { computeAssetTargets } from '../../../compute-targets'
 import type { CategoryAllocation, Props } from './constants'
@@ -29,6 +30,7 @@ export const AporteTab = ({
   const [launched, setLaunched] = useState<Set<string>>(new Set())
   const markLaunched = (key: string) => setLaunched((prev) => new Set(prev).add(key))
   const { hideValues } = usePrivacy()
+  const { usdRate } = useDisplayCurrency()
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -164,6 +166,7 @@ export const AporteTab = ({
                     onLaunched={markLaunched}
                     maxAporte={aporte}
                     onOverride={(value) => overrideCat(allocation.cat.id, value)}
+                    usdRate={usdRate}
                   />
                 )
               })}

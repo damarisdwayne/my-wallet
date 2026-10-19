@@ -6,9 +6,11 @@ import { MASK, usePrivacy } from '@/store/privacy'
 
 import type { Asset, PortfolioCategory, Trade } from '@/types'
 import type { CategoryAllocation } from '../constants'
+import { isForeignType } from '../utils'
 import { AssetRow } from './asset-row'
 import { CategoryAporteEditor } from './category-aporte-editor'
 import { RegisterFixedIncomeDialog } from './register-fixed-income-dialog'
+import { UsdHint } from './usd-hint'
 
 interface CategoryRowProps {
   allocation: CategoryAllocation
@@ -21,6 +23,7 @@ interface CategoryRowProps {
   onLaunched: (key: string) => void
   maxAporte: number
   onOverride: (value: number | null) => void
+  usdRate: number
 }
 
 export const CategoryRow = ({
@@ -34,6 +37,7 @@ export const CategoryRow = ({
   onLaunched,
   maxAporte,
   onOverride,
+  usdRate,
 }: CategoryRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
@@ -48,6 +52,7 @@ export const CategoryRow = ({
     assetAllocations,
   } = allocation
   const isFixedIncome = cat.assetTypes.some((t) => t === 'fixed_income' || t === 'tesouro')
+  const isForeign = cat.assetTypes.some(isForeignType)
   const [fiOpen, setFiOpen] = useState(false)
   const fiKey = `fi:${cat.id}`
   const fiDone = launched.has(fiKey)
@@ -95,12 +100,15 @@ export const CategoryRow = ({
             {catPercentBefore.toFixed(1)}%<span className="mx-1">→</span>
             <span className="text-foreground font-medium">{catPercentAfter.toFixed(1)}%</span>
           </span>
-          <CategoryAporteEditor
-            value={catAporte}
-            overridden={catOverridden}
-            max={maxAporte}
-            onChange={onOverride}
-          />
+          <span className="flex flex-col items-end">
+            <CategoryAporteEditor
+              value={catAporte}
+              overridden={catOverridden}
+              max={maxAporte}
+              onChange={onOverride}
+            />
+            {isForeign && <UsdHint brl={catAporte} usdRate={usdRate} />}
+          </span>
           <ChevronDown
             size={14}
             className={cn('text-muted-foreground transition-transform', isOpen && 'rotate-180')}
@@ -137,6 +145,7 @@ export const CategoryRow = ({
               onRegister={onRegister}
               launched={launched.has(a.asset.id)}
               onLaunched={() => onLaunched(a.asset.id)}
+              usdRate={usdRate}
             />
           ))}
         </div>

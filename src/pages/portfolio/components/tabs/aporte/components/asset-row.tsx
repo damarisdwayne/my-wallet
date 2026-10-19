@@ -1,20 +1,29 @@
 import { useState } from 'react'
 import { Check, Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatUsdCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
 import type { Trade } from '@/types'
 import type { AssetAllocation } from '../constants'
+import { isForeignType } from '../utils'
 import { RegisterTradeDialog } from './register-trade-dialog'
+import { UsdHint } from './usd-hint'
 
 interface AssetRowProps {
   allocation: AssetAllocation
   onRegister: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
   launched: boolean
   onLaunched: () => void
+  usdRate: number
 }
 
-export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: AssetRowProps) => {
+export const AssetRow = ({
+  allocation,
+  onRegister,
+  launched,
+  onLaunched,
+  usdRate,
+}: AssetRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
   const {
@@ -28,18 +37,17 @@ export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: Asset
 
   // Cripto e ativos no exterior (stock_us/etf_us) permitem fração (ex: 0,2 ações, 0,0577 BTC) —
   // não arredonda; ativos da B3 são unidades inteiras.
-  const allowsFraction =
-    asset.type === 'crypto' || asset.type === 'stock_us' || asset.type === 'etf_us'
+  const isForeign = isForeignType(asset.type)
+  const allowsFraction = asset.type === 'crypto' || isForeign
   const fractionDigits = asset.type === 'crypto' ? 8 : 4
   const displayQty = allowsFraction ? quantityToBuy : Math.floor(quantityToBuy)
 
   // Preço atual na moeda de origem: US$ para ativos do exterior, R$ para os demais.
-  const priceUsd =
-    asset.type === 'stock_us' || asset.type === 'etf_us' ? asset.currentPriceUsd : undefined
+  const priceUsd = isForeign ? asset.currentPriceUsd : undefined
   const priceLabel = hideValues
     ? MASK
     : priceUsd != null && priceUsd > 0
-      ? `US$ ${priceUsd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? formatUsdCurrency(priceUsd)
       : formatCurrency(asset.currentPrice)
 
   const handleConfirm = async (trade: Omit<Trade, 'id' | 'source'>) => {
@@ -65,10 +73,15 @@ export const AssetRow = ({ allocation, onRegister, launched, onLaunched }: Asset
       </div>
       <div className="text-right shrink-0 min-w-20">
         <p className="font-medium text-foreground">{fmt(assetAporte)}</p>
+        {isForeign && <UsdHint brl={assetAporte} usdRate={usdRate} className="block" />}
         {asset.currentPrice > 0 && (
           <p className="text-xs text-muted-foreground">
             ~{displayQty.toLocaleString('pt-BR', { maximumFractionDigits: fractionDigits })} unid. (
-            {fmt(displayQty * asset.currentPrice)})
+            {fmt(displayQty * asset.currentPrice)}
+            {priceUsd != null && priceUsd > 0 && !hideValues && (
+              <> · {formatUsdCurrency(displayQty * priceUsd)}</>
+            )}
+            )
           </p>
         )}
       </div>

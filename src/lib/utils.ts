@@ -82,6 +82,9 @@ export const formatNumber = (v: number, decimals = 2): string =>
 export const formatUSD = (v: number): string =>
   `$ ${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 
+export const formatUsdCurrency = (v: number): string =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'USD' })
+
 export const formatCompact = (v: number): string => {
   if (Math.abs(v) >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
   if (Math.abs(v) >= 1_000) return `R$${(v / 1_000).toFixed(0)}k`

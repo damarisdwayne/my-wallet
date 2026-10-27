@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Plus } from 'lucide-react'
+import { Ban, Check, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency, formatUsdCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
@@ -7,6 +7,9 @@ import type { Trade } from '@/types'
 import type { AssetAllocation } from '../constants'
 import { isForeignType } from '../utils'
 import { RegisterTradeDialog } from './register-trade-dialog'
+import type { LastBuy } from '../last-buy'
+import { PriceLabel } from './price-label'
+import { PriceSignalBadge } from './price-signal-badge'
 import { UsdHint } from './usd-hint'
 import { WeeklyVariation } from './weekly-variation'
 
@@ -15,7 +18,9 @@ interface AssetRowProps {
   onRegister: (trade: Omit<Trade, 'id' | 'source'>) => Promise<void>
   launched: boolean
   onLaunched: () => void
+  onExclude: () => void
   usdRate: number
+  lastBuy?: LastBuy
 }
 
 export const AssetRow = ({
@@ -23,7 +28,9 @@ export const AssetRow = ({
   onRegister,
   launched,
   onLaunched,
+  onExclude,
   usdRate,
+  lastBuy,
 }: AssetRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
@@ -45,11 +52,6 @@ export const AssetRow = ({
 
   // Preço atual na moeda de origem: US$ para ativos do exterior, R$ para os demais.
   const priceUsd = isForeign ? asset.currentPriceUsd : undefined
-  const priceLabel = hideValues
-    ? MASK
-    : priceUsd != null && priceUsd > 0
-      ? formatUsdCurrency(priceUsd)
-      : formatCurrency(asset.currentPrice)
 
   const handleConfirm = async (trade: Omit<Trade, 'id' | 'source'>) => {
     await onRegister(trade)
@@ -60,12 +62,11 @@ export const AssetRow = ({
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 pl-10 text-sm">
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground flex items-center gap-1.5">
+        <p className="font-semibold text-foreground flex flex-wrap items-center gap-1.5">
           {asset.ticker}
-          {asset.currentPrice > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">{priceLabel}</span>
-          )}
+          {asset.currentPrice > 0 && <PriceLabel asset={asset} lastBuy={lastBuy} />}
           <WeeklyVariation asset={asset} />
+          <PriceSignalBadge asset={asset} lastBuy={lastBuy} />
         </p>
         <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
           rec. {fmt(recommendedValue)}
@@ -99,6 +100,13 @@ export const AssetRow = ({
           <Plus size={14} /> Lançar
         </button>
       )}
+      <button
+        onClick={onExclude}
+        title="Não investir neste ativo agora"
+        className="text-muted-foreground/60 hover:text-destructive transition-colors shrink-0"
+      >
+        <Ban size={14} />
+      </button>
       {open && (
         <RegisterTradeDialog
           asset={asset}

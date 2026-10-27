@@ -6,6 +6,7 @@ import { MASK, usePrivacy } from '@/store/privacy'
 
 import type { Asset, PortfolioCategory, Trade } from '@/types'
 import type { CategoryAllocation } from '../constants'
+import type { LastBuy } from '../last-buy'
 import { isForeignType } from '../utils'
 import { AssetRow } from './asset-row'
 import { CategoryAporteEditor } from './category-aporte-editor'
@@ -21,9 +22,11 @@ interface CategoryRowProps {
   onSaveFixedIncome: (asset: Partial<Asset>) => Promise<void>
   launched: Set<string>
   onLaunched: (key: string) => void
+  onExcludeAsset: (assetId: string) => void
   maxAporte: number
   onOverride: (value: number | null) => void
   usdRate: number
+  lastBuys: Map<string, LastBuy>
 }
 
 export const CategoryRow = ({
@@ -35,9 +38,11 @@ export const CategoryRow = ({
   onSaveFixedIncome,
   launched,
   onLaunched,
+  onExcludeAsset,
   maxAporte,
   onOverride,
   usdRate,
+  lastBuys,
 }: CategoryRowProps) => {
   const { hideValues } = usePrivacy()
   const fmt = (v: number) => (hideValues ? MASK : formatCurrency(v))
@@ -145,7 +150,9 @@ export const CategoryRow = ({
               onRegister={onRegister}
               launched={launched.has(a.asset.id)}
               onLaunched={() => onLaunched(a.asset.id)}
+              onExclude={() => onExcludeAsset(a.asset.id)}
               usdRate={usdRate}
+              lastBuy={lastBuys.get(a.asset.ticker.toUpperCase())}
             />
           ))}
         </div>

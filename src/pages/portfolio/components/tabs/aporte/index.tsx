@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TooltipProvider } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { MASK, usePrivacy } from '@/store/privacy'
@@ -7,11 +7,14 @@ import { useDisplayCurrency } from '@/store/display-currency'
 import { computeAssetTargets } from '../../../compute-targets'
 import { PriceChangesButton } from '../../dialog'
 import type { CategoryAllocation, Props } from './constants'
+import { lastBuysByTicker } from './last-buy'
 import { calcDistribution } from './utils'
-import { CategoryRow } from './components'
+import type { DistributionOptions } from './utils'
+import { CategoryChips, CategoryRow, ExcludedAssetChips } from './components'
 
 export const AporteTab = ({
   assets,
+  trades,
   categories,
   diagrams,
   answers,
@@ -26,12 +29,14 @@ export const AporteTab = ({
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [excludedCatIds, setExcludedCatIds] = useState<Set<string>>(new Set())
   const [catOverrides, setCatOverrides] = useState<Map<string, number>>(new Map())
+  const [excludedAssetIds, setExcludedAssetIds] = useState<Set<string>>(new Set())
   // Marca quais ativos/categorias já foram lançados nesta simulação. Mora aqui (e não no
   // AssetRow) porque a linha desmonta ao recolher a categoria — o estado se perderia.
   const [launched, setLaunched] = useState<Set<string>>(new Set())
   const markLaunched = (key: string) => setLaunched((prev) => new Set(prev).add(key))
   const { hideValues } = usePrivacy()
   const { usdRate } = useDisplayCurrency()
+  const lastBuys = useMemo(() => lastBuysByTicker(trades), [trades])
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -41,12 +46,17 @@ export const AporteTab = ({
       return next
     })
 
-  const runCalc = (excluded: Set<string>, overrides: Map<string, number> = catOverrides) => {
+  const runCalc = (changes: DistributionOptions = {}) => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
     const assetTargets = computeAssetTargets(assets, categories, diagrams, answers)
     setDistribution(
-      calcDistribution(aporte, categories, assets, totalValue, assetTargets, excluded, overrides),
+      calcDistribution(aporte, categories, assets, totalValue, assetTargets, {
+        excludedCatIds,
+        excludedAssetIds,
+        catOverrides,
+        ...changes,
+      }),
     )
   }
 
@@ -55,7 +65,15 @@ export const AporteTab = ({
     if (next.has(id)) next.delete(id)
     else next.add(id)
     setExcludedCatIds(next)
-    runCalc(next)
+    runCalc({ excludedCatIds: next })
+  }
+
+  const toggleAsset = (id: string) => {
+    const next = new Set(excludedAssetIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setExcludedAssetIds(next)
+    runCalc({ excludedAssetIds: next })
   }
 
   const overrideCat = (id: string, value: number | null) => {
@@ -63,14 +81,14 @@ export const AporteTab = ({
     if (value === null) next.delete(id)
     else next.set(id, value)
     setCatOverrides(next)
-    runCalc(excludedCatIds, next)
+    runCalc({ catOverrides: next })
   }
 
   const calcular = async () => {
     const aporte = Number.parseFloat(aporteInput) || 0
     if (aporte <= 0) return
     await refreshPrices()
-    runCalc(excludedCatIds)
+    runCalc()
   }
 
   const aporte = distribution ? Number.parseFloat(aporteInput) || 0 : 0
@@ -84,6 +102,7 @@ export const AporteTab = ({
   const chipCats = categories?.filter(
     (cat) => (aporteByCat.get(cat.id) ?? 0) > 0 || excludedCatIds.has(cat.id),
   )
+  const excludedAssets = assets.filter((a) => excludedAssetIds.has(a.id))
 
   return (
     <div className="space-y-6">
@@ -121,25 +140,11 @@ export const AporteTab = ({
       </div>
 
       {distribution !== null && chipCats?.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {chipCats?.map((cat) => {
-            const excluded = excludedCatIds.has(cat.id)
-            return (
-              <button
-                key={cat.id}
-                onClick={() => toggleCat(cat.id)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                  excluded
-                    ? 'border-border text-muted-foreground bg-transparent opacity-40'
-                    : 'border-transparent text-background'
-                }`}
-                style={excluded ? {} : { background: cat.color }}
-              >
-                {cat.name}
-              </button>
-            )
-          })}
-        </div>
+        <CategoryChips categories={chipCats} excludedCatIds={excludedCatIds} onToggle={toggleCat} />
+      )}
+
+      {distribution !== null && (
+        <ExcludedAssetChips assets={excludedAssets} onInclude={toggleAsset} />
       )}
 
       {distribution !== null && categories.length === 0 && (
@@ -166,9 +171,11 @@ export const AporteTab = ({
                     onSaveFixedIncome={saveFixedIncome}
                     launched={launched}
                     onLaunched={markLaunched}
+                    onExcludeAsset={toggleAsset}
                     maxAporte={aporte}
                     onOverride={(value) => overrideCat(allocation.cat.id, value)}
                     usdRate={usdRate}
+                    lastBuys={lastBuys}
                   />
                 )
               })}

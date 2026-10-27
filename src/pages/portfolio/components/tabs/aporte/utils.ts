@@ -3,14 +3,43 @@ import type { AssetAllocation, CategoryAllocation } from './constants'
 
 export const isForeignType = (type: AssetType) => type === 'stock_us' || type === 'etf_us'
 
+export interface DistributionOptions {
+  excludedCatIds?: Set<string>
+  excludedAssetIds?: Set<string>
+  catOverrides?: Map<string, number>
+}
+
+const buildAssetData = (
+  cat: PortfolioCategory,
+  catAssets: Asset[],
+  newCatTotal: number,
+  assetTargets: Map<string, number>,
+  excludedAssetIds: Set<string>,
+) =>
+  catAssets
+    .filter((asset) => !asset.pauseAporte && !excludedAssetIds.has(asset.id))
+    .filter((asset) => !(asset.ceilingPrice && asset.currentPrice >= asset.ceilingPrice))
+    .map((asset) => {
+      const withinCatRatio =
+        cat.targetPercent > 0 ? (assetTargets.get(asset.id) ?? 0) / cat.targetPercent : 0
+      const assetCurrentValue = asset.currentPrice * asset.quantity
+      const assetRecommended = withinCatRatio * newCatTotal
+      const assetDeficit = Math.max(0, assetRecommended - assetCurrentValue)
+      return { asset, assetCurrentValue, assetRecommended, assetDeficit, withinCatRatio }
+    })
+    .filter((d) => d.withinCatRatio > 0)
+
 export const calcDistribution = (
   aporte: number,
   categories: PortfolioCategory[],
   assets: Asset[],
   totalValue: number,
   assetTargets: Map<string, number>,
-  excludedCatIds: Set<string> = new Set(),
-  catOverrides: Map<string, number> = new Map(),
+  {
+    excludedCatIds = new Set(),
+    excludedAssetIds = new Set(),
+    catOverrides = new Map(),
+  }: DistributionOptions = {},
 ): CategoryAllocation[] => {
   const activeCats = categories.filter((c) => !excludedCatIds.has(c.id))
   const newTotal = totalValue + aporte
@@ -19,7 +48,16 @@ export const calcDistribution = (
     const catAssets = assets.filter((a) => a.categoryId === cat.id)
     const catCurrentValue = catAssets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
     const catTargetValue = (cat.targetPercent / 100) * newTotal
-    const catDeficit = Math.max(0, catTargetValue - catCurrentValue)
+    const rawDeficit = Math.max(0, catTargetValue - catCurrentValue)
+    // Excluded assets can't absorb money: cap the category at what the remaining
+    // assets still lack, so the surplus flows to other categories.
+    const capacity = catAssets.some((a) => excludedAssetIds.has(a.id))
+      ? buildAssetData(cat, catAssets, catTargetValue, assetTargets, excludedAssetIds).reduce(
+          (s, d) => s + d.assetDeficit,
+          0,
+        )
+      : Infinity
+    const catDeficit = Math.min(rawDeficit, capacity)
     return { cat, catAssets, catCurrentValue, catTargetValue, catDeficit }
   })
 
@@ -30,18 +68,7 @@ export const calcDistribution = (
 
     const newCatTotal = catCurrentValue + catAporte
 
-    const assetData = catAssets
-      .filter((asset) => !asset.pauseAporte)
-      .filter((asset) => !(asset.ceilingPrice && asset.currentPrice >= asset.ceilingPrice))
-      .map((asset) => {
-        const withinCatRatio =
-          cat.targetPercent > 0 ? (assetTargets.get(asset.id) ?? 0) / cat.targetPercent : 0
-        const assetCurrentValue = asset.currentPrice * asset.quantity
-        const assetRecommended = withinCatRatio * newCatTotal
-        const assetDeficit = Math.max(0, assetRecommended - assetCurrentValue)
-        return { asset, assetCurrentValue, assetRecommended, assetDeficit, withinCatRatio }
-      })
-      .filter((d) => d.withinCatRatio > 0)
+    const assetData = buildAssetData(cat, catAssets, newCatTotal, assetTargets, excludedAssetIds)
 
     const totalAssetDeficit = assetData.reduce((s, a) => s + a.assetDeficit, 0)
 

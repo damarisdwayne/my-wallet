@@ -22,6 +22,7 @@ export interface CategoryAllocation {
 
 export interface Props {
   assets: Asset[]
+  trades: Trade[]
   categories: PortfolioCategory[]
   diagrams: Diagram[]
   answers: Record<string, AssetAnswers>

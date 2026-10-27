@@ -5,7 +5,8 @@ import { cn, isUsdQuoted } from '@/lib/utils'
 import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, ImportRecord, PortfolioCategory, Trade } from '@/types'
 import { ALL } from '../../../constants'
-import { DividendsSection, FilterBar, TickerRow } from './components'
+import { DividendsSection, FilterBar, PeriodFilter, TickerRow } from './components'
+import { usePeriodFilter } from './use-period-filter'
 import { ImportsTab } from '../imports'
 
 type Section = 'trades' | 'dividends' | 'imports'
@@ -45,6 +46,7 @@ export const TradesTab = ({
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set())
   const [filterCatId, setFilterCatId] = useState<string | typeof ALL>(ALL)
   const [recomputing, setRecomputing] = useState(false)
+  const period = usePeriodFilter(trades)
   const { usdRate } = useDisplayCurrency()
 
   // Recompute every ticker's position from its movements.
@@ -111,12 +113,15 @@ export const TradesTab = ({
     [categories, assets, trades, tickerToCatId],
   )
 
+  const { matches } = period
   const filteredTrades = useMemo(
     () =>
-      filterCatId === ALL
-        ? trades
-        : trades.filter((t) => tickerToCatId[t.ticker.toUpperCase()] === filterCatId),
-    [trades, filterCatId, tickerToCatId],
+      trades.filter(
+        (t) =>
+          (filterCatId === ALL || tickerToCatId[t.ticker.toUpperCase()] === filterCatId) &&
+          matches(t),
+      ),
+    [trades, filterCatId, tickerToCatId, matches],
   )
 
   const grouped = useMemo(() => {
@@ -221,6 +226,13 @@ export const TradesTab = ({
         activeCategories={activeCategories}
         onSetFilterCatId={setFilterCatId}
       />
+      <PeriodFilter
+        month={period.month}
+        months={period.months}
+        onMonthChange={period.setMonth}
+        type={period.type}
+        onTypeChange={period.setType}
+      />
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
@@ -239,7 +251,9 @@ export const TradesTab = ({
 
       {grouped.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhuma movimentação nesta categoria.
+          {period.active
+            ? 'Nenhuma movimentação com esses filtros.'
+            : 'Nenhuma movimentação nesta categoria.'}
         </p>
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">

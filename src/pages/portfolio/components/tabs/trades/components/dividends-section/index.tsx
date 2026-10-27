@@ -6,6 +6,8 @@ import { useDisplayCurrency } from '@/store/display-currency'
 import type { Dividend } from '@/types'
 import { THIS_YEAR } from '@/pages/dividends/constants'
 import { ALL } from '../../../../../constants'
+import { formatMonth, monthKey, monthsOf } from '../../utils'
+import { MonthPicker } from '../month-picker'
 import { ChipRow } from './chip-row'
 import { DividendTickerRow } from './ticker-row'
 
@@ -15,6 +17,7 @@ export const DividendsSection = () => {
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState<string>(THIS_YEAR)
+  const [month, setMonth] = useState<string>(ALL)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -33,10 +36,22 @@ export const DividendsSection = () => {
     return [{ value: ALL, label: 'Todos' }, ...years.map((y) => ({ value: y, label: y }))]
   }, [dividends])
 
-  const filtered = useMemo(
+  const inYear = useMemo(
     () => (year === ALL ? dividends : dividends.filter((d) => d.paymentDate.startsWith(year))),
     [dividends, year],
   )
+  const monthOptions = useMemo(() => monthsOf(inYear.map((d) => d.paymentDate)), [inYear])
+  const filtered = useMemo(
+    () => (month === ALL ? inYear : inYear.filter((d) => monthKey(d.paymentDate) === month)),
+    [inYear, month],
+  )
+
+  const selectYear = (value: string) => {
+    setYear(value)
+    setMonth(ALL)
+  }
+
+  const emptyPeriod = month !== ALL ? formatMonth(month) : year !== ALL ? year : null
 
   const grouped = useMemo(() => {
     const map = new Map<string, Dividend[]>()
@@ -81,7 +96,15 @@ export const DividendsSection = () => {
 
   return (
     <div className="space-y-4">
-      <ChipRow options={yearOptions} selected={year} onSelect={setYear} />
+      <ChipRow options={yearOptions} selected={year} onSelect={selectYear} />
+      <div className="flex flex-wrap items-center gap-2">
+        <MonthPicker
+          month={month}
+          months={monthOptions}
+          onChange={setMonth}
+          allLabel="Todos os meses"
+        />
+      </div>
 
       <p className="text-xs text-muted-foreground">
         {grouped.length} ativo(s) · {filtered.length} provento(s) ·{' '}
@@ -90,7 +113,7 @@ export const DividendsSection = () => {
 
       {grouped.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          {year === ALL ? 'Nenhum provento.' : `Nenhum provento em ${year}.`}
+          {emptyPeriod ? `Nenhum provento em ${emptyPeriod}.` : 'Nenhum provento.'}
         </p>
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">

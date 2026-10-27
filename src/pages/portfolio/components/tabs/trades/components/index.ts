@@ -1,4 +1,6 @@
 export * from './filter-bar'
+export * from './month-picker'
+export * from './period-filter'
 export * from './ticker-row'
 export * from './trade-money'
 export * from './dividends-section'

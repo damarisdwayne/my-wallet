@@ -1,4 +1,6 @@
 export * from './use-assets'
+export * from './use-auto-alert-settings'
+export * from './use-auto-alerts'
 export * from './use-dashboard'
 export * from './use-expenses'
 export * from './use-fundamentals'

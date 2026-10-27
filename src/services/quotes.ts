@@ -19,7 +19,8 @@ const CRYPTO_IDS: Record<string, string> = {
   ATOM: 'cosmos',
 }
 
-export type PriceInfo = { brl: number; usd?: number }
+// changePct: variation since the previous close (24h for crypto), when the source provides it
+export type PriceInfo = { brl: number; usd?: number; changePct?: number }
 export type PriceMap = Record<string, PriceInfo>
 
 const CACHE_KEY = 'mw_quotes_v1'
@@ -189,7 +190,13 @@ export const fetchUsdBrlRate = async (): Promise<number> => {
 }
 
 type BrapiResp =
-  | { results: { symbol: string; regularMarketPrice: number }[] }
+  | {
+      results: {
+        symbol: string
+        regularMarketPrice: number
+        regularMarketChangePercent?: number
+      }[]
+    }
   | { error: boolean; message: string }
 
 async function fetchBrapiTicker(
@@ -215,7 +222,10 @@ async function fetchStockPrices(tickers: string[]): Promise<PriceMap> {
     if (!data || 'error' in data) continue
     const item = data.results?.[0]
     if (item?.regularMarketPrice)
-      prices[item.symbol.toUpperCase()] = { brl: item.regularMarketPrice }
+      prices[item.symbol.toUpperCase()] = {
+        brl: item.regularMarketPrice,
+        changePct: item.regularMarketChangePercent,
+      }
   }
 
   return prices
@@ -240,6 +250,7 @@ async function fetchUsStockPrices(tickers: string[]): Promise<PriceMap> {
       prices[item.symbol.toUpperCase()] = {
         brl: Math.round(usd * usdRate * 100) / 100,
         usd,
+        changePct: item.regularMarketChangePercent,
       }
     }
   }
@@ -253,14 +264,17 @@ async function fetchCryptoPrices(tickers: string[]): Promise<PriceMap> {
 
   try {
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl,usd`,
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl,usd&include_24hr_change=true`,
     )
     if (!res.ok) return {}
-    const data = (await res.json()) as Record<string, { brl: number; usd?: number }>
+    const data = (await res.json()) as Record<
+      string,
+      { brl: number; usd?: number; brl_24h_change?: number }
+    >
     const out: PriceMap = {}
     for (const [ticker, id] of Object.entries(idMap)) {
       const row = data[id]
-      if (row?.brl) out[ticker] = { brl: row.brl, usd: row.usd }
+      if (row?.brl) out[ticker] = { brl: row.brl, usd: row.usd, changePct: row.brl_24h_change }
     }
     return out
   } catch {

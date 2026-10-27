@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Bell, BellOff, CheckCheck } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { AlertItem } from './alert-item'
+import { AutoAlertsSettings } from './auto-alerts-settings'
 import { CreateAlertForm } from './create-alert-form'
 import { NotificationItem } from './notification-item'
 import type { AppNotification, PriceAlert } from '@/types'
@@ -118,6 +119,7 @@ export const NotificationsSheet = ({
 
           {tab === 'alerts' && (
             <>
+              <AutoAlertsSettings />
               <CreateAlertForm onSubmit={onCreateAlert} />
               {alerts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">

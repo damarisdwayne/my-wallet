@@ -7,6 +7,7 @@ import { MobileNav } from '@/components/layout/mobile-nav'
 import { ChatAssistant } from '@/components/chat-assistant'
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 import { useNotifications } from '@/hooks/use-notifications'
+import { useAutoAlerts } from '@/hooks/use-auto-alerts'
 import { usePriceAlerts } from '@/hooks/use-price-alerts'
 import { useAuth } from '@/store/auth'
 import { PageLoader } from '@/components'
@@ -34,6 +35,7 @@ export const AppLayout = () => {
     user?.uid ?? null,
     user?.email ?? null,
   )
+  useAutoAlerts(user?.uid ?? null, user?.email ?? null)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

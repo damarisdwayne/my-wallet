@@ -1,6 +1,6 @@
 /* ─── Notifications ────────────────────────────────────────────── */
 
-export type NotificationType = 'price_alert'
+export type NotificationType = 'price_alert' | 'auto_alert'
 
 export interface AppNotification {
   id: string
@@ -20,6 +20,17 @@ export interface PriceAlert {
   channels: Array<'browser' | 'email'>
   active: boolean
   createdAt: string
+}
+
+export type AutoAlertKind = 'dailyDrop' | 'weeklyDrop' | 'belowAvg'
+
+export interface AutoAlertSettings {
+  dailyDrop: { enabled: boolean; pct: number }
+  weeklyDrop: { enabled: boolean; pct: number }
+  belowAvg: { enabled: boolean }
+  email: boolean
+  // `${kind}:${ticker}` → date (YYYY-MM-DD) it last fired, used to avoid repeating alerts
+  fired: Record<string, string>
 }
 
 /* ─── Expenses ─────────────────────────────────────────────────── */

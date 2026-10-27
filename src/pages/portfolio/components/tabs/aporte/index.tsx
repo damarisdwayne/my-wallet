@@ -5,6 +5,7 @@ import { MASK, usePrivacy } from '@/store/privacy'
 import { useDisplayCurrency } from '@/store/display-currency'
 
 import { computeAssetTargets } from '../../../compute-targets'
+import { PriceChangesButton } from '../../dialog'
 import type { CategoryAllocation, Props } from './constants'
 import { calcDistribution } from './utils'
 import { CategoryRow } from './components'
@@ -116,6 +117,7 @@ export const AporteTab = ({
         >
           {refreshingPrices ? 'Calculando...' : 'Calcular'}
         </button>
+        <PriceChangesButton />
       </div>
 
       {distribution !== null && chipCats?.length > 0 && (

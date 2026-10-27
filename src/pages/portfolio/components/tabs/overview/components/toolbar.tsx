@@ -1,5 +1,6 @@
 import { RefreshCw, Upload, Plus, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PriceChangesButton } from '../../../dialog'
 
 interface ToolbarProps {
   priceError: string | undefined | null
@@ -31,6 +32,7 @@ export const Toolbar = ({
         {refreshingPrices ? 'Atualizando...' : 'Atualizar preços'}
       </span>
     </button>
+    <PriceChangesButton />
     <button
       onClick={onExportCsv}
       title="Exportar CSV"

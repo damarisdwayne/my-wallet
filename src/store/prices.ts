@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import type { PriceMap } from '@/services/quotes'
 
 // Set by useAssets.refreshPrices after every successful price fetch
@@ -21,6 +22,10 @@ export interface PriceChangesSummary {
   refreshedAt: number
 }
 
-// Movements detected on the last refresh, relative to the previously stored prices
-export const priceChangesAtom = atom<PriceChangesSummary | null>(null)
+// Movements detected on the last refresh, relative to the previously stored prices.
+// Persisted so the summary can be reopened later, not only right after refreshing.
+export const priceChangesAtom = atomWithStorage<PriceChangesSummary | null>(
+  'mw_price_changes_v1',
+  null,
+)
 export const priceChangesOpenAtom = atom(false)

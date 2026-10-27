@@ -233,7 +233,7 @@ export const PortfolioPage = () => {
         )}
       </Suspense>
 
-      <PriceChangesDialog />
+      <PriceChangesDialog assets={assets} />
     </div>
   )
 }

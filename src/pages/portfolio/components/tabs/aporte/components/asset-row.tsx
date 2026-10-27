@@ -8,6 +8,7 @@ import type { AssetAllocation } from '../constants'
 import { isForeignType } from '../utils'
 import { RegisterTradeDialog } from './register-trade-dialog'
 import { UsdHint } from './usd-hint'
+import { WeeklyVariation } from './weekly-variation'
 
 interface AssetRowProps {
   allocation: AssetAllocation
@@ -64,6 +65,7 @@ export const AssetRow = ({
           {asset.currentPrice > 0 && (
             <span className="text-xs font-normal text-muted-foreground">{priceLabel}</span>
           )}
+          <WeeklyVariation asset={asset} />
         </p>
         <p className="text-xs text-muted-foreground/60 mt-0.5 hidden sm:block">
           rec. {fmt(recommendedValue)}

@@ -36,7 +36,7 @@ export const ChangesList = ({ changes, loading }: Props) => {
         </p>
       </div>
 
-      <ScrollArea className="max-h-[50vh] -mx-1 px-1">
+      <ScrollArea className="-mx-1 px-1 [&>[data-radix-scroll-area-viewport]]:max-h-[50vh]">
         <div className="divide-y divide-border">
           {changes.map((change) => (
             <ChangeRow key={change.ticker} change={change} hideValues={hideValues} />

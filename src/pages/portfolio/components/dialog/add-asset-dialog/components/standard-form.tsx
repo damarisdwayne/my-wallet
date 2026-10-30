@@ -19,8 +19,7 @@ export const StandardForm = ({
     ticker: '',
     name: '',
     quantity: '',
-    avgPrice: '',
-    currentPrice: '',
+    price: '',
     targetPercent: '10',
     categoryId: '',
     autoCategory: true,
@@ -34,7 +33,10 @@ export const StandardForm = ({
     ? (categories.find((c) => c.id === autoCatId)?.name ?? 'Nenhuma encontrada')
     : (categories.find((c) => c.id === form.categoryId)?.name ?? '—')
 
-  const canSave = !!(form.ticker.trim() && form.name.trim())
+  const canSave =
+    !!(form.ticker.trim() && form.name.trim()) &&
+    Number.parseFloat(form.quantity) > 0 &&
+    Number.parseFloat(form.price) > 0
 
   return (
     <div className="space-y-3 mt-2">
@@ -56,7 +58,7 @@ export const StandardForm = ({
           />
         </Field>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Field label="Quantidade">
           <input
             className={inputClass}
@@ -68,26 +70,15 @@ export const StandardForm = ({
             onChange={(e) => set('quantity', e.target.value)}
           />
         </Field>
-        <Field label="PM (R$)">
+        <Field label="Preço (R$)">
           <input
             className={inputClass}
             type="number"
             min={0}
             step={0.01}
             placeholder="30.00"
-            value={form.avgPrice}
-            onChange={(e) => set('avgPrice', e.target.value)}
-          />
-        </Field>
-        <Field label="Atual (R$)" className="col-span-2 sm:col-span-1">
-          <input
-            className={inputClass}
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="35.00"
-            value={form.currentPrice}
-            onChange={(e) => set('currentPrice', e.target.value)}
+            value={form.price}
+            onChange={(e) => set('price', e.target.value)}
           />
         </Field>
       </div>
@@ -148,8 +139,8 @@ export const StandardForm = ({
             type,
             categoryId: resolvedCatId,
             quantity: Number.parseFloat(form.quantity) || 0,
-            avgPrice: Number.parseFloat(form.avgPrice) || 0,
-            currentPrice: Number.parseFloat(form.currentPrice) || 0,
+            avgPrice: Number.parseFloat(form.price) || 0,
+            currentPrice: Number.parseFloat(form.price) || 0,
             targetPercent: Number.parseFloat(form.targetPercent) || 0,
           })
         }

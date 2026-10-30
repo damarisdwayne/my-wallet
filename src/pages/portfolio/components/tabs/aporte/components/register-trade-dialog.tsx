@@ -14,8 +14,6 @@ import type { Asset, Trade } from '@/types'
 const inputClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
-const todayStr = new Date().toISOString().slice(0, 10)
-
 // Cripto e exterior são cotados em dólar — o trade precisa carregar priceUsd/totalUsd/usdRateAtTrade
 // para o PM em USD e o IR (custo em dólar) ficarem corretos.
 
@@ -38,6 +36,7 @@ export const RegisterTradeDialog = ({ asset, defaultQuantity, onClose, onConfirm
     defaultQuantity > 0 ? String(Number(defaultQuantity.toFixed(8))) : '',
   )
   const [price, setPrice] = useState(initialPrice > 0 ? String(initialPrice) : '')
+  const [todayStr] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [date, setDate] = useState(todayStr)
   // Cotação do dólar atual (mesma do dashboard), editável — null = ainda seguindo a cotação.
   const [usdRateEdit, setUsdRateEdit] = useState<string | null>(null)

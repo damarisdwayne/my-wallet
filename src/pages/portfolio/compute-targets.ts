@@ -15,8 +15,9 @@ export const computeAssetTargets = (
     const catAssets = assets.filter((a) => a.categoryId === cat.id)
     if (catAssets.length === 0) continue
 
-    // Manual mode: any asset with targetPercent > 0 means whole category is manual
-    if (catAssets.some((a) => (a.targetPercent ?? 0) > 0)) {
+    // Manual mode: any asset with targetPercent > 0 means whole category is manual,
+    // unless the category tracks by diagram (stale manual targets must not override scores)
+    if (cat.tracking !== 'diagram' && catAssets.some((a) => (a.targetPercent ?? 0) > 0)) {
       catAssets.forEach((a) => result.set(a.id, a.targetPercent ?? 0))
       continue
     }

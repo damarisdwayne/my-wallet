@@ -22,6 +22,8 @@ const formatDate = (date: string) =>
 const tickerName = (t: Trade, asset: Asset | undefined) =>
   asset?.type === 'fixed_income' ? getFiLabel(asset) : t.ticker
 
+const COLUMN_WIDTHS = ['24%', '14%', '10%', '14%', '14%', '12%', '12%']
+
 const MiniLabel = ({ children }: { children: string }) => (
   <p className="text-muted-foreground/60 uppercase tracking-wide text-[9px]">{children}</p>
 )
@@ -109,7 +111,12 @@ export const TradeList = ({ items, getAsset, byDay, onDeleteTrade, onEditTrade }
         })}
       </div>
 
-      <table className="hidden md:table w-full text-sm">
+      <table className="hidden md:table w-full table-fixed text-sm">
+        <colgroup>
+          {COLUMN_WIDTHS.map((width, i) => (
+            <col key={i} style={{ width }} />
+          ))}
+        </colgroup>
         <thead>
           <tr className="text-left text-muted-foreground bg-muted/30">
             <th className="px-4 py-2 font-medium text-xs">{byDay ? 'Ativo' : 'Data'}</th>
@@ -130,7 +137,7 @@ export const TradeList = ({ items, getAsset, byDay, onDeleteTrade, onEditTrade }
                 className="border-t border-border/60 hover:bg-accent/20 transition-colors"
               >
                 {byDay ? (
-                  <td className="px-4 py-2 text-xs font-semibold text-foreground">
+                  <td className="truncate px-4 py-2 text-xs font-semibold text-foreground">
                     {tickerName(t, asset)}
                   </td>
                 ) : (

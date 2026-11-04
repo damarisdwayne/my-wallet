@@ -11,12 +11,14 @@ interface Props {
   onEditTrade: (tradeId: string, patch: Partial<Trade>) => Promise<void>
 }
 
-const formatDayHeader = (date: string) =>
-  new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
+const formatDayHeader = (date: string) => {
+  const label = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
   })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
 
 const sumTotal = (items: Trade[], type: Trade['type']) =>
   items.filter((t) => t.type === type).reduce((s, t) => s + t.total, 0)
@@ -32,9 +34,7 @@ export const DayTimeline = ({ trades, getAsset, onDeleteTrade, onEditTrade }: Pr
         return (
           <div key={date} className="rounded-lg border border-border overflow-hidden">
             <div className="flex items-center gap-3 bg-muted/40 px-4 py-2">
-              <span className="text-sm font-semibold capitalize text-foreground">
-                {formatDayHeader(date)}
-              </span>
+              <span className="text-sm font-semibold text-foreground">{formatDayHeader(date)}</span>
               <span className="text-xs text-muted-foreground">{items.length} op.</span>
               <div className="ml-auto flex items-center gap-3 text-xs tabular-nums">
                 {bought > 0 && <TradeMoney brl={bought} className="text-success" />}

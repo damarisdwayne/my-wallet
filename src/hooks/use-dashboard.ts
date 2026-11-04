@@ -4,6 +4,9 @@ import { subscribeToAllDividends } from '@/services/dividends'
 import {
   subscribeToPatrimonyHistory,
   savePatrimonySnapshot,
+  subscribeToDailyPatrimony,
+  saveDailyPatrimonySnapshot,
+  type DailyPatrimonyPoint,
   type PatrimonyPoint,
 } from '@/services/patrimony'
 import { subscribeToTrades } from '@/services/trades'
@@ -13,6 +16,7 @@ import type { Asset, AssetType, Dividend, Trade } from '@/types'
 
 export const CURRENT_MONTH = new Date().toISOString().slice(0, 7)
 const CURRENT_YEAR = new Date().getFullYear().toString()
+export const TODAY = new Date().toLocaleDateString('en-CA')
 
 export interface AllocationSlice {
   type: AssetType
@@ -41,6 +45,7 @@ export const useDashboard = () => {
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
   const [patrimonyHistory, setPatrimonyHistory] = useState<PatrimonyPoint[]>([])
+  const [dailyHistory, setDailyHistory] = useState<DailyPatrimonyPoint[]>([])
   const [assetsLoading, setAssetsLoading] = useState(true)
   const [dividendsLoading, setDividendsLoading] = useState(true)
   const [tradesLoading, setTradesLoading] = useState(true)
@@ -65,6 +70,7 @@ export const useDashboard = () => {
         setPatrimonyHistory(data)
         setHistoryLoading(false)
       }),
+      subscribeToDailyPatrimony(user.uid, setDailyHistory),
       subscribeToTrades(user.uid, (data) => {
         setTrades(data)
         setTradesLoading(false)
@@ -78,12 +84,14 @@ export const useDashboard = () => {
 
   /* ── portfolio numbers ── */
   const totalPatrimony = assets.reduce((s, a) => s + a.currentPrice * a.quantity, 0)
+  const totalCost = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
 
-  // Salva snapshot do mês atual — sobrescreve o mesmo doc, nunca cria duplicatas
+  // Salva snapshot do mês e do dia atuais — sobrescreve o mesmo doc, nunca cria duplicatas
   useEffect(() => {
     if (loading || totalPatrimony === 0 || !user) return
     savePatrimonySnapshot(user.uid, CURRENT_MONTH, totalPatrimony)
-  }, [loading, totalPatrimony, user])
+    saveDailyPatrimonySnapshot(user.uid, { date: TODAY, value: totalPatrimony, cost: totalCost })
+  }, [loading, totalPatrimony, totalCost, user])
 
   // Backfill patrimony history from trades for months without a saved snapshot
   useEffect(() => {
@@ -115,7 +123,6 @@ export const useDashboard = () => {
     })
     Promise.all(saves).catch(console.error)
   }, [loading, trades, patrimonyHistory, user])
-  const totalCost = assets.reduce((s, a) => s + a.avgPrice * a.quantity, 0)
   const totalReturn = totalCost > 0 ? ((totalPatrimony - totalCost) / totalCost) * 100 : 0
   const totalGain = totalPatrimony - totalCost
 
@@ -195,6 +202,7 @@ export const useDashboard = () => {
     last12Dividends,
     monthlyExpenses,
     patrimonyHistory,
+    dailyHistory,
     allocation,
   }
 }

@@ -19,6 +19,7 @@ export const DashboardPage = () => {
     last12Dividends,
     monthlyExpenses,
     patrimonyHistory,
+    dailyHistory,
   } = useDashboard()
 
   const { hideValues } = usePrivacy()
@@ -88,7 +89,9 @@ export const DashboardPage = () => {
 
       <PatrimonyChartComponent
         patrimonyHistory={patrimonyHistory}
+        dailyHistory={dailyHistory}
         totalPatrimony={totalPatrimony}
+        totalCost={totalCost}
         loading={loading}
         hidden={hideValues}
       />

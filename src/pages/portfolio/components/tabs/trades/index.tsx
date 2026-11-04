@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, isUsdQuoted } from '@/lib/utils'
 import { useDisplayCurrency } from '@/store/display-currency'
 import type { Asset, ImportRecord, PortfolioCategory, Trade } from '@/types'
 import { ALL } from '../../../constants'
-import { DividendsSection, FilterBar, PeriodFilter, TickerRow } from './components'
+import { DayTimeline, DividendsSection, FilterBar, PeriodFilter, TickerRow } from './components'
 import { usePeriodFilter } from './use-period-filter'
 import { ImportsTab } from '../imports'
 
@@ -156,6 +156,12 @@ export const TradesTab = ({
       .sort((a, b) => a.ticker.localeCompare(b.ticker))
   }, [filteredTrades, tickerToAsset, usdRate])
 
+  const getAsset = useCallback(
+    (ticker: string) => tickerToAsset[ticker.toUpperCase()],
+    [tickerToAsset],
+  )
+  const byDay = period.month !== ALL
+
   const toggle = (ticker: string) =>
     setExpandedTickers((prev) => {
       const next = new Set(prev)
@@ -236,7 +242,10 @@ export const TradesTab = ({
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          {grouped.length} ativo(s) · {filteredTrades.length} operação(ões)
+          {byDay
+            ? `${new Set(filteredTrades.map((t) => t.date)).size} dia(s)`
+            : `${grouped.length} ativo(s)`}{' '}
+          · {filteredTrades.length} operação(ões)
         </p>
         <button
           onClick={handleRecompute}
@@ -255,6 +264,13 @@ export const TradesTab = ({
             ? 'Nenhuma movimentação com esses filtros.'
             : 'Nenhuma movimentação nesta categoria.'}
         </p>
+      ) : byDay ? (
+        <DayTimeline
+          trades={filteredTrades}
+          getAsset={getAsset}
+          onDeleteTrade={onDeleteTrade}
+          onEditTrade={onEditTrade}
+        />
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">
           {grouped.map((g, idx) => (
@@ -271,7 +287,7 @@ export const TradesTab = ({
                 onToggle={toggle}
                 onDeleteTrade={onDeleteTrade}
                 onEditTrade={onEditTrade}
-                asset={tickerToAsset[g.ticker.toUpperCase()]}
+                asset={getAsset(g.ticker)}
               />
             </div>
           ))}

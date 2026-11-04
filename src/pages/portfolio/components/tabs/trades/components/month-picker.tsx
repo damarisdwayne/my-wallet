@@ -1,13 +1,15 @@
-import { CalendarDays, ChevronDown } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { ALL } from '../../../../constants'
-import { formatMonth } from '../utils'
+import { formatMonth, formatMonthName, groupMonthsByYear } from '../utils'
 
 interface Props {
   month: string | typeof ALL
@@ -15,6 +17,21 @@ interface Props {
   onChange: (month: string | typeof ALL) => void
   allLabel?: string
 }
+
+const PickerItem = ({
+  label,
+  selected,
+  onSelect,
+}: {
+  label: string
+  selected: boolean
+  onSelect: () => void
+}) => (
+  <DropdownMenuItem onClick={onSelect} className="justify-between gap-6">
+    {label}
+    {selected && <Check size={12} className="text-primary" />}
+  </DropdownMenuItem>
+)
 
 export const MonthPicker = ({ month, months, onChange, allLabel = 'Todo o período' }: Props) => (
   <DropdownMenu>
@@ -32,12 +49,21 @@ export const MonthPicker = ({ month, months, onChange, allLabel = 'Todo o perío
         <ChevronDown size={12} />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-      <DropdownMenuItem onClick={() => onChange(ALL)}>{allLabel}</DropdownMenuItem>
-      {months.map((m) => (
-        <DropdownMenuItem key={m} onClick={() => onChange(m)}>
-          {formatMonth(m)}
-        </DropdownMenuItem>
+    <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto scrollbar-none">
+      <PickerItem label={allLabel} selected={month === ALL} onSelect={() => onChange(ALL)} />
+      {groupMonthsByYear(months).map(({ year, months: yearMonths }) => (
+        <div key={year}>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>{year}</DropdownMenuLabel>
+          {yearMonths.map((m) => (
+            <PickerItem
+              key={m}
+              label={formatMonthName(m)}
+              selected={month === m}
+              onSelect={() => onChange(m)}
+            />
+          ))}
+        </div>
       ))}
     </DropdownMenuContent>
   </DropdownMenu>

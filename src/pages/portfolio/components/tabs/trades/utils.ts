@@ -23,7 +23,50 @@ export const monthKey = (date: string) => date.slice(0, 7)
 export const monthsOf = (dates: string[]) =>
   [...new Set(dates.map(monthKey).filter(Boolean))].sort().reverse()
 
-export const formatMonth = (key: string) => {
-  const [year, month] = key.split('-')
-  return `${month}/${year}`
+const MONTH_NAMES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+]
+
+export const formatMonthName = (key: string) => MONTH_NAMES[Number(key.slice(5, 7)) - 1] ?? key
+
+export const formatMonth = (key: string) => `${formatMonthName(key)} ${key.slice(0, 4)}`
+
+// Groups YYYY-MM keys by year, preserving the input order
+export const groupMonthsByYear = (months: string[]) => {
+  const map = new Map<string, string[]>()
+  for (const m of months) {
+    const year = m.slice(0, 4)
+    map.set(year, [...(map.get(year) ?? []), m])
+  }
+  return [...map.entries()].map(([year, items]) => ({ year, months: items }))
+}
+
+export interface TradeDay {
+  date: string
+  items: Trade[]
+}
+
+// Most recent day first; on the same day, buys before sells
+export const groupTradesByDay = (trades: Trade[]): TradeDay[] => {
+  const sorted = [...trades].sort(
+    (a, b) => b.date.localeCompare(a.date) || (a.type === b.type ? 0 : a.type === 'buy' ? -1 : 1),
+  )
+  const map = new Map<string, Trade[]>()
+  for (const t of sorted) {
+    const list = map.get(t.date) ?? []
+    list.push(t)
+    map.set(t.date, list)
+  }
+  return [...map.entries()].map(([date, items]) => ({ date, items }))
 }

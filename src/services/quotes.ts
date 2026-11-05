@@ -1,5 +1,6 @@
 import type { AssetType } from '@/types'
 import { fetchTesouroPriceMap } from '@/services/tesouro'
+import { brapiFetch } from '@/services/brapi-client'
 import type { TickerSets } from '@/lib/ir-calc'
 
 export type { TickerSets } from '@/lib/ir-calc'
@@ -205,7 +206,7 @@ async function fetchBrapiTicker(
   currency?: string,
 ): Promise<BrapiResp | null> {
   const params = currency ? `currency=${currency}&token=${token}` : `token=${token}`
-  return fetch(`https://brapi.dev/api/quote/${ticker}?${params}`)
+  return brapiFetch(`https://brapi.dev/api/quote/${ticker}?${params}`)
     .then((r) => r.json() as Promise<BrapiResp>)
     .catch(() => null)
 }
@@ -421,7 +422,7 @@ export const fetchHistoricalPrices = async (ticker: string): Promise<HistoricalP
 
   try {
     const url = `https://brapi.dev/api/quote/${ticker}?range=1mo&interval=1d&token=${token}`
-    const res = await fetch(url)
+    const res = await brapiFetch(url)
     if (!res.ok) return []
     const json = (await res.json()) as {
       results?: { historicalDataPrice?: { date: number; close: number }[] }[]

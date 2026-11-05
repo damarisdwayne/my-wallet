@@ -1,5 +1,6 @@
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firestore'
+import { brapiFetch } from '@/services/brapi-client'
 import type {
   ExteriorInfo,
   FiiInfo,
@@ -174,7 +175,7 @@ export const fetchBrapiSummary = async (
   const token = import.meta.env.VITE_BRAPI_TOKEN as string | undefined
   if (!token) return { priceEarnings: null, sector: null, industry: null }
 
-  const res = await fetch(
+  const res = await brapiFetch(
     `https://brapi.dev/api/quote/${ticker}?modules=summaryProfile&token=${token}`,
   ).catch(() => null)
   if (!res?.ok) return { priceEarnings: null, sector: null, industry: null }

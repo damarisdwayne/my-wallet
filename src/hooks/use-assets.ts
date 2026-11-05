@@ -219,6 +219,14 @@ export const useAssets = (uid: string | null) => {
           }),
       )
       setPriceTs()
+      const missing = priceable
+        .map((a) => a.ticker.toUpperCase())
+        .filter((ticker) => prices[ticker] === undefined)
+      if (missing.length > 0)
+        toast.warning(`${missing.length} ativo(s) sem cotação nova`, {
+          description: `Mantido o preço anterior: ${missing.join(', ')}`,
+          duration: 15000,
+        })
       if (silent && changes.length > 0) {
         toast.success('Preços atualizados', {
           description: `${changes.length} ${changes.length === 1 ? 'ativo se moveu' : 'ativos se moveram'} desde a última atualização`,

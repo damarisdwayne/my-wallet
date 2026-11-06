@@ -52,21 +52,26 @@ export const groupMonthsByYear = (months: string[]) => {
   return [...map.entries()].map(([year, items]) => ({ year, months: items }))
 }
 
-export interface TradeDay {
+export interface DayGroup<T> {
   date: string
-  items: Trade[]
+  items: T[]
 }
 
-// Most recent day first; on the same day, buys before sells
-export const groupTradesByDay = (trades: Trade[]): TradeDay[] => {
-  const sorted = [...trades].sort(
-    (a, b) => b.date.localeCompare(a.date) || (a.type === b.type ? 0 : a.type === 'buy' ? -1 : 1),
-  )
-  const map = new Map<string, Trade[]>()
-  for (const t of sorted) {
-    const list = map.get(t.date) ?? []
-    list.push(t)
-    map.set(t.date, list)
+// Most recent day first; items keep the order given by `compare` inside each day
+export const groupByDay = <T>(
+  items: T[],
+  dateOf: (item: T) => string,
+  compare: (a: T, b: T) => number = () => 0,
+): DayGroup<T>[] => {
+  const sorted = [...items].sort((a, b) => dateOf(b).localeCompare(dateOf(a)) || compare(a, b))
+  const map = new Map<string, T[]>()
+  for (const item of sorted) {
+    const date = dateOf(item)
+    map.set(date, [...(map.get(date) ?? []), item])
   }
-  return [...map.entries()].map(([date, items]) => ({ date, items }))
+  return [...map.entries()].map(([date, dayItems]) => ({ date, items: dayItems }))
 }
+
+const buysFirst = (a: Trade, b: Trade) => (a.type === b.type ? 0 : a.type === 'buy' ? -1 : 1)
+
+export const groupTradesByDay = (trades: Trade[]) => groupByDay(trades, (t) => t.date, buysFirst)

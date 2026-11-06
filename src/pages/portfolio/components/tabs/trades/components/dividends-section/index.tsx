@@ -9,7 +9,7 @@ import { ALL } from '../../../../../constants'
 import { formatMonth, monthKey, monthsOf } from '../../utils'
 import { MonthPicker } from '../month-picker'
 import { ChipRow } from './chip-row'
-import { DividendTickerRow } from './ticker-row'
+import { DividendTimeline } from './dividend-timeline'
 
 export const DividendsSection = () => {
   const { user } = useAuth()
@@ -18,7 +18,6 @@ export const DividendsSection = () => {
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState<string>(THIS_YEAR)
   const [month, setMonth] = useState<string>(ALL)
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!user) return
@@ -53,35 +52,11 @@ export const DividendsSection = () => {
 
   const emptyPeriod = month !== ALL ? formatMonth(month) : year !== ALL ? year : null
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, Dividend[]>()
-    for (const d of filtered) {
-      const list = map.get(d.ticker) ?? []
-      list.push(d)
-      map.set(d.ticker, list)
-    }
-    return [...map.entries()]
-      .map(([ticker, items]) => ({
-        ticker,
-        items,
-        total: items.reduce((s, d) => s + getDividendBrl(d, usdRate), 0),
-        // Só soma em dólar quando todos os proventos do ticker têm o valor original em USD.
-        totalUsd: items.every((d) => d.amountUsd != null)
-          ? items.reduce((s, d) => s + (d.amountUsd ?? 0), 0)
-          : undefined,
-      }))
-      .sort((a, b) => a.ticker.localeCompare(b.ticker))
-  }, [filtered, usdRate])
-
-  const total = grouped.reduce((s, g) => s + g.total, 0)
-
-  const toggle = (ticker: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(ticker)) next.delete(ticker)
-      else next.add(ticker)
-      return next
-    })
+  const total = useMemo(
+    () => filtered.reduce((s, d) => s + getDividendBrl(d, usdRate), 0),
+    [filtered, usdRate],
+  )
+  const dayCount = useMemo(() => new Set(filtered.map((d) => d.paymentDate)).size, [filtered])
 
   if (loading)
     return <p className="text-sm text-muted-foreground py-8 text-center">Carregando...</p>
@@ -107,31 +82,20 @@ export const DividendsSection = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {grouped.length} ativo(s) · {filtered.length} provento(s) ·{' '}
+        {dayCount} dia(s) · {filtered.length} provento(s) ·{' '}
         <span className="font-medium text-success">{formatCurrency(total)}</span>
       </p>
 
-      {grouped.length === 0 ? (
+      {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
           {emptyPeriod ? `Nenhum provento em ${emptyPeriod}.` : 'Nenhum provento.'}
         </p>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          {grouped.map((g, idx) => (
-            <div key={g.ticker} className={idx > 0 ? 'border-t border-border' : undefined}>
-              <DividendTickerRow
-                ticker={g.ticker}
-                items={g.items}
-                total={g.total}
-                totalUsd={g.totalUsd}
-                usdRate={usdRate}
-                isExpanded={expanded.has(g.ticker)}
-                onToggle={toggle}
-                onDelete={(id) => user && deleteDividend(user.uid, id)}
-              />
-            </div>
-          ))}
-        </div>
+        <DividendTimeline
+          dividends={filtered}
+          usdRate={usdRate}
+          onDelete={(id) => user && deleteDividend(user.uid, id)}
+        />
       )}
     </div>
   )

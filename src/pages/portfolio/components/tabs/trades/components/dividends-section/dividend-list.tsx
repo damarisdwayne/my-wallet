@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react'
-import { cn, getDividendBrl, getDividendIrBrl } from '@/lib/utils'
+import { cn, formatDate, getDividendBrl, getDividendIrBrl } from '@/lib/utils'
 import type { Dividend } from '@/types'
 import { TradeMoney } from '../trade-money'
 import { dividendColor, dividendLabel, dividendSourceLabel } from './utils'
@@ -7,6 +7,8 @@ import { dividendColor, dividendLabel, dividendSourceLabel } from './utils'
 interface Props {
   items: Dividend[]
   usdRate: number
+  /** Shows the ticker column and hides the payment date one — used by the day-grouped timeline. */
+  byDay?: boolean
   onDelete: (id: string) => void
 }
 
@@ -33,14 +35,20 @@ const MiniLabel = ({ children }: { children: string }) => (
   <p className="text-muted-foreground/60 uppercase tracking-wide text-[9px]">{children}</p>
 )
 
-export const DividendList = ({ items, usdRate, onDelete }: Props) => (
+export const DividendList = ({ items, usdRate, byDay, onDelete }: Props) => (
   <>
     <div className="md:hidden divide-y divide-border/60">
       {items.map((d) => (
         <div key={d.id} className="px-4 py-2.5 hover:bg-accent/20 transition-colors">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-sm font-semibold text-foreground">{d.ticker}</span>
+              {byDay ? (
+                <span className="truncate text-sm font-semibold text-foreground">{d.ticker}</span>
+              ) : (
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {formatDate(d.paymentDate)}
+                </span>
+              )}
               <TypeBadge dividend={d} />
             </div>
             <DeleteButton onClick={() => onDelete(d.id)} />
@@ -79,7 +87,7 @@ export const DividendList = ({ items, usdRate, onDelete }: Props) => (
       </colgroup>
       <thead>
         <tr className="text-left text-muted-foreground bg-muted/30">
-          <th className="px-4 py-2 font-medium text-xs">Ativo</th>
+          <th className="px-4 py-2 font-medium text-xs">{byDay ? 'Ativo' : 'Pagamento'}</th>
           <th className="px-4 py-2 font-medium text-xs">Tipo</th>
           <th className="px-4 py-2 font-medium text-xs text-right">Valor</th>
           <th className="px-4 py-2 font-medium text-xs text-right">IR</th>
@@ -90,7 +98,15 @@ export const DividendList = ({ items, usdRate, onDelete }: Props) => (
       <tbody>
         {items.map((d) => (
           <tr key={d.id} className="border-t border-border/60 hover:bg-accent/20 transition-colors">
-            <td className="truncate px-4 py-2 text-xs font-semibold text-foreground">{d.ticker}</td>
+            {byDay ? (
+              <td className="truncate px-4 py-2 text-xs font-semibold text-foreground">
+                {d.ticker}
+              </td>
+            ) : (
+              <td className="px-4 py-2 text-xs tabular-nums text-muted-foreground">
+                {formatDate(d.paymentDate)}
+              </td>
+            )}
             <td className="px-4 py-2">
               <TypeBadge dividend={d} />
             </td>

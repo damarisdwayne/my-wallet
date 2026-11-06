@@ -31,7 +31,7 @@ export const DividendTimeline = ({ dividends, usdRate, onDelete }: Props) => {
             />
           }
         >
-          <DividendList items={items} usdRate={usdRate} onDelete={onDelete} />
+          <DividendList items={items} usdRate={usdRate} byDay onDelete={onDelete} />
         </DayCard>
       ))}
     </div>
